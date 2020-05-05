@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Gaius.Core.Configuration;
 using Strube.Utilities.DataStructures;
+using Strube.Utilities.FileSystem;
 using Gaius.Core.Worker;
 
 namespace Gaius.Core.Processing.FileSystem
@@ -153,8 +154,22 @@ namespace Gaius.Core.Processing.FileSystem
             if(Directory.Exists(genDirFullPath))
             {
                 var genDir = new DirectoryInfo(genDirFullPath);
-                genDir.Delete(true);
-                genDir = Directory.CreateDirectory(genDirFullPath);
+                var allContainedFsInfos = genDir.EnumerateFileSystemInfos();
+
+                //rs: delete *almost* all contained directories and files in the generation directory
+                foreach(var containedFsInfo in allContainedFsInfos)
+                {
+                    if(containedFsInfo.IsDirectory())
+                    {
+                        //rs: specifically skip over the deletion of a .git directory in the _generated folder
+                        if(containedFsInfo.Name.Equals(".git", StringComparison.InvariantCultureIgnoreCase))
+                            continue;
+
+                        else ((DirectoryInfo)containedFsInfo).Delete(true);
+                    }
+
+                    else containedFsInfo.Delete();
+                }
             }
 
             opTree.Data.Status = OperationStatus.Complete;
@@ -172,7 +187,6 @@ namespace Gaius.Core.Processing.FileSystem
             {
                 opTreeNode.Data.Status = OperationStatus.Complete;
                 return;
-
             }
 
             if(opTreeNode.Data.IsDirectoryOp)

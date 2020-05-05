@@ -42,7 +42,10 @@ namespace Gaius.Core.Processing.FileSystem
         public bool IsDirectoryOp => FSInfo.IsDirectory();
         public bool ShouldSkip(FileSystemInfo fsInfo)
         {
-            if(fsInfo.Name.Equals(_gaiusConfig.LayoutDirectoryName))
+            if(fsInfo.Name.Equals(_gaiusConfig.LayoutDirectoryName, StringComparison.InvariantCultureIgnoreCase))
+                return true;
+
+            if(fsInfo.Name.Equals(".git", StringComparison.InvariantCultureIgnoreCase))
                 return true;
 
             if(fsInfo.IsLiquidFile())
