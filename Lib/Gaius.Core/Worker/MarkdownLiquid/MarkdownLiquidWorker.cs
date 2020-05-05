@@ -14,14 +14,13 @@ namespace Gaius.Core.Worker.MarkdownLiquid
     {
         private readonly GaiusConfiguration _gaiusConfiguration;
         private readonly IFrontMatterParser _frontMatterParser;
-        private readonly MarkdownPipeline _markdownPipeline;
-        private IFileProvider _liquidTemplatePhysicalFileProvider;
+        private static readonly MarkdownPipeline _markdownPipeline = new MarkdownPipelineBuilder().UseYamlFrontMatter().Build();
+        private static IFileProvider _liquidTemplatePhysicalFileProvider;
 
         public MarkdownLiquidWorker(IFrontMatterParser frontMatterParser, IOptions<GaiusConfiguration> gaiusConfigurationOptions)
         {
             _frontMatterParser = frontMatterParser;
             _gaiusConfiguration = gaiusConfigurationOptions.Value;
-            _markdownPipeline = new MarkdownPipelineBuilder().UseYamlFrontMatter().Build();
         }
 
         public WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo)

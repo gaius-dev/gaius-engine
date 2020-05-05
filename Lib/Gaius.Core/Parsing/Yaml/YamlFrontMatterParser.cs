@@ -6,7 +6,7 @@ namespace Gaius.Core.Parsing.Yaml
 {
     public class YamlFrontMatterParser : IFrontMatterParser
     {
-        private static IDeserializer _yamlDeserializer 
+        private static readonly IDeserializer _yamlDeserializer 
             = new DeserializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
                 .Build();
