@@ -1,0 +1,7 @@
+{
+    "SourceDirectoryName": "_source",
+    "LayoutDirectoryName" : "_layouts",
+    "GenerationDirectoryName" : "_generated",
+    "Processor" : "file",
+    "Pipeline" : "markdown-liquid"
+}
