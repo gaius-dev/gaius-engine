@@ -81,6 +81,20 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return file.Name;
         }
 
+        public bool ShouldSkip(FileSystemInfo fsInfo)
+        {
+            if(fsInfo.Name.Equals(_gaiusConfiguration.LayoutDirectoryName, StringComparison.InvariantCultureIgnoreCase))
+                return true;
+
+            if(fsInfo.Name.Equals(".git", StringComparison.InvariantCultureIgnoreCase))
+                return true;
+
+            if(fsInfo.IsLiquidFile())
+                return true;
+
+            return false;
+        }
+
         private static WorkType GetTransformType(FileSystemInfo fsInfo)
         {
             if (fsInfo.IsMarkdownFile())

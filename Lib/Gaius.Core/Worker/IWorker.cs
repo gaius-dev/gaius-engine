@@ -7,5 +7,6 @@ namespace Gaius.Core.Worker
         WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo);
         string PerformTransform(WorkerTask workerOperation);
         string GetTarget(FileSystemInfo fsInfo);
+        bool ShouldSkip(FileSystemInfo fsInfo);
     }
 }
