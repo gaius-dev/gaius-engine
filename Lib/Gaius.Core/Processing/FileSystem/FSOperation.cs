@@ -19,14 +19,11 @@ namespace Gaius.Core.Processing.FileSystem
             _gaiusConfig = gaiusConfig.Value;
 
             FSInfo = fsInfo;
-            FSOperationType = _worker.ShouldSkip(fsInfo) ? FSOperationType.Skip : fsAction;
-
+            FSOperationType = fsAction;
             Status = OperationStatus.Pending;
 
-            if(fsAction == FSOperationType.Delete || fsAction == FSOperationType.Skip)
-                WorkerTask = null;
-
-            else WorkerTask = _worker.GenerateWorkerTask(fsInfo);
+            if(!IsWorkerOmittedForOp)
+                WorkerTask = _worker.GenerateWorkerTask(fsInfo);
         }
 
         public static FSOperation CreateInstance(IServiceProvider provider, FileSystemInfo fsInfo, FSOperationType fSAction)
@@ -39,6 +36,10 @@ namespace Gaius.Core.Processing.FileSystem
         public WorkerTask WorkerTask { get; private set;}
         public OperationStatus Status { get; set; }
         public bool IsUnsafe => FSOperationType == FSOperationType.Delete;
+        public bool IsWorkerOmittedForOp => FSOperationType == FSOperationType.Skip 
+                                            || FSOperationType == FSOperationType.Keep
+                                            || FSOperationType == FSOperationType.Delete
+                                            || FSOperationType == FSOperationType.SkipDelete;
         public bool IsDirectoryOp => FSInfo.IsDirectory();
     }
 }

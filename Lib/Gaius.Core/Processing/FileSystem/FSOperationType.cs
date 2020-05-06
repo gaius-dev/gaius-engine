@@ -5,6 +5,8 @@ namespace Gaius.Core.Processing.FileSystem
         CreateNew,
         Overwrite,
         Delete,
-        Skip
+        Skip,
+        Keep,
+        SkipDelete
     }
 }

@@ -79,54 +79,96 @@ namespace Gaius.Core.Processing.FileSystem
 
         private void AddOperationsToTreeNode(TreeNode<FSOperation> startNode, DirectoryInfo sourceStartDir, DirectoryInfo genStartDir)
         {
-            var existingGenFiles = new List<FileInfo>();
+            // Files ==========================================================
+            var matchingGenFiles = new List<FileInfo>();
 
             foreach(var sourceFile in sourceStartDir?.EnumerateFiles() ?? Enumerable.Empty<FileInfo>())
             {
-                var existingGenFile = FindMachingGenerationFile(genStartDir, sourceFile);
+                var hasMatch = false;
+                var matchingGenFile = FindMachingGenerationFile(genStartDir, sourceFile);
 
-                if(existingGenFile == null)
+                //rs: we have a source file with a matching file in the generation directory
+                if(matchingGenFile != null)
                 {
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.CreateNew));
+                    hasMatch = true;
+                    matchingGenFiles.Add(matchingGenFile);
                 }
 
-                else
+                if(hasMatch && _worker.ShouldSkip(sourceFile) && _worker.ShouldKeep(sourceFile))
                 {
-                    existingGenFiles.Add(existingGenFile);
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.Skip));
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.Keep));
+                }
+
+                else if(hasMatch && _worker.ShouldSkip(sourceFile))
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.SkipDelete));
+
+                else if(hasMatch)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.Overwrite));
-                }
+
+                else if(!hasMatch && _worker.ShouldSkip(sourceFile))
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.Skip));
+
+                else startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.CreateNew));
             }
 
-            foreach(var genFile in genStartDir?.EnumerateFiles()
-                .Where(file => !existingGenFiles.Any(exFile => exFile.Name.Equals(file.Name))) ?? Enumerable.Empty<FileInfo>())
+            //rs: all other files in the generation dir are considered orphaned
+            foreach(var orphanGenFile in genStartDir?.EnumerateFiles()
+                .Where(file => !matchingGenFiles.Any(exFile => exFile.Name.Equals(file.Name))) ?? Enumerable.Empty<FileInfo>())
             {
-                startNode.AddChild(FSOperation.CreateInstance(_provider, genFile, FSOperationType.Delete));
+                //rs: is this a special file that should be kept despite being orphaned?
+                if(_worker.ShouldKeep(orphanGenFile))
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFile, FSOperationType.Keep));
+
+                else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFile, FSOperationType.Delete));
             }
 
-            var existingGenDirs = new List<DirectoryInfo>();
+            // Directories ====================================================
+            var matchingGenDirs = new List<DirectoryInfo>();
 
             foreach(var sourceDir in sourceStartDir?.EnumerateDirectories() ?? Enumerable.Empty<DirectoryInfo>())
             {
-                var existingGenDir = FindMatchingGenerationDirectory(genStartDir, sourceDir);
+                var hasMatch = false;
+                var matchingGenDir = FindMatchingGenerationDirectory(genStartDir, sourceDir);
 
-                if(existingGenDir == null)
+                //rs: we have a source directory with a matching directory in the generation directory
+                if(matchingGenDir != null)
                 {
-                    var newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDir, FSOperationType.CreateNew));
-                    AddOperationsToTreeNode(newOpTreeNode, sourceDir, null);
+                    hasMatch = true;
+                    matchingGenDirs.Add(matchingGenDir);
                 }
-                    
-                else
+
+                TreeNode<FSOperation> newOpTreeNode = null;
+
+                if(hasMatch && _worker.ShouldSkip(sourceDir) && _worker.ShouldKeep(sourceDir))
                 {
-                    existingGenDirs.Add(existingGenDir);
-                    var newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDir, FSOperationType.Overwrite));
-                    AddOperationsToTreeNode(newOpTreeNode, sourceDir, existingGenDir);
-                }                
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDir, FSOperationType.Skip));
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDir, FSOperationType.Keep));
+                }
+
+                else if(hasMatch && _worker.ShouldSkip(sourceDir))
+                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDir, FSOperationType.SkipDelete));
+
+                else if(hasMatch)
+                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDir, FSOperationType.Overwrite));
+                
+                else if(!hasMatch && _worker.ShouldSkip(sourceDir))
+                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDir, FSOperationType.Skip));
+
+                else newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDir, FSOperationType.CreateNew));
+
+                if(newOpTreeNode != null)
+                    AddOperationsToTreeNode(newOpTreeNode, sourceDir, matchingGenDir);
             }
 
-            foreach(var genDir in genStartDir?.EnumerateDirectories()
-                .Where(dir => !existingGenDirs.Any(exDir=> exDir.Name.Equals(dir.Name))) ?? Enumerable.Empty<DirectoryInfo>())
+            foreach(var orphanGenDir in genStartDir?.EnumerateDirectories()
+                .Where(dir => !matchingGenDirs.Any(exDir=> exDir.Name.Equals(dir.Name))) ?? Enumerable.Empty<DirectoryInfo>())
             {
-                var newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, genDir, FSOperationType.Delete));
+                //rs: is this a special dir that should be kept despite being orphaned?
+                if(_worker.ShouldKeep(orphanGenDir))
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDir, FSOperationType.Keep));
+
+                else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDir, FSOperationType.Delete));
             }
         }
 
@@ -159,14 +201,11 @@ namespace Gaius.Core.Processing.FileSystem
                 //rs: delete *almost* all contained directories and files in the generation directory
                 foreach(var containedFsInfo in allContainedFsInfos)
                 {
-                    if(containedFsInfo.IsDirectory())
-                    {
-                        //rs: specifically skip over the deletion of a .git directory in the _generated folder
-                        if(containedFsInfo.Name.Equals(".git", StringComparison.InvariantCultureIgnoreCase))
-                            continue;
+                    if(_worker.ShouldKeep(containedFsInfo))
+                        continue;
 
-                        else ((DirectoryInfo)containedFsInfo).Delete(true);
-                    }
+                    if(containedFsInfo.IsDirectory())
+                        ((DirectoryInfo)containedFsInfo).Delete(true);
 
                     else containedFsInfo.Delete();
                 }
@@ -183,7 +222,7 @@ namespace Gaius.Core.Processing.FileSystem
         private void ProcessFSOpTreeNode(TreeNode<FSOperation> opTreeNode, string parentDirFullPath)
         {
 
-            if(opTreeNode.Data.FSOperationType == FSOperationType.Skip || opTreeNode.Data.FSOperationType == FSOperationType.Delete)
+            if(opTreeNode.Data.IsWorkerOmittedForOp)
             {
                 opTreeNode.Data.Status = OperationStatus.Complete;
                 return;

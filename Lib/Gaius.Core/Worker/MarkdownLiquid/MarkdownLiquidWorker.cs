@@ -10,7 +10,7 @@ using Strube.Utilities.FileSystem;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
-    public class MarkdownLiquidWorker : IWorker
+    public class MarkdownLiquidWorker : BaseWorker, IWorker
     {
         private readonly GaiusConfiguration _gaiusConfiguration;
         private readonly IFrontMatterParser _frontMatterParser;
@@ -23,12 +23,12 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             _gaiusConfiguration = gaiusConfigurationOptions.Value;
         }
 
-        public WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo)
+        public override WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo)
         {
             return new WorkerTask(fsInfo, GetTransformType(fsInfo), GetTarget(fsInfo));
         }
 
-        public string PerformTransform(WorkerTask task)
+        public override string PerformTransform(WorkerTask task)
         {
             if(task.TransformType != WorkType.Transform)
                 throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.WorkerTransformType == TransformConvert");
@@ -63,7 +63,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return html;
         }
 
-        public string GetTarget(FileSystemInfo fsInfo)
+        public override string GetTarget(FileSystemInfo fsInfo)
         {
             if(fsInfo.IsDirectory())
             {
@@ -81,12 +81,17 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return file.Name;
         }
 
-        public bool ShouldSkip(FileSystemInfo fsInfo)
+        public override bool ShouldKeep(FileSystemInfo fsInfo)
         {
-            if(fsInfo.Name.Equals(_gaiusConfiguration.LayoutDirectoryName, StringComparison.InvariantCultureIgnoreCase))
-                return true;
+            return base.ShouldKeep(fsInfo);
+        }
 
-            if(fsInfo.Name.Equals(".git", StringComparison.InvariantCultureIgnoreCase))
+        public override bool ShouldSkip(FileSystemInfo fsInfo)
+        {
+            if(base.ShouldSkip(fsInfo))
+                return true;
+                
+            if(fsInfo.Name.Equals(_gaiusConfiguration.LayoutDirectoryName, StringComparison.InvariantCultureIgnoreCase))
                 return true;
 
             if(fsInfo.IsLiquidFile())

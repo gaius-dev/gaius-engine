@@ -107,11 +107,17 @@ namespace Gaius.Core.Terminal
             else if(treeNode.Data.FSOperationType == FSOperationType.Overwrite)
                 PrintOverwriteOperationTreeNode(treeNode, maxSrcLength);
 
-            else if(treeNode.Data.FSOperationType == FSOperationType.Delete)
-                PrintDeleteOperationTreeNode(treeNode, maxSrcLength);
-            
             else if(treeNode.Data.FSOperationType == FSOperationType.Skip)
                 PrintSkipOperationTreeNode(treeNode, maxSrcLength);
+
+            else if(treeNode.Data.FSOperationType == FSOperationType.Keep)
+                PrintKeepOperationTreeNode(treeNode, maxSrcLength);
+
+            else if(treeNode.Data.FSOperationType == FSOperationType.Delete)
+                PrintDeleteOperationTreeNode(treeNode, maxSrcLength);
+
+            else if(treeNode.Data.FSOperationType == FSOperationType.SkipDelete)
+                PrintSkipDeleteOperationTreeNode(treeNode, maxSrcLength);
         }
 
         private static (string indent, string outdent) GetIndentAndOutdent(TreeNode<FSOperation> treeNode, int maxSrcLength)
@@ -178,6 +184,29 @@ namespace Gaius.Core.Terminal
             Console.WriteLine();
         }
 
+        private static void PrintKeepOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        {
+            (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
+
+            Console.Write(string.Empty.PadRight(maxSrcLength + 1, ' '));
+            PrintOperation(treeNode.Data);
+            Console.Write(indent);
+            Colorful.Console.Write(treeNode.Data.FSInfo.Name, CYAN_COLOR);
+            Console.WriteLine();
+        }
+
+        private static void PrintSkipDeleteOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        {
+            (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
+            
+            Console.Write(indent);
+            Colorful.Console.Write(treeNode.Data.FSInfo.Name, GetColorForTreeNodeSource(treeNode));
+            Console.Write(outdent);
+            PrintOperation(treeNode.Data);
+            Console.Write(indent);
+            Colorful.Console.Write(treeNode.Data.FSInfo.Name, RED_COLOR);
+            Console.WriteLine();
+        }
         private static void PrintOperationStatus(FSOperation op)
         {
             switch(op.Status)
@@ -232,8 +261,13 @@ namespace Gaius.Core.Terminal
                 case FSOperationType.Skip:
                     Colorful.Console.Write(" _ ", GREY_COLOR);
                     break;
+                
+                case FSOperationType.Keep:
+                    Colorful.Console.Write(" ^ ", CYAN_COLOR);
+                    break;
 
                 case FSOperationType.Delete:
+                case FSOperationType.SkipDelete:
                     Colorful.Console.Write(" x ", RED_COLOR);
                     break;
             }
@@ -249,10 +283,6 @@ namespace Gaius.Core.Terminal
 
             switch (op.FSOperationType)
             {
-                case FSOperationType.Delete:
-                    Console.Write("delete");
-                    break;
-
                 case FSOperationType.CreateNew:
                     Console.Write("create");
                     break;
@@ -263,6 +293,15 @@ namespace Gaius.Core.Terminal
 
                 case FSOperationType.Skip:
                     Console.Write("skip  ");
+                    break;
+
+                case FSOperationType.Keep:
+                    Console.Write("keep  ");
+                    break;
+
+                case FSOperationType.Delete:
+                case FSOperationType.SkipDelete:
+                    Console.Write("delete");
                     break;
             }
         }
@@ -294,6 +333,10 @@ namespace Gaius.Core.Terminal
                             Console.Write(" copy  ");
                             break;
                     }
+                    break;
+
+                case FSOperationType.SkipDelete:
+                    Console.Write(" skip  ");
                     break;
 
                 default:
