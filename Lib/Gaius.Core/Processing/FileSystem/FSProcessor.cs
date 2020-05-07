@@ -193,24 +193,26 @@ namespace Gaius.Core.Processing.FileSystem
         {
             var genDirFullPath = _gaiusConfiguration.GenerationDirectoryFullPath;
 
-            if(Directory.Exists(genDirFullPath))
+            if(!Directory.Exists(genDirFullPath))
             {
-                var genDir = new DirectoryInfo(genDirFullPath);
-                var allContainedFsInfos = genDir.EnumerateFileSystemInfos();
-
-                //rs: delete *almost* all contained directories and files in the generation directory
-                foreach(var containedFsInfo in allContainedFsInfos)
-                {
-                    if(_worker.ShouldKeep(containedFsInfo))
-                        continue;
-
-                    if(containedFsInfo.IsDirectory())
-                        ((DirectoryInfo)containedFsInfo).Delete(true);
-
-                    else containedFsInfo.Delete();
-                }
+                Directory.CreateDirectory(genDirFullPath);
             }
 
+            var genDir = new DirectoryInfo(genDirFullPath);
+            var allContainedFsInfos = genDir.EnumerateFileSystemInfos();
+
+            //rs: delete *almost* all contained directories and files in the generation directory
+            foreach(var containedFsInfo in allContainedFsInfos)
+            {
+                if(_worker.ShouldKeep(containedFsInfo))
+                    continue;
+
+                if(containedFsInfo.IsDirectory())
+                    ((DirectoryInfo)containedFsInfo).Delete(true);
+
+                else containedFsInfo.Delete();
+            }
+            
             opTree.Data.Status = OperationStatus.Complete;
             
             foreach(var opTreeNode in opTree.Children)
