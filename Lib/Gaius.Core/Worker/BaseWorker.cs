@@ -22,6 +22,9 @@ namespace Gaius.Core.Worker
             if(fsInfo.Name.Equals(DOT_GIT_DIR_NAME, StringComparison.InvariantCultureIgnoreCase))
                 return true;
 
+            if(fsInfo.Name.StartsWith("."))
+                return true;
+
             return false;
         }
     }
