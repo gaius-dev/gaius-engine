@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using Gaius.Core.Configuration;
 
 namespace Gaius.Core.Worker
 {
     public abstract class BaseWorker : IWorker
     {
         private const string DOT_GIT_DIR_NAME = ".git";
+        protected List<string> RequiredDirectories;
+        protected GaiusConfiguration GaiusConfiguration;
         public abstract WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo);
         public abstract string GetTarget(FileSystemInfo fsInfo);
         public abstract string PerformTransform(WorkerTask workerOperation);
@@ -26,6 +30,29 @@ namespace Gaius.Core.Worker
                 return true;
 
             return false;
+        }
+
+        public (bool, List<string>) ValidateSiteContainerDirectory()
+        {
+            var validationErrors = new List<string>();
+
+            var sourceDirExists = Directory.Exists(GaiusConfiguration.SourceDirectoryFullPath);
+
+            if (!sourceDirExists)
+                validationErrors.Add($"The source directory '{GaiusConfiguration.SourceDirectoryFullPath}' does not exist.");
+
+            var otherReqDirsExist = true;
+
+            foreach(var reqDirFullPath in RequiredDirectories)
+            {
+                if(!Directory.Exists(reqDirFullPath))
+                {
+                    otherReqDirsExist = false;
+                    validationErrors.Add($"The required directory '{reqDirFullPath}' does not exist.");
+                }
+            }
+
+            return (sourceDirExists && otherReqDirsExist, validationErrors);
         }
     }
 }

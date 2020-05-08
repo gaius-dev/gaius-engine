@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 
 namespace Gaius.Core.Worker
@@ -9,5 +10,6 @@ namespace Gaius.Core.Worker
         string GetTarget(FileSystemInfo fsInfo);
         bool ShouldKeep(FileSystemInfo fsInfo);
         bool ShouldSkip(FileSystemInfo fsInfo);
+        (bool, List<string>) ValidateSiteContainerDirectory();
     }
 }

@@ -23,37 +23,7 @@ namespace Gaius.Core.Processing.FileSystem
             _gaiusConfiguration = gaiusConfigurationOptions.Value;
         }
 
-        public (bool, List<string>) ValidateSiteContainerDir()
-        {
-            var validationErrors = new List<string>();
-
-            var sourceDirExists = Directory.Exists(_gaiusConfiguration.SourceDirectoryFullPath);
-
-            if (!sourceDirExists)
-                validationErrors.Add($"The source directory '{_gaiusConfiguration.SourceDirectoryFullPath}' does not exist.");
-
-            var otherReqDirsExist = true;
-            var requiredDirsFullPaths = new List<string>();
-
-            switch(_gaiusConfiguration.Pipeline)
-            {
-                case GaiusConfiguration.MARKDOWN_LIQUIDE_PIPELINE:
-                default:
-                    requiredDirsFullPaths.Add(_gaiusConfiguration.LayoutDirectorFullPath);
-                    break;
-            }
-
-            foreach(var reqDirFullPath in requiredDirsFullPaths)
-            {
-                if(!Directory.Exists(reqDirFullPath))
-                {
-                    otherReqDirsExist = false;
-                    validationErrors.Add($"The required directory '{reqDirFullPath}' does not exist.");
-                }
-            }
-
-            return (sourceDirExists && otherReqDirsExist, validationErrors);
-        }
+        
 
         public TreeNode<FSOperation> CreateFSOperationTree()
         {

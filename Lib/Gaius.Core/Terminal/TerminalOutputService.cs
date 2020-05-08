@@ -92,7 +92,6 @@ namespace Gaius.Core.Terminal
         {
             var sourceDirectoryFullPath = treeNode.Data.FSInfo.FullName;
             Console.WriteLine($"[Source Directory] {sourceDirectoryFullPath}");
-            Console.WriteLine($"[Layout Directory] {_gaiusConfiguration.LayoutDirectorFullPath}");
             Console.WriteLine($"[ Gen. Directory ] {_gaiusConfiguration.GenerationDirectoryFullPath}");
             Console.WriteLine();
         }
@@ -573,8 +572,7 @@ Example: gaius process ./mysite -y
             Colorful.Console.WriteLine("Unsupported configuration detected.", RED_COLOR);
             Console.WriteLine("Gaius currently supports the following configurations:");
             System.Console.WriteLine();
-            Console.WriteLine($"Processors: {string.Join(",", _gaiusConfiguration.SupportedProcessors)}");
-            Console.WriteLine($"Pipelines: {string.Join(",", _gaiusConfiguration.SupportedPipelines)}");
+            Console.WriteLine($"Workers: {string.Join(",", _gaiusConfiguration.SupportedWorkers)}");
 
             var checkMsg = 
 @"

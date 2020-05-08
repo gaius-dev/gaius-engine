@@ -6,8 +6,6 @@ using Gaius.Core.Configuration;
 using Gaius.Core.Processing.FileSystem;
 using Gaius.Core.Terminal;
 using Strube.Utilities.Terminal;
-using Gaius.Core.Parsing;
-using Gaius.Core.Parsing.Yaml;
 using Gaius.Core.Worker;
 using Gaius.Core.Worker.MarkdownLiquid;
 
@@ -35,30 +33,21 @@ namespace Gaius
                     overrideConfig.SiteContainerPath = basePath;
                 })
                 .Configure<GaiusConfiguration>(config)
-                .AddSingleton<ITerminalOutputService, TerminalOutputService>();
+                .AddSingleton<ITerminalOutputService, TerminalOutputService>()
+                .AddSingleton<IFSProcessor, FSProcessor>();
 
-                var gaiusConfiguration = new GaiusConfiguration();
-                gaiusConfiguration.SiteContainerPath = basePath;
-                config.Bind(gaiusConfiguration);
+            var gaiusConfiguration = new GaiusConfiguration();
+            gaiusConfiguration.SiteContainerPath = basePath;
+            config.Bind(gaiusConfiguration);
 
-                bool processorConfigured = false;
-                if(gaiusConfiguration.SupportedProcessors.Contains(gaiusConfiguration.Processor))
-                {
-                    serviceCollection
-                        .AddSingleton<IFSProcessor, FSProcessor>();
-                    processorConfigured = true;
-                }
+            var workerConfigured = false;
+            if (gaiusConfiguration.Worker.Equals("Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
+            {
+                serviceCollection = MarkdownLiquidWorker.ConfigureServicesForWorker(serviceCollection);
+                workerConfigured = true;
+            }
 
-                bool pipelineConfigured = false;
-                if(gaiusConfiguration.SupportedPipelines.Contains(gaiusConfiguration.Pipeline))
-                {
-                    serviceCollection
-                        .AddSingleton<IFrontMatterParser, YamlFrontMatterParser>()
-                        .AddSingleton<IWorker, MarkdownLiquidWorker>();
-                    pipelineConfigured = true;
-                }
-                
-            return (serviceCollection, processorConfigured && pipelineConfigured);
+            return (serviceCollection, workerConfigured);
         }
 
         public static (IConfigurationRoot, IServiceCollection, bool) ConfigureConsoleApplication(string basePath)
@@ -112,6 +101,7 @@ namespace Gaius
             var commandArg = listArgs[0].ToLowerInvariant();
 
             var fileSystemProcessor = serviceProvider.GetService<IFSProcessor>();
+            var worker = serviceProvider.GetService<IWorker>();
 
             switch(commandArg)
             {
@@ -129,7 +119,7 @@ namespace Gaius
 
                 case "process":
 
-                    var validationResults = fileSystemProcessor.ValidateSiteContainerDir();
+                    var validationResults = worker.ValidateSiteContainerDirectory();
 
                     if(!validationResults.Item1)
                     {

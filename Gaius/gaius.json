@@ -1,7 +1,3 @@
 {
-    "SourceDirectoryName": "_source",
-    "LayoutDirectoryName" : "_layouts",
-    "GenerationDirectoryName" : "_generated",
-    "Processor" : "file",
-    "Pipeline" : "markdown-liquid"
+    "Worker" : "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker"
 }

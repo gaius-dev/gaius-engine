@@ -7,12 +7,15 @@ using Gaius.Core.Configuration;
 using Markdig;
 using Gaius.Core.Parsing;
 using Strube.Utilities.FileSystem;
+using Microsoft.Extensions.DependencyInjection;
+using Gaius.Core.Parsing.Yaml;
+using System.Collections.Generic;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
     public class MarkdownLiquidWorker : BaseWorker, IWorker
     {
-        private readonly GaiusConfiguration _gaiusConfiguration;
+        private const string LAYOUT_DIR = "_layouts";
         private readonly IFrontMatterParser _frontMatterParser;
         private static readonly MarkdownPipeline _markdownPipeline = new MarkdownPipelineBuilder().UseYamlFrontMatter().Build();
         private static IFileProvider _liquidTemplatePhysicalFileProvider;
@@ -20,7 +23,16 @@ namespace Gaius.Core.Worker.MarkdownLiquid
         public MarkdownLiquidWorker(IFrontMatterParser frontMatterParser, IOptions<GaiusConfiguration> gaiusConfigurationOptions)
         {
             _frontMatterParser = frontMatterParser;
-            _gaiusConfiguration = gaiusConfigurationOptions.Value;
+            GaiusConfiguration = gaiusConfigurationOptions.Value;
+            RequiredDirectories = new List<string> { GetLayoutDirFullPath(GaiusConfiguration) };
+        }
+
+        public static IServiceCollection ConfigureServicesForWorker(IServiceCollection serviceCollection)
+        {
+            serviceCollection
+                .AddSingleton<IFrontMatterParser, YamlFrontMatterParser>()
+                .AddSingleton<IWorker, MarkdownLiquidWorker>();
+            return serviceCollection;
         }
 
         public override WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo)
@@ -37,7 +49,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.FSInput is a markdown file");
             
             if(_liquidTemplatePhysicalFileProvider == null)
-                _liquidTemplatePhysicalFileProvider = new PhysicalFileProvider(_gaiusConfiguration.LayoutDirectorFullPath);
+                _liquidTemplatePhysicalFileProvider = new PhysicalFileProvider(GetLayoutDirFullPath(GaiusConfiguration));
                 
             var markdownFile = task.FSInfo as FileInfo;
             var markdownContent = File.ReadAllText(markdownFile.FullName);
@@ -46,7 +58,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             var layoutName = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : "default";
 
             var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
-            var liquidSourcePath = Path.Combine(_gaiusConfiguration.LayoutDirectorFullPath, $"{layoutName}.liquid");
+            var liquidSourcePath = Path.Combine(GetLayoutDirFullPath(GaiusConfiguration), $"{layoutName}.liquid");
             var liquidSource = File.ReadAllText(liquidSourcePath);
 
             var liquidModel = new LiquidTemplateModel(yamlFrontMatter, html);
@@ -67,8 +79,8 @@ namespace Gaius.Core.Worker.MarkdownLiquid
         {
             if(fsInfo.IsDirectory())
             {
-                if(fsInfo.FullName.Equals(_gaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
-                    return _gaiusConfiguration.GenerationDirectoryName;
+                if(fsInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
+                    return GaiusConfiguration.GenerationDirectoryName;
 
                 else return fsInfo.Name;
             }
@@ -91,7 +103,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             if(base.ShouldSkip(fsInfo))
                 return true;
                 
-            if(fsInfo.Name.Equals(_gaiusConfiguration.LayoutDirectoryName, StringComparison.InvariantCultureIgnoreCase))
+            if(fsInfo.Name.Equals(LAYOUT_DIR, StringComparison.InvariantCultureIgnoreCase))
                 return true;
 
             if(fsInfo.IsLiquidFile())
@@ -106,6 +118,11 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 return WorkType.Transform;
 
             return WorkType.None;
+        }
+
+        private static string GetLayoutDirFullPath(GaiusConfiguration gaiusConfiguration)
+        {
+            return Path.Combine(gaiusConfiguration.SourceDirectoryFullPath, LAYOUT_DIR);
         }
     }
 }
