@@ -13,7 +13,7 @@ echo ""
 echo "Building crossplatform gaius binaries for CI environments..."
 echo ""
 
-dotnet publish ./Gaius/Gaius.csproj -c Release --self-contained false -p:DebugType=None -o "$BUILD_PATH"/bin/gaius-ci
+dotnet publish ./Gaius/Gaius.csproj -c Release --self-contained false -p:DebugType=None -o "$BUILD_PATH"/bin/gaius
 
 echo ""
-echo "Crossplatform gaius binaries built and copied to: '"$BUILD_PATH"/bin/gaius-ci'"
+echo "Crossplatform gaius binaries built and copied to: '"$BUILD_PATH"/bin/gaius'"

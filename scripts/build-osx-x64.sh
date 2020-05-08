@@ -8,10 +8,6 @@ if [ "$#" -ne "1" ]; then
 fi
 
 BUILD_PATH="$1"
-
-# Build the crossplatform gaius binaries for Github/Gitlab actions...
-./scripts/build-crossplatform.sh "$BUILD_PATH"
-
 RID=osx-x64
 
 echo ""
