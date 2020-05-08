@@ -16,7 +16,7 @@ namespace Gaius.Core.Worker
         {
             if (fsInfo.IsDirectory()
                 && (fsInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
-                    || fsInfo.FullName.Equals(GaiusConfiguration.NamedThemesDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)))
+                    || fsInfo.FullName.Equals(GaiusConfiguration.NamedThemeDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)))
                 return GaiusConfiguration.GenerationDirectoryName;
 
             else return fsInfo.Name;
@@ -48,10 +48,10 @@ namespace Gaius.Core.Worker
             if (!sourceDirExists)
                 validationErrors.Add($"The source directory '{GaiusConfiguration.SourceDirectoryFullPath}' does not exist.");
 
-            var themesDirExists = Directory.Exists(GaiusConfiguration.NamedThemesDirectoryFullPath);
+            var themesDirExists = Directory.Exists(GaiusConfiguration.NamedThemeDirectoryFullPath);
 
             if (!themesDirExists)
-                validationErrors.Add($"The themes directory '{GaiusConfiguration.NamedThemesDirectoryFullPath}' does not exist.");
+                validationErrors.Add($"The themes directory '{GaiusConfiguration.NamedThemeDirectoryFullPath}' does not exist.");
 
             var otherReqDirsExist = true;
 

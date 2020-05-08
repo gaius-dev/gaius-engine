@@ -114,7 +114,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
         private static string GetLayoutsDirFullPath(GaiusConfiguration gaiusConfiguration)
         {
-            return Path.Combine(gaiusConfiguration.NamedThemesDirectoryFullPath, LAYOUTS_DIRECTORY);
+            return Path.Combine(gaiusConfiguration.NamedThemeDirectoryFullPath, LAYOUTS_DIRECTORY);
         }
     }
 }

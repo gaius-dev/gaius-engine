@@ -27,36 +27,55 @@ namespace Gaius.Core.Processing.FileSystem
         {
             var rootSiteDirInfo = new DirectoryInfo(_gaiusConfiguration.SiteContainerFullPath);
             var sourceDirInfo = new DirectoryInfo(_gaiusConfiguration.SourceDirectoryFullPath);
-            var namedThemedInfo = new DirectoryInfo(_gaiusConfiguration.NamedThemesDirectoryFullPath);
+            var themesDirInfo = new DirectoryInfo(_gaiusConfiguration.ThemesDirectoryFullPath);
+            var namedThemeDirInfo = new DirectoryInfo(_gaiusConfiguration.NamedThemeDirectoryFullPath);
 
             var genDirectoryFullPath = _gaiusConfiguration.GenerationDirectoryFullPath;
             DirectoryInfo genDirInfo = null;
 
             FSOperation rootOp = null;
             FSOperation sourceDirOp = null;
+            FSOperation themesDirOp = null;
             FSOperation namedThemeDirOp = null;
 
-            rootOp = FSOperation.CreateInstance(_provider, rootSiteDirInfo, FSOperationType.Skip);
+            rootOp = FSOperation.CreateInstance(_provider, rootSiteDirInfo, FSOperationType.Root);
+            themesDirOp = FSOperation.CreateInstance(_provider, themesDirInfo, FSOperationType.Skip);
 
             if(!Directory.Exists(genDirectoryFullPath))
             {
                  sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.CreateNew);
-                 namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemedInfo, FSOperationType.CreateNew);
+                 namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.CreateNew);
             }
                 
             else
             {
                 sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.Overwrite);
-                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemedInfo, FSOperationType.Overwrite);
+                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.Overwrite);
                 genDirInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
             }
-            
+
+            /*====== FS Operation Tree Structure ======||
+            ||                                         ||
+            ||     Site Container Dir (Root)           ||
+            ||         //           \\                 ||
+            ||        //             \\                ||
+            || [_src -> _gen]      _themes             ||
+            ||      //                 \\              ||
+            ||     //                   \\             ||
+            ||  children        [named theme -> _gen]  ||     
+            ||                            \\           ||
+            ||                             \\          ||
+            ||                           children      ||
+            ||=========================================*/
+
             var opTree = new TreeNode<FSOperation>(rootOp);
+
             var sourceDirTreeNode = opTree.AddChild(sourceDirOp);
             AddOperationsToTreeNode(sourceDirTreeNode, sourceDirInfo, genDirInfo);
 
-            var namedThemeDirTreeNode = opTree.AddChild(namedThemeDirOp);
-            AddOperationsToTreeNode(namedThemeDirTreeNode, namedThemedInfo, genDirInfo);
+            var themeDirTreeNode = opTree.AddChild(themesDirOp);
+            var namedThemeDirTreeNode = themeDirTreeNode.AddChild(namedThemeDirOp);
+            AddOperationsToTreeNode(namedThemeDirTreeNode, namedThemeDirInfo, genDirInfo);
 
             return opTree;            
         }
