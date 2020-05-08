@@ -54,7 +54,7 @@ namespace Gaius.Core.Terminal
                 if(treeNode.Data.FSOperationType == FSOperationType.Delete)
                     continue;
 
-                var srcLength = (3 * treeNode.Level) + treeNode.Data.FSInfo.Name.Length;
+                var srcLength = (3 * treeNode.Level) + treeNode.Data.Name.Length;
                 
                 if(srcLength > maxSrcLength)
                     maxSrcLength = srcLength;
@@ -122,7 +122,7 @@ namespace Gaius.Core.Terminal
 
         private static (string indent, string outdent) GetIndentAndOutdent(TreeNode<FSOperation> treeNode, int maxSrcLength)
         {
-            var srcName = treeNode.Data.FSOperationType != FSOperationType.Delete ? treeNode.Data.FSInfo.Name : string.Empty;
+            var srcName = treeNode.Data.FSOperationType != FSOperationType.Delete ? treeNode.Data.Name : string.Empty;
 
             var paddingLeft = 3 * treeNode.Level;
             var indent = string.Empty;
@@ -141,7 +141,7 @@ namespace Gaius.Core.Terminal
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
             
             Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.FSInfo.Name, GetColorForTreeNodeSource(treeNode));
+            Colorful.Console.Write(treeNode.Data.Name, GetColorForTreeNodeSource(treeNode));
             Console.Write(outdent);
             PrintOperation(treeNode.Data);
             Console.Write(indent);
@@ -154,7 +154,7 @@ namespace Gaius.Core.Terminal
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
 
             Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.FSInfo.Name, GetColorForTreeNodeSource(treeNode));
+            Colorful.Console.Write(treeNode.Data.Name, GetColorForTreeNodeSource(treeNode));
             Console.Write(outdent);
             PrintOperation(treeNode.Data);
             Console.Write(indent);
@@ -172,7 +172,7 @@ namespace Gaius.Core.Terminal
 
             var targetColor = treeNode.Data.FSOperationType == FSOperationType.Delete ? RED_COLOR : CYAN_COLOR;
 
-            Colorful.Console.Write(treeNode.Data.FSInfo.Name, targetColor);
+            Colorful.Console.Write(treeNode.Data.Name, targetColor);
             Console.WriteLine();
         }
 
@@ -181,7 +181,7 @@ namespace Gaius.Core.Terminal
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
 
             Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.FSInfo.Name, GetColorForTreeNodeSource(treeNode));
+            Colorful.Console.Write(treeNode.Data.Name, GetColorForTreeNodeSource(treeNode));
             Console.Write(outdent);
             PrintOperation(treeNode.Data);
             Console.WriteLine();
@@ -192,11 +192,11 @@ namespace Gaius.Core.Terminal
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
             
             Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.FSInfo.Name, GetColorForTreeNodeSource(treeNode));
+            Colorful.Console.Write(treeNode.Data.Name, GetColorForTreeNodeSource(treeNode));
             Console.Write(outdent);
             PrintOperation(treeNode.Data);
             Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.FSInfo.Name, RED_COLOR);
+            Colorful.Console.Write(treeNode.Data.Name, RED_COLOR);
             Console.WriteLine();
         }
 

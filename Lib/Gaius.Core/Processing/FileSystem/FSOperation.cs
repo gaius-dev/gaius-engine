@@ -14,6 +14,9 @@ namespace Gaius.Core.Processing.FileSystem
         private readonly GaiusConfiguration _gaiusConfig;
 
         public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FileSystemInfo fsInfo, FSOperationType fsAction)
+            : this(worker, gaiusConfig, fsInfo, fsAction, string.Empty) { }
+
+        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FileSystemInfo fsInfo, FSOperationType fsAction, string overrideName)
         {
             _worker = worker;
             _gaiusConfig = gaiusConfig.Value;
@@ -24,13 +27,20 @@ namespace Gaius.Core.Processing.FileSystem
 
             if(!IsWorkerOmittedForOp)
                 WorkerTask = _worker.GenerateWorkerTask(fsInfo);
+
+            _overrideName = overrideName;
         }
 
-        public static FSOperation CreateInstance(IServiceProvider provider, FileSystemInfo fsInfo, FSOperationType fSAction)
+        public static FSOperation CreateInstance(IServiceProvider provider, FileSystemInfo fsInfo, FSOperationType fSAction, string overrideString = null)
         {
+            if(!string.IsNullOrEmpty(overrideString))
+                return ActivatorUtilities.CreateInstance<FSOperation>(provider, fsInfo, fSAction, overrideString);
+
             return ActivatorUtilities.CreateInstance<FSOperation>(provider, fsInfo, fSAction);
         }
 
+        private string _overrideName;
+        public string Name => !string.IsNullOrEmpty(_overrideName) ? _overrideName : FSInfo.Name;
         public FileSystemInfo FSInfo { get; private set; }
         public FSOperationType FSOperationType { get; private set; }
         public WorkerTask WorkerTask { get; private set;}

@@ -19,8 +19,6 @@ namespace Gaius.Core.Configuration
         [JsonIgnore]
         public string SourceDirectoryFullPath => Path.Combine(SiteContainerFullPath, SourceDirectoryName);
         [JsonIgnore]
-        public string ThemesDirectoryFullPath => Path.Combine(SiteContainerFullPath, ThemesDirectoryName);
-        [JsonIgnore]
         public string NamedThemeDirectoryFullPath => Path.Combine(SiteContainerFullPath, ThemesDirectoryName, ThemeName);
 
         [JsonIgnore]

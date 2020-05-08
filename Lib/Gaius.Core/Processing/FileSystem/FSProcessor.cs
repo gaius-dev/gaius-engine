@@ -27,7 +27,6 @@ namespace Gaius.Core.Processing.FileSystem
         {
             var rootSiteDirInfo = new DirectoryInfo(_gaiusConfiguration.SiteContainerFullPath);
             var sourceDirInfo = new DirectoryInfo(_gaiusConfiguration.SourceDirectoryFullPath);
-            var themesDirInfo = new DirectoryInfo(_gaiusConfiguration.ThemesDirectoryFullPath);
             var namedThemeDirInfo = new DirectoryInfo(_gaiusConfiguration.NamedThemeDirectoryFullPath);
 
             var genDirectoryFullPath = _gaiusConfiguration.GenerationDirectoryFullPath;
@@ -35,11 +34,9 @@ namespace Gaius.Core.Processing.FileSystem
 
             FSOperation rootOp = null;
             FSOperation sourceDirOp = null;
-            FSOperation themesDirOp = null;
             FSOperation namedThemeDirOp = null;
 
             rootOp = FSOperation.CreateInstance(_provider, rootSiteDirInfo, FSOperationType.Root);
-            themesDirOp = FSOperation.CreateInstance(_provider, themesDirInfo, FSOperationType.Skip);
 
             if(!Directory.Exists(genDirectoryFullPath))
             {
@@ -50,7 +47,7 @@ namespace Gaius.Core.Processing.FileSystem
             else
             {
                 sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.Overwrite);
-                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.Overwrite);
+                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.Overwrite, $"{_gaiusConfiguration.ThemesDirectoryName}/{namedThemeDirInfo.Name}");
                 genDirInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
             }
 
@@ -59,13 +56,10 @@ namespace Gaius.Core.Processing.FileSystem
             ||     Site Container Dir (Root)           ||
             ||         //           \\                 ||
             ||        //             \\                ||
-            || [_src -> _gen]      _themes             ||
+            || [_src -> _gen]   [named theme -> _gen]  ||
             ||      //                 \\              ||
             ||     //                   \\             ||
-            ||  children        [named theme -> _gen]  ||     
-            ||                            \\           ||
-            ||                             \\          ||
-            ||                           children      ||
+            ||  children              children         ||
             ||=========================================*/
 
             var opTree = new TreeNode<FSOperation>(rootOp);
@@ -73,8 +67,7 @@ namespace Gaius.Core.Processing.FileSystem
             var sourceDirTreeNode = opTree.AddChild(sourceDirOp);
             AddOperationsToTreeNode(sourceDirTreeNode, sourceDirInfo, genDirInfo);
 
-            var themeDirTreeNode = opTree.AddChild(themesDirOp);
-            var namedThemeDirTreeNode = themeDirTreeNode.AddChild(namedThemeDirOp);
+            var namedThemeDirTreeNode = opTree.AddChild(namedThemeDirOp);
             AddOperationsToTreeNode(namedThemeDirTreeNode, namedThemeDirInfo, genDirInfo);
 
             return opTree;            
