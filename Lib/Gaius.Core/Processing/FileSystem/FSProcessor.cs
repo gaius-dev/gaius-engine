@@ -23,27 +23,41 @@ namespace Gaius.Core.Processing.FileSystem
             _gaiusConfiguration = gaiusConfigurationOptions.Value;
         }
 
-        
-
         public TreeNode<FSOperation> CreateFSOperationTree()
         {
-            var rootSourceDir = new DirectoryInfo(_gaiusConfiguration.SourceDirectoryFullPath);
-            var rootGenDirFullPath = _gaiusConfiguration.GenerationDirectoryFullPath;
+            var rootSiteDirInfo = new DirectoryInfo(_gaiusConfiguration.SiteContainerFullPath);
+            var sourceDirInfo = new DirectoryInfo(_gaiusConfiguration.SourceDirectoryFullPath);
+            var namedThemedInfo = new DirectoryInfo(_gaiusConfiguration.NamedThemesDirectoryFullPath);
+
+            var genDirectoryFullPath = _gaiusConfiguration.GenerationDirectoryFullPath;
+            DirectoryInfo genDirInfo = null;
 
             FSOperation rootOp = null;
-            DirectoryInfo rootGenDir = null;
+            FSOperation sourceDirOp = null;
+            FSOperation namedThemeDirOp = null;
 
-            if(!Directory.Exists(rootGenDirFullPath))
-                rootOp = FSOperation.CreateInstance(_provider, rootSourceDir, FSOperationType.CreateNew);
+            rootOp = FSOperation.CreateInstance(_provider, rootSiteDirInfo, FSOperationType.Skip);
+
+            if(!Directory.Exists(genDirectoryFullPath))
+            {
+                 sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.CreateNew);
+                 namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemedInfo, FSOperationType.CreateNew);
+            }
                 
             else
             {
-                rootOp = FSOperation.CreateInstance(_provider, rootSourceDir, FSOperationType.Overwrite);
-                rootGenDir = new DirectoryInfo(rootGenDirFullPath);
+                sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.Overwrite);
+                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemedInfo, FSOperationType.Overwrite);
+                genDirInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
             }
             
             var opTree = new TreeNode<FSOperation>(rootOp);
-            AddOperationsToTreeNode(opTree, rootSourceDir, rootGenDir);
+            var sourceDirTreeNode = opTree.AddChild(sourceDirOp);
+            AddOperationsToTreeNode(sourceDirTreeNode, sourceDirInfo, genDirInfo);
+
+            var namedThemeDirTreeNode = opTree.AddChild(namedThemeDirOp);
+            AddOperationsToTreeNode(namedThemeDirTreeNode, namedThemedInfo, genDirInfo);
+
             return opTree;            
         }
 
@@ -161,6 +175,7 @@ namespace Gaius.Core.Processing.FileSystem
 
         public void ProcessFSOperationTree(TreeNode<FSOperation> opTree)
         {
+            var siteDirFullPath = _gaiusConfiguration.SiteContainerFullPath;
             var genDirFullPath = _gaiusConfiguration.GenerationDirectoryFullPath;
 
             if(!Directory.Exists(genDirFullPath))
@@ -187,7 +202,7 @@ namespace Gaius.Core.Processing.FileSystem
             
             foreach(var opTreeNode in opTree.Children)
             {
-                ProcessFSOpTreeNode(opTreeNode, genDirFullPath);
+                ProcessFSOpTreeNode(opTreeNode, siteDirFullPath);
             }
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Gaius.Core.Configuration;
+using Strube.Utilities.FileSystem;
 
 namespace Gaius.Core.Worker
 {
@@ -11,7 +12,16 @@ namespace Gaius.Core.Worker
         protected List<string> RequiredDirectories;
         protected GaiusConfiguration GaiusConfiguration;
         public abstract WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo);
-        public abstract string GetTarget(FileSystemInfo fsInfo);
+        public virtual string GetTarget(FileSystemInfo fsInfo)
+        {
+            if (fsInfo.IsDirectory()
+                && (fsInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
+                    || fsInfo.FullName.Equals(GaiusConfiguration.NamedThemesDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)))
+                return GaiusConfiguration.GenerationDirectoryName;
+
+            else return fsInfo.Name;
+        }
+
         public abstract string PerformTransform(WorkerTask workerOperation);
         public virtual bool ShouldKeep(FileSystemInfo fsInfo)
         {
@@ -23,9 +33,6 @@ namespace Gaius.Core.Worker
 
         public virtual bool ShouldSkip(FileSystemInfo fsInfo)
         {
-            if(fsInfo.Name.Equals(DOT_GIT_DIR_NAME, StringComparison.InvariantCultureIgnoreCase))
-                return true;
-
             if(fsInfo.Name.StartsWith("."))
                 return true;
 
@@ -40,6 +47,11 @@ namespace Gaius.Core.Worker
 
             if (!sourceDirExists)
                 validationErrors.Add($"The source directory '{GaiusConfiguration.SourceDirectoryFullPath}' does not exist.");
+
+            var themesDirExists = Directory.Exists(GaiusConfiguration.NamedThemesDirectoryFullPath);
+
+            if (!themesDirExists)
+                validationErrors.Add($"The themes directory '{GaiusConfiguration.NamedThemesDirectoryFullPath}' does not exist.");
 
             var otherReqDirsExist = true;
 

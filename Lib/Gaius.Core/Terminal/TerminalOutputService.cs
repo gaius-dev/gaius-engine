@@ -90,9 +90,11 @@ namespace Gaius.Core.Terminal
 
         private void PrintRootOperationTreeNode(TreeNode<FSOperation> treeNode)
         {
-            var sourceDirectoryFullPath = treeNode.Data.FSInfo.FullName;
-            Console.WriteLine($"[Source Directory] {sourceDirectoryFullPath}");
-            Console.WriteLine($"[ Gen. Directory ] {_gaiusConfiguration.GenerationDirectoryFullPath}");
+            var siteDirectoryFullPath = treeNode.Data.FSInfo.FullName;
+            Console.WriteLine($"[ Site Directory] {siteDirectoryFullPath}");
+            Console.WriteLine($"[ Src. Directory] {_gaiusConfiguration.SourceDirectoryFullPath}");
+            Console.WriteLine($"[Theme Directory] {_gaiusConfiguration.NamedThemesDirectoryFullPath}");
+            Console.WriteLine($"[ Gen. Directory] {_gaiusConfiguration.GenerationDirectoryFullPath}");
             Console.WriteLine();
         }
 
@@ -524,7 +526,7 @@ namespace Gaius.Core.Terminal
         public void PrintSiteContainerDirectoryNotValid(List<string> validationErrors)
         {
             System.Console.WriteLine();
-            Colorful.Console.WriteLine($"The site container directory '{_gaiusConfiguration.SiteContainerPath}' is not valid.", RED_COLOR);
+            Colorful.Console.WriteLine($"The site container directory '{_gaiusConfiguration.SiteContainerFullPath}' is not valid.", RED_COLOR);
             System.Console.WriteLine();
             Colorful.Console.WriteLine("Validation errors:", RED_COLOR);
 

@@ -30,14 +30,14 @@ namespace Gaius
                 .AddOptions()
                 .Configure<GaiusConfiguration>(overrideConfig => 
                 {
-                    overrideConfig.SiteContainerPath = basePath;
+                    overrideConfig.SiteContainerFullPath = basePath;
                 })
                 .Configure<GaiusConfiguration>(config)
                 .AddSingleton<ITerminalOutputService, TerminalOutputService>()
                 .AddSingleton<IFSProcessor, FSProcessor>();
 
             var gaiusConfiguration = new GaiusConfiguration();
-            gaiusConfiguration.SiteContainerPath = basePath;
+            gaiusConfiguration.SiteContainerFullPath = basePath;
             config.Bind(gaiusConfiguration);
 
             var workerConfigured = false;

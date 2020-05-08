@@ -9,13 +9,17 @@ namespace Gaius.Core.Configuration
         public const string MARKDOWN_LIQUID_PIPELINE = "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker";
         public string SourceDirectoryName { get; set; } = "_source";
         public string GenerationDirectoryName { get; set; } = "_generated";
+        public string ThemesDirectoryName { get; set; } = "_themes";
+        public string ThemeName { get; set; } = "default";
         public string Worker { get; set; } = MARKDOWN_LIQUID_PIPELINE;
-        public string SiteContainerPath { get; set; }
+        public string SiteContainerFullPath { get; set; }
 
         [JsonIgnore]
-        public string GenerationDirectoryFullPath => Path.Combine(SiteContainerPath, GenerationDirectoryName);
+        public string GenerationDirectoryFullPath => Path.Combine(SiteContainerFullPath, GenerationDirectoryName);
         [JsonIgnore]
-        public string SourceDirectoryFullPath => Path.Combine(SiteContainerPath, SourceDirectoryName);
+        public string SourceDirectoryFullPath => Path.Combine(SiteContainerFullPath, SourceDirectoryName);
+        [JsonIgnore]
+        public string NamedThemesDirectoryFullPath => Path.Combine(SiteContainerFullPath, ThemesDirectoryName, ThemeName);
 
         [JsonIgnore]
         public List<string> SupportedWorkers => new List<string>() { MARKDOWN_LIQUID_PIPELINE };
