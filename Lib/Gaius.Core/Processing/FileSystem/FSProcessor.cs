@@ -38,16 +38,18 @@ namespace Gaius.Core.Processing.FileSystem
 
             rootOp = FSOperation.CreateInstance(_provider, rootSiteDirInfo, FSOperationType.Root);
 
+            var nameOverrideForNamedThemeDirOp = $"{_gaiusConfiguration.ThemesDirectoryName}/{namedThemeDirInfo.Name}";
+
             if(!Directory.Exists(genDirectoryFullPath))
             {
                  sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.CreateNew);
-                 namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.CreateNew);
+                 namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.CreateNew, nameOverrideForNamedThemeDirOp);
             }
                 
             else
             {
                 sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.Overwrite);
-                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.Overwrite, $"{_gaiusConfiguration.ThemesDirectoryName}/{namedThemeDirInfo.Name}");
+                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.Overwrite, nameOverrideForNamedThemeDirOp);
                 genDirInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
             }
 
