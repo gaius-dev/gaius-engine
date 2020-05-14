@@ -101,11 +101,17 @@ namespace Gaius.Core.Processing.FileSystem
                 else if(hasMatch && _worker.ShouldSkip(sourceFile))
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.SkipDelete));
 
+                else if(hasMatch && _worker.ShouldSkip(sourceFile, true))
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.SkipDraft));
+
                 else if(hasMatch)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.Overwrite));
 
                 else if(!hasMatch && _worker.ShouldSkip(sourceFile))
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.Skip));
+
+                else if(!hasMatch && _worker.ShouldSkip(sourceFile, true))
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.SkipDraft));
 
                 else startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.CreateNew));
             }

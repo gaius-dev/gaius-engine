@@ -8,6 +8,7 @@ namespace Gaius.Core.Processing.FileSystem
         Overwrite,
         Root,
         Skip,
-        SkipDelete
+        SkipDelete,
+        SkipDraft
     }
 }

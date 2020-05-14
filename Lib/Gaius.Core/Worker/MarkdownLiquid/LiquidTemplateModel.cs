@@ -10,6 +10,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             author = frontMatter.Author;
             keywords = frontMatter.Keywords;
             description = frontMatter.Description;
+            draft = frontMatter.Draft;
             content = html;
         }
 
@@ -18,5 +19,6 @@ namespace Gaius.Core.Worker.MarkdownLiquid
         public string keywords { get;set; }
         public string description { get;set; }
         public string content { get; set; }
+        public bool draft { get; set; }
     }
 }

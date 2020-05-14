@@ -90,11 +90,11 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return base.ShouldKeep(fsInfo);
         }
 
-        public override bool ShouldSkip(FileSystemInfo fsInfo)
+        public override bool ShouldSkip(FileSystemInfo fsInfo, bool checkDraft = false)
         {
-            if(base.ShouldSkip(fsInfo))
+            if(base.ShouldSkip(fsInfo, checkDraft))
                 return true;
-                
+
             if(fsInfo.Name.Equals(LAYOUTS_DIRECTORY, StringComparison.InvariantCultureIgnoreCase))
                 return true;
 
@@ -102,6 +102,19 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 return true;
 
             return false;
+        }
+
+        public override bool IsDraft(FileSystemInfo fsInfo)
+        {
+            if (!fsInfo.IsMarkdownFile())
+                return false;
+
+            var markdownFile = fsInfo as FileInfo;
+            var markdownContent = File.ReadAllText(markdownFile.FullName);
+
+            var yamlFrontMatter = _frontMatterParser.DeserializeFromContent(markdownContent);
+
+            return yamlFrontMatter.Draft;
         }
 
         private static WorkType GetTransformType(FileSystemInfo fsInfo)

@@ -31,13 +31,18 @@ namespace Gaius.Core.Worker
             return false;
         }
 
-        public virtual bool ShouldSkip(FileSystemInfo fsInfo)
+        public virtual bool ShouldSkip(FileSystemInfo fsInfo, bool checkDraft = false)
         {
             if(fsInfo.Name.StartsWith("."))
                 return true;
 
+            if(checkDraft && IsDraft(fsInfo))
+                return true;
+
             return false;
         }
+
+        public abstract bool IsDraft(FileSystemInfo fsInfo);
 
         public (bool, List<string>) ValidateSiteContainerDirectory()
         {

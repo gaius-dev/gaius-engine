@@ -7,5 +7,6 @@ namespace Gaius.Core.Models
         string Author { get; set; }
         string Keywords { get;set; }
         string Description { get;set; }
+        bool Draft { get;set; }
     }
 }

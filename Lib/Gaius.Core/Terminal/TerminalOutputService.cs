@@ -118,6 +118,9 @@ namespace Gaius.Core.Terminal
 
             else if(treeNode.Data.FSOperationType == FSOperationType.SkipDelete)
                 PrintSkipDeleteOperationTreeNode(treeNode, maxSrcLength);
+            
+            else if(treeNode.Data.FSOperationType == FSOperationType.SkipDraft)
+                PrintSkipDraftOperationTreeNode(treeNode, maxSrcLength);
         }
 
         private static (string indent, string outdent) GetIndentAndOutdent(TreeNode<FSOperation> treeNode, int maxSrcLength)
@@ -200,6 +203,19 @@ namespace Gaius.Core.Terminal
             Console.WriteLine();
         }
 
+        private static void PrintSkipDraftOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        {
+            (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
+            
+            Console.Write(indent);
+            Colorful.Console.Write(treeNode.Data.Name, GetColorForTreeNodeSource(treeNode));
+            Console.Write(outdent);
+            PrintOperation(treeNode.Data);
+            Console.Write(indent);
+            Colorful.Console.Write(treeNode.Data.Name, RED_COLOR);
+            Console.WriteLine();
+        }
+
         private static void PrintOperationStatus(FSOperation op)
         {
             switch(op.Status)
@@ -267,6 +283,10 @@ namespace Gaius.Core.Terminal
                 case FSOperationType.SkipDelete:
                     Colorful.Console.Write(" x ", RED_COLOR);
                     break;
+                
+                case FSOperationType.SkipDraft:
+                    Colorful.Console.Write(" d ", RED_COLOR);
+                    break;
             }
         }
 
@@ -304,6 +324,10 @@ namespace Gaius.Core.Terminal
                 case FSOperationType.SkipDelete:
                     Console.Write("delete");
                     break;
+
+                case FSOperationType.SkipDraft:
+                    Console.Write("draft ");
+                    break;
             }
         }
 
@@ -337,6 +361,7 @@ namespace Gaius.Core.Terminal
                     break;
 
                 case FSOperationType.SkipDelete:
+                case FSOperationType.SkipDraft:
                     Console.Write(" skip  ");
                     break;
 

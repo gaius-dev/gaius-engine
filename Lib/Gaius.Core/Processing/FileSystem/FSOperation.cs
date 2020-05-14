@@ -49,7 +49,8 @@ namespace Gaius.Core.Processing.FileSystem
         public bool IsWorkerOmittedForOp => FSOperationType == FSOperationType.Skip 
                                             || FSOperationType == FSOperationType.Keep
                                             || FSOperationType == FSOperationType.Delete
-                                            || FSOperationType == FSOperationType.SkipDelete;
+                                            || FSOperationType == FSOperationType.SkipDelete
+                                            || FSOperationType == FSOperationType.SkipDraft;
         public bool IsDirectoryOp => FSInfo.IsDirectory();
     }
 }

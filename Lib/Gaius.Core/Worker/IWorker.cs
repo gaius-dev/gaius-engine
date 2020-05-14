@@ -9,7 +9,8 @@ namespace Gaius.Core.Worker
         string PerformTransform(WorkerTask workerOperation);
         string GetTarget(FileSystemInfo fsInfo);
         bool ShouldKeep(FileSystemInfo fsInfo);
-        bool ShouldSkip(FileSystemInfo fsInfo);
+        bool ShouldSkip(FileSystemInfo fsInfo, bool checkDraft = false);        
+        bool IsDraft(FileSystemInfo fsInfo);
         (bool, List<string>) ValidateSiteContainerDirectory();
     }
 }
