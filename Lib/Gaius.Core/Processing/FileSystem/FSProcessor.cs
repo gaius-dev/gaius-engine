@@ -72,6 +72,8 @@ namespace Gaius.Core.Processing.FileSystem
             var namedThemeDirTreeNode = opTree.AddChild(namedThemeDirOp);
             AddOperationsToTreeNode(namedThemeDirTreeNode, namedThemeDirInfo, genDirInfo);
 
+            RemoveFalsePositiveDeleteOps(sourceDirTreeNode, namedThemeDirTreeNode);
+
             return opTree;            
         }
 
@@ -191,6 +193,49 @@ namespace Gaius.Core.Processing.FileSystem
                 return null;
 
             return genStartDir.EnumerateDirectories().FirstOrDefault(genDir => genDir.Name.Equals(sourceDir.Name));
+        }
+
+        private static void RemoveFalsePositiveDeleteOps(TreeNode<FSOperation> sourceTreeNode, TreeNode<FSOperation> namedThemeTreeNode)
+        {
+            var invalidDeleteOpTreeNodes = new List<TreeNode<FSOperation>>();
+
+            foreach(var sourceTreeNodeDeleteOp in sourceTreeNode.Where(tn => tn.Data.FSOperationType == FSOperationType.Delete))
+            {
+                //rs: we have another Op in the named theme tree node that renders the delete Op in the source tree node invalid
+                if(namedThemeTreeNode.Any(ntTn => 
+                    (ntTn.Data.WorkerTask != null && ntTn.Data.WorkerTask.Target == sourceTreeNodeDeleteOp.Data.Name)
+                    && ntTn.Level == sourceTreeNodeDeleteOp.Level
+                    && (ntTn.Data.FSOperationType == FSOperationType.CreateNew || ntTn.Data.FSOperationType == FSOperationType.Overwrite)))
+                    {
+                        invalidDeleteOpTreeNodes.Add(sourceTreeNodeDeleteOp);
+                    }
+            }
+
+            foreach(var invalidTreeNode in invalidDeleteOpTreeNodes)
+            {
+                if(invalidTreeNode.Parent != null)
+                    invalidTreeNode.Parent.Children.Remove(invalidTreeNode);
+            }
+
+            invalidDeleteOpTreeNodes.Clear();
+
+            foreach(var namedThemeDeleteOp in namedThemeTreeNode.Where(tn => tn.Data.FSOperationType == FSOperationType.Delete))
+            {
+                //rs: we have another Op in the source tree node that renders the delete Op in the named theme tree node invalid
+                if(sourceTreeNode.Any(srcTn =>
+                    (srcTn.Data.WorkerTask != null && srcTn.Data.WorkerTask.Target == namedThemeDeleteOp.Data.Name)
+                    && srcTn.Level == namedThemeDeleteOp.Level
+                    && (srcTn.Data.FSOperationType == FSOperationType.CreateNew || srcTn.Data.FSOperationType == FSOperationType.Overwrite)))
+                    {
+                        invalidDeleteOpTreeNodes.Add(namedThemeDeleteOp);
+                    }
+            }
+
+            foreach(var invalidTreeNode in invalidDeleteOpTreeNodes)
+            {
+                if(invalidTreeNode.Parent != null)
+                    invalidTreeNode.Parent.Children.Remove(invalidTreeNode);
+            }
         }
 
         public void ProcessFSOperationTree(TreeNode<FSOperation> opTree)
