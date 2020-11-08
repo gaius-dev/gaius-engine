@@ -1,0 +1,24 @@
+name: gaius-process
+on:
+  push:
+    branches:
+      - master
+jobs:
+  gaius-process:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup dotnet
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Run gaius process
+      run: |
+        dotnet ./bin/gaius/gaius.dll process -y
+    - name: Push generated files to gh-pages branch
+      uses: s0/git-publish-subdir-action@develop
+      env:
+        REPO: self
+        BRANCH: gh-pages
+        FOLDER: _generated
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
