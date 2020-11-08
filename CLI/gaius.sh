@@ -1,5 +1,6 @@
 #!/bin/bash
 # Gaius CLI wrapper for Linux/OSX
+# v0.0.4
 
 function main() {
 
