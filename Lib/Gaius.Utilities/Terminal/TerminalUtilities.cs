@@ -1,8 +1,8 @@
 using System;
 using System.Drawing;
-using Strube.Utilities.Reflection;
+using Gaius.Utilities.Reflection;
 
-namespace Strube.Utilities.Terminal
+namespace Gaius.Utilities.Terminal
 {
     public class TerminalUtilities
     {

@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Strube.Utilities.DataStructures
+namespace Gaius.Utilities.DataStructures
 {
     public class TreeNode<T> : IEnumerable<TreeNode<T>>
     {

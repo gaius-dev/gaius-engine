@@ -1,7 +1,7 @@
 
 using System.Collections.Generic;
 using Gaius.Core.Processing.FileSystem;
-using Strube.Utilities.DataStructures;
+using Gaius.Utilities.DataStructures;
 
 namespace Gaius.Core.Terminal
 {

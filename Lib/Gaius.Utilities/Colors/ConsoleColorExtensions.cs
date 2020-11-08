@@ -1,6 +1,6 @@
 using System.Drawing;
 
-namespace Strube.Utilities.Colors
+namespace Gaius.Utilities.Colors
 {
     public static class ConsoleColorExtensions
     {

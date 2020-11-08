@@ -3,7 +3,7 @@ using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Gaius.Core.Configuration;
-using Strube.Utilities.FileSystem;
+using Gaius.Utilities.FileSystem;
 using Gaius.Core.Worker;
 
 namespace Gaius.Core.Processing.FileSystem

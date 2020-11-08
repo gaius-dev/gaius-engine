@@ -2,7 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace Strube.Utilities.Reflection
+namespace Gaius.Utilities.Reflection
 {
     public static class AssemblyUtilities
     {

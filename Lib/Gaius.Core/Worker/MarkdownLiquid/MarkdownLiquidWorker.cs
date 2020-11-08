@@ -6,7 +6,7 @@ using Fluid;
 using Gaius.Core.Configuration;
 using Markdig;
 using Gaius.Core.Parsing;
-using Strube.Utilities.FileSystem;
+using Gaius.Utilities.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Parsing.Yaml;
 using System.Collections.Generic;

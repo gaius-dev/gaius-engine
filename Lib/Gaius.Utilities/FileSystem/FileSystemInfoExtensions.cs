@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Strube.Utilities.FileSystem
+namespace Gaius.Utilities.FileSystem
 {
     public static class FileSystemInfoExtensions
     {

@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Configuration;
 using Gaius.Core.Processing.FileSystem;
 using Gaius.Core.Terminal;
-using Strube.Utilities.Terminal;
+using Gaius.Utilities.Terminal;
 using Gaius.Core.Worker;
 using Gaius.Core.Worker.MarkdownLiquid;
 

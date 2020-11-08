@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Strube.Utilities.DataStructures;
+using Gaius.Utilities.DataStructures;
 
 namespace Gaius.Core.Processing.FileSystem
 {

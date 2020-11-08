@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Gaius.Core.Configuration;
-using Strube.Utilities.FileSystem;
+using Gaius.Utilities.FileSystem;
 
 namespace Gaius.Core.Worker
 {

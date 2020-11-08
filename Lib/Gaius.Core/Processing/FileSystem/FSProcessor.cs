@@ -4,8 +4,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Gaius.Core.Configuration;
-using Strube.Utilities.DataStructures;
-using Strube.Utilities.FileSystem;
+using Gaius.Utilities.DataStructures;
+using Gaius.Utilities.FileSystem;
 using Gaius.Core.Worker;
 
 namespace Gaius.Core.Processing.FileSystem

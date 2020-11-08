@@ -2,13 +2,13 @@
 
 if [ "$#" -ne "1" ]; then
 	echo "Error: gaius build script requires [path] location which specifies where to deploy the gaius binary."
-	echo "Usage: ./build-linux-x64.sh [path]"
-	echo "Example: ./build-linux-x64.sh ~/MySites/SampleSite"
+	echo "Usage: ./build_osx_x64.sh [path]"
+	echo "Example: ./build_osx_x64.sh ~/MySites/SampleSite"
 	exit 1
 fi
 
 BUILD_PATH="$1"
-RID=linux-x64
+RID=osx-x64
 
 echo ""
 echo "Building platform specific gaius binary for "$RID"..."
