@@ -519,7 +519,6 @@ namespace Gaius.Core.Terminal
         {
             PrintStylizedApplicationName();
             TerminalUtilities.PrintApplicationNameAndVersion();
-            Console.WriteLine();
         }
 
         public void PrintShowConfigurationCommand(string path)
@@ -583,6 +582,8 @@ Commands:
     help                Show a reference for how to use gaius.
     showconfig [path]   Show the current configuration at the location specified by [path]
     process [path]      Process the location specified by [path] using the configuration [path]/gaius.json
+
+                        Note: if no [path] is provided, [path] defaults to current directory.
 
 Options:
     -y                  Assume 'yes' as the answer for all questions.

@@ -1,8 +1,16 @@
 #!/bin/bash
 # Gaius CLI wrapper for Linux/OSX
-# v0.0.4
+# v0.0.5
+
+VERSION="0.0.5"
 
 function main() {
+
+    if [[ "$1" == "version" ]]; then
+        dotnet ./bin/gaius/gaius.dll version
+        echo "Gaius CLI wrapper version $VERSION"
+        exit 0
+    fi
 
     if [[ "$1" == "update-all" ]]; then
         update-engine
@@ -41,10 +49,10 @@ function update-engine() {
         rm -rf ./bin/gaius
     fi
 
+    mkdir -p ./bin/gaius
+
     echo "Downloading latest release of Gaius engine binaries..."
     curl -O -L https://github.com/gaius-dev/gaius-engine/releases/latest/download/gaius-engine-bin.zip
-
-    mkdir -p ./bin/gaius
 
     echo "Extracting latest release of Gaius engine binaries to ./bin/gaius ..."
     unzip gaius-engine-bin.zip -d ./bin/gaius
@@ -68,12 +76,12 @@ function update-github-actions() {
         rm -rf ./.github/workflows
     fi
 
+    mkdir -p ./.github/workflows
+
     echo "Downloading latest release of Gaius Github actions..."
     curl -O -L https://github.com/gaius-dev/gaius-engine/releases/latest/download/gaius-github-actions.zip
 
-    mkdir -p ./.github/workflows
-
-    echo "Extracting latest release of Gaius engine binaries to ./bin/gaius ..."
+    echo "Extracting latest release of Gaius engine binaries to ./.github/workflows ..."
     unzip gaius-github-actions -d ./.github/workflows
     rm gaius-github-actions.zip
 }
