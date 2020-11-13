@@ -133,7 +133,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return Path.Combine(gaiusConfiguration.NamedThemeDirectoryFullPath, LAYOUTS_DIRECTORY);
         }
 
-        private static readonly string ROOT_PREFIX_LIQUID_TAG = $"{{{nameof(LiquidTemplateModel.root)}}}";
+        private static readonly string ROOT_PREFIX_LIQUID_TAG = "{{" + nameof(LiquidTemplateModel.root) + "}}";
         private string MarkdownPreProcess(string markdownContent)
         {
             return markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, GaiusConfiguration.GenerationUrlRootPrefix);
