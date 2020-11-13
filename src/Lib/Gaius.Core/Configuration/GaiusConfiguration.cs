@@ -12,8 +12,8 @@ namespace Gaius.Core.Configuration
         public string ThemesDirectoryName { get; set; } = "_themes";
         public string ThemeName { get; set; } = "default";
         public string Worker { get; set; } = MARKDOWN_LIQUID_PIPELINE;
-        public string GenerationRootPrefix { get; set; } = string.Empty;
         public string SiteContainerFullPath { get; set; }
+        public string GenerationUrlRootPrefix { get; set; } = string.Empty;
 
         [JsonIgnore]
         public string GenerationDirectoryFullPath => Path.Combine(SiteContainerFullPath, GenerationDirectoryName);

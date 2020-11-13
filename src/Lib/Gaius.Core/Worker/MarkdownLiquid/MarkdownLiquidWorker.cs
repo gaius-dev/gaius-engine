@@ -10,6 +10,7 @@ using Gaius.Utilities.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Parsing.Yaml;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
@@ -52,17 +53,18 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 _liquidTemplatePhysicalFileProvider = new PhysicalFileProvider(GetLayoutsDirFullPath(GaiusConfiguration));
                 
             var markdownFile = task.FSInfo as FileInfo;
-            var markdownContent = File.ReadAllText(markdownFile.FullName);
+            var markdownContent = MarkdownPreProcess(File.ReadAllText(markdownFile.FullName));
 
             var yamlFrontMatter = _frontMatterParser.DeserializeFromContent(markdownContent);
             var layoutName = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : "default";
 
-            var html = HtmlPostProcessing(Markdown.ToHtml(markdownContent, _markdownPipeline), GaiusConfiguration);
+            var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
 
             var liquidSourcePath = Path.Combine(GetLayoutsDirFullPath(GaiusConfiguration), $"{layoutName}.liquid");
             var liquidSource = File.ReadAllText(liquidSourcePath);
 
-            var liquidModel = new LiquidTemplateModel(yamlFrontMatter, html, GaiusConfiguration);
+            var transformId = GetTransformId(task.FSInfo);
+            var liquidModel = new LiquidTemplateModel(transformId, yamlFrontMatter, html, GaiusConfiguration);
 
             if (FluidTemplate.TryParse(liquidSource, out var template))
             {
@@ -131,10 +133,20 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return Path.Combine(gaiusConfiguration.NamedThemeDirectoryFullPath, LAYOUTS_DIRECTORY);
         }
 
-        private static readonly string ROOT_PREFIX_HTML = $"%7B%7B{nameof(LiquidTemplateModel.rp)}%7D%7D";
-        private static string HtmlPostProcessing(string html, GaiusConfiguration gaiusConfiguration)
+        private static readonly string ROOT_PREFIX_LIQUID_TAG = $"{{{nameof(LiquidTemplateModel.root)}}}";
+        private string MarkdownPreProcess(string markdownContent)
         {
-            return html.Replace(ROOT_PREFIX_HTML, gaiusConfiguration.GenerationRootPrefix);
+            return markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, GaiusConfiguration.GenerationUrlRootPrefix);
+        }
+
+        private string GetTransformId(FileSystemInfo fsInfo)
+        {
+            var nameWithoutExt = fsInfo.GetNameWithoutExtension();
+            var pathSegments = fsInfo.GetPathSegments();
+            pathSegments[pathSegments.Length - 1] = nameWithoutExt;
+
+            var sourceDirIndex = Array.IndexOf(pathSegments, GaiusConfiguration.SourceDirectoryName);
+            return string.Join(".", pathSegments.Skip(sourceDirIndex + 1));
         }
     }
 }

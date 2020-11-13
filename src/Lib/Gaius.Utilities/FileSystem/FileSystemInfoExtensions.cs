@@ -60,5 +60,10 @@ namespace Gaius.Utilities.FileSystem
         {
             return fsInfo.FileHasExtension(".sass");
         }
+
+        public static string[] GetPathSegments(this FileSystemInfo fsInfo)
+        {
+            return fsInfo.FullName.Split(Path.DirectorySeparatorChar);
+        }
     }
 }

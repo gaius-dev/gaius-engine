@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Gaius/bin/Debug/netcoreapp3.1/gaius.dll",
-            "args": ["process", "../../gaius-docs", "-y"],
-            "cwd": "${workspaceFolder}/Gaius",
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/netcoreapp3.1/gaius.dll",
+            "args": ["process", "../../../gaius-docs", "-y"],
+            "cwd": "${workspaceFolder}/src/Gaius",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
