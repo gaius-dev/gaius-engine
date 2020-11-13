@@ -8,4 +8,8 @@
 
 # Gaius
 
-Gaius is an extensible static site generator built in .NET Core.
+Gaius is an ultra-fast, extensible static site generation platform designed to work easily with Github Pages.
+
+Please visit the official [Gaius Documentation Site](https://gaius-dev.github.io/gaius-docs/) for more information.
+
+![Gaius Engine in Action](/images/engine.png)
