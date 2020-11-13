@@ -2,12 +2,12 @@ name: gaius-process
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   gaius-process:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@main
     - name: Setup dotnet
       uses: actions/setup-dotnet@v1
       with:
