@@ -34,7 +34,7 @@ function build-deploy-xplatform-engine-bin() {
 function deploy-cli-wrapper() {
 
 	echo "Deploying CLI wrappers in '$1'..."
-	cp ../CLI/* $1/
+	cp ../cli/* $1/
 }
 
 function deploy-github-actions() {
@@ -47,7 +47,7 @@ function deploy-github-actions() {
 	mkdir -p $1/.github/workflows
 
 	echo "Deploying Github Actions in '$1/.github/workflows'..."
-	cp ../GithubActions/* $1/.github/workflows/
+	cp ../github-actions/* $1/.github/workflows/
 }
 
 main "$@"

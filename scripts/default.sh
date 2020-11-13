@@ -3,7 +3,7 @@
 
 DIR=$(dirname $(readlink -f $0))
 GAIUS_ENGINE_TOPLVL_DIR="$DIR/.."
-BUILD_ARTIFACTS_DIR="$GAIUS_ENGINE_TOPLVL_DIR/BuildArtifacts"
+BUILD_ARTIFACTS_DIR="$GAIUS_ENGINE_TOPLVL_DIR/build-artifacts"
 
 if [[ -d $BUILD_ARTIFACTS_DIR ]]; then
     rm -rf $BUILD_ARTIFACTS_DIR

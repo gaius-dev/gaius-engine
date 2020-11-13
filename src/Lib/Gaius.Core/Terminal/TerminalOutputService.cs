@@ -578,12 +578,17 @@ namespace Gaius.Core.Terminal
 Usage: gaius [command] [options]
 
 Commands:
-    version             Show version information.
-    help                Show a reference for how to use gaius.
-    showconfig [path]   Show the current configuration at the location specified by [path]
-    process [path]      Process the location specified by [path] using the configuration [path]/gaius.json
+    version                Show version information.
+    help                   Show a reference for how to use gaius.
+    showconfig [path]      Show the current configuration at the location specified by [path]
+    process [path]         Process the location specified by [path] using the configuration [path]/gaius.json
 
-                        Note: if no [path] is provided, [path] defaults to current directory.
+                           Note: if no [path] is provided, [path] defaults to current directory.
+Commands (CLI wrapper):
+    update-all             Update the Gaius engine binaries, Github Actions workflow, and the CLI wrappers
+    update-engine          Only update the Gaius engine binaries
+    update-cli             Only update the Gaius CLI wrappers
+    update-github-actions  Only update the Gaius Github Actions workflow
 
 Options:
     -y                  Assume 'yes' as the answer for all questions.

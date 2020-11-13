@@ -433,5 +433,5 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 # Build Artifacts and Build Zip File Directories
-BuildArtifacts
-BuildZip
+build-artifacts
+build-zip

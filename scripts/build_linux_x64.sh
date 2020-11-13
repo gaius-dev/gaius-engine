@@ -8,6 +8,6 @@ fi
 RID=linux-x64
 
 echo "Building platform specific gaius binary for "$RID"..."
-dotnet publish ../Gaius/Gaius.csproj -c Release -r $RID --self-contained false -p:PublishSingleFile=true -p:DebugType=None -o $1
+dotnet publish ../src/Gaius/Gaius.csproj -c Release -r $RID --self-contained false -p:PublishSingleFile=true -p:DebugType=None -o $1
 
 echo ""$RID" gaius binary built and copied to: '$1'"
