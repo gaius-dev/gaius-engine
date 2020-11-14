@@ -10,7 +10,7 @@ using Gaius.Core.Worker.MarkdownLiquid;
 
 namespace Gaius
 {
-    public abstract class Gaius
+    public class Gaius
     {
         public static IConfigurationRoot CreateConfiguration(string basePath)
         {

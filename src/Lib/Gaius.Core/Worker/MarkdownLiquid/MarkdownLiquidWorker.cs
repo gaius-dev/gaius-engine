@@ -21,9 +21,16 @@ namespace Gaius.Core.Worker.MarkdownLiquid
         private static readonly MarkdownPipeline _markdownPipeline 
                                                         = new MarkdownPipelineBuilder()
                                                                 .UseYamlFrontMatter() //Markdig extension to parse YAML
+                                                                .UseCustomContainers() // Markdig custom contain extension
+                                                                .UseEmphasisExtras() // Markdig extension for extra emphasis extension
+                                                                .UseListExtras() // Markdig extension for extra bullet lists
+                                                                .UseFigures() //Markdig extension for figures & footers
+                                                                .UsePipeTables() // Markdig extension for Github style pipe tables
+                                                                .UseMediaLinks() //Markdig extension for media links (e.g. youtube)
                                                                 .UseBootstrap() //Markdig extension to apply bootstrap CSS classes automatically
                                                                 .UseGenericAttributes() //Markdig extension to allow application of generic HTML attributes
                                                                 .Build();
+                                                                
         private static IFileProvider _liquidTemplatePhysicalFileProvider;
 
         public MarkdownLiquidWorker(IFrontMatterParser frontMatterParser, IOptions<GaiusConfiguration> gaiusConfigurationOptions)
