@@ -18,7 +18,12 @@ namespace Gaius.Core.Worker.MarkdownLiquid
     {
         private const string LAYOUTS_DIRECTORY = "_layouts";
         private readonly IFrontMatterParser _frontMatterParser;
-        private static readonly MarkdownPipeline _markdownPipeline = new MarkdownPipelineBuilder().UseYamlFrontMatter().Build();
+        private static readonly MarkdownPipeline _markdownPipeline 
+                                                        = new MarkdownPipelineBuilder()
+                                                                .UseYamlFrontMatter() //Markdig extension to parse YAML
+                                                                .UseBootstrap() //Markdig extension to apply bootstrap CSS classes automatically
+                                                                .UseGenericAttributes() //Markdig extension to allow application of generic HTML attributes
+                                                                .Build();
         private static IFileProvider _liquidTemplatePhysicalFileProvider;
 
         public MarkdownLiquidWorker(IFrontMatterParser frontMatterParser, IOptions<GaiusConfiguration> gaiusConfigurationOptions)
