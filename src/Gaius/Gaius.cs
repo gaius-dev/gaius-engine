@@ -1,5 +1,4 @@
 using System.IO;
-using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Configuration;
@@ -24,13 +23,14 @@ namespace Gaius
                 .Build();
         }
 
-        public static (IServiceCollection, bool) ConfigureServices(IConfigurationRoot config, string basePath)
+        public static (IServiceCollection, bool) ConfigureServices(IConfigurationRoot config, string basePath, bool isTestCommand)
         {
             var serviceCollection = new ServiceCollection()
                 .AddOptions()
                 .Configure<GaiusConfiguration>(overrideConfig => 
                 {
                     overrideConfig.SiteContainerFullPath = basePath;
+                    overrideConfig.IsTestCommand = isTestCommand;
                 })
                 .Configure<GaiusConfiguration>(config)
                 .AddSingleton<ITerminalOutputService, TerminalOutputService>()
@@ -38,6 +38,7 @@ namespace Gaius
 
             var gaiusConfiguration = new GaiusConfiguration();
             gaiusConfiguration.SiteContainerFullPath = basePath;
+            gaiusConfiguration.IsTestCommand = isTestCommand;
             config.Bind(gaiusConfiguration);
 
             var workerConfigured = false;
@@ -50,96 +51,91 @@ namespace Gaius
             return (serviceCollection, workerConfigured);
         }
 
-        public static (IConfigurationRoot, IServiceCollection, bool) ConfigureConsoleApplication(string basePath)
+        public static (IConfigurationRoot, IServiceCollection, bool) ConfigureConsoleApplication(string basePath, bool isTestCommand)
         {
             var config = CreateConfiguration(basePath);
-            var serviceCollection = ConfigureServices(config, basePath);
+            var serviceCollection = ConfigureServices(config, basePath, isTestCommand);
             return (config, serviceCollection.Item1, serviceCollection.Item2);
         }
 
-        private const string AUTOMATIC_YES_PARAM = "-y";
-
         static void Main(string[] args)
         {
-            var listArgs = new List<string>(args);
+            var gaiusArgs = new GaiusArgs(args);
 
-            var isAutomaticYesEnabled = listArgs.Contains(AUTOMATIC_YES_PARAM);
-
-            if(isAutomaticYesEnabled)
-                listArgs.Remove(AUTOMATIC_YES_PARAM);
-                
-            var pathArg = listArgs.Count <= 1 ? "." : listArgs[1];
-            pathArg = Path.GetFullPath(pathArg);
-
-            if(!Directory.Exists(pathArg))
+            if(!Directory.Exists(gaiusArgs.BasePath))
             {
-                TerminalUtilities.PrintBasePathDoesNotExist(pathArg);
-                System.Console.WriteLine();
+                TerminalUtilities.PrintBasePathDoesNotExist(gaiusArgs.BasePath);
                 return;
             }
-            
-            var appConfiguration = ConfigureConsoleApplication(pathArg);
 
+            var appConfiguration = ConfigureConsoleApplication(gaiusArgs.BasePath, gaiusArgs.IsTestCommand);
             var config = appConfiguration.Item1;
             var serviceProvider = appConfiguration.Item2.BuildServiceProvider();
             var validConfiguration = appConfiguration.Item3;
             
             var terminalOutputService = serviceProvider.GetService<ITerminalOutputService>();
 
-            if(!validConfiguration)
-            {
-                terminalOutputService.PrintInvalidConfiguration(pathArg);
-                return;
-            }
-
-            if(listArgs.Count == 0)
+            // commands that don't require full initialization and validation
+            if(gaiusArgs.IsNoCommand)
             {
                 terminalOutputService.PrintDefault();
                 return;
             }
 
-            var commandArg = listArgs[0].ToLowerInvariant();
+            if(gaiusArgs.IsUnknownCommand)
+            {
+                terminalOutputService.PrintUnknownCommand(gaiusArgs.Command);
+                return;
+            }
 
+            if(gaiusArgs.IsVersionCommand)
+            {
+                terminalOutputService.PrintVersionCommand();
+                return;
+            }
+
+            if(gaiusArgs.IsHelpCommand)
+            {
+                terminalOutputService.PrintHelpCommand();
+                return;
+            }
+
+            // explicitly validate configuration for remaining commands
+            if(!validConfiguration)
+            {
+                terminalOutputService.PrintInvalidConfiguration(gaiusArgs.BasePath);
+                return;
+            }
+
+            if(gaiusArgs.IsShowConfigCommand)
+            {
+                terminalOutputService.PrintShowConfigurationCommand(gaiusArgs.BasePath);
+                return;
+            }
+
+            // additional initialization required for remaining commands
             var fileSystemProcessor = serviceProvider.GetService<IFSProcessor>();
             var worker = serviceProvider.GetService<IWorker>();
 
-            switch(commandArg)
+            if(gaiusArgs.IsTestCommand || gaiusArgs.IsProcessCommand)
             {
-                case "version":
-                    terminalOutputService.PrintVersionCommand();
+                var validationResults = worker.ValidateSiteContainerDirectory();
+
+                if(!validationResults.Item1)
+                {
+                    terminalOutputService.PrintSiteContainerDirectoryNotValid(validationResults.Item2);
+                    return;
+                }
+
+                var opTree = fileSystemProcessor.CreateFSOperationTree();
+                terminalOutputService.PrintOperationTree(opTree);
+
+                if(!gaiusArgs.IsAutomaticYesEnabled && !TerminalUtilities.YesToContinue())
                     return;
 
-                case "help":
-                    terminalOutputService.PrintHelpCommand();
-                    return;
-
-                case "showconfig":
-                    terminalOutputService.PrintShowConfigurationCommand(pathArg);
-                    return;
-
-                case "process":
-
-                    var validationResults = worker.ValidateSiteContainerDirectory();
-
-                    if(!validationResults.Item1)
-                    {
-                        terminalOutputService.PrintSiteContainerDirectoryNotValid(validationResults.Item2);
-                        return;
-                    }
-
-                    var opTree = fileSystemProcessor.CreateFSOperationTree();
-                    terminalOutputService.PrintOperationTree(opTree);
-
-                    if(!isAutomaticYesEnabled && !TerminalUtilities.YesToContinue())
-                        return;
-
-                    fileSystemProcessor.ProcessFSOperationTree(opTree);
-                    terminalOutputService.PrintOperationTree(opTree);
-                    return;
-                    
-                default:
-                    terminalOutputService.PrintUnknownCommand(commandArg);
-                    return;
+                fileSystemProcessor.ProcessFSOperationTree(opTree);
+                terminalOutputService.PrintOperationTree(opTree);
+                return;
             }
         }
     }

@@ -14,7 +14,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             description = frontMatter.Description;
             draft = frontMatter.Draft;
             content = html;
-            root = gaiusConfiguration.GenerationUrlRootPrefix;
+            root = gaiusConfiguration.IsTestCommand ? string.Empty : gaiusConfiguration.GenerationUrlRootPrefix;
         }
 
         public string pageId { get; set; }

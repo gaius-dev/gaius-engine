@@ -543,7 +543,7 @@ namespace Gaius.Core.Terminal
 
         private static void PrintStylizedApplicationName()
         {
-            var assemblyTitleFiggle = FiggleFonts.Standard.Render(AssemblyUtilities.GetAssemblyTitle(AssemblyUtilities.EntryAssembly));
+            var assemblyTitleFiggle = FiggleFonts.Standard.Render(AssemblyUtilities.GetAssemblyTitle(AssemblyUtilities.EntryAssembly).ToLowerInvariant());
             Colorful.Console.WriteLine(assemblyTitleFiggle, Color.Gold);
         }
         
@@ -578,23 +578,41 @@ namespace Gaius.Core.Terminal
 Usage: gaius [command] [options]
 
 Commands:
-    version                Show version information.
-    help                   Show a reference for how to use gaius.
-    showconfig [path]      Show the current configuration at the location specified by [path]
-    process [path]         Process the location specified by [path] using the configuration [path]/gaius.json
+  version                Show version information.
+  help                   Show help information.
+  showconfig [path]      Show the configuration in [path].
 
-                           Note: if no [path] is provided, [path] defaults to current directory.
+  test [path]            Process the source data in [path] using the config file [path]/gaius.json.
+                           This does *not* prepend the 'GenerationUrlRootPrefix' config param to URLs.
+                           This allows for the local testing of generated sites (e.g. http://localhost).
+
+  process [path]         Process the source data in [path] using the config file [path]/gaius.json.
+
+Note: if no [path] is provided, [path] defaults to current directory.
+
 Commands (CLI wrapper):
-    update-all             Update the Gaius engine binaries, Github Actions workflow, and the CLI wrappers
-    update-engine          Only update the Gaius engine binaries
-    update-cli             Only update the Gaius CLI wrappers
-    update-github-actions  Only update the Gaius Github Actions workflow
+  update-all             Update the Gaius engine binaries, Github Actions workflow, and the CLI wrappers.
+  update-engine          Only update the Gaius engine binaries.
+  update-cli             Only update the Gaius CLI wrappers.
+  update-github-actions  Only update the Gaius Github Actions workflow.
 
 Options:
-    -y                  Assume 'yes' as the answer for all questions.
+  -y                     Automatically answer 'yes' for all questions.
+                           This allows for automatic processing of source data.
 
-Example: gaius process ./mysite -y
-         Processes the directory ./mysite using the configuration ./mysite/gaius.json
+Example: gaius process
+
+         Processes the source data in the current directory using the config file in the current directory.
+
+Example: gaius test -y
+
+         Processes the source data in the current directory using the config file in the current directory
+         in order to support local testing of the generated site (e.g. http://localhost).
+         Automatically answers yes for all questions (automatically processes all source data).
+
+Example: gaius process ~/mysite
+
+         Processes the source data in [~/mysite] using the config file in [~/mysite]
 ";
             System.Console.WriteLine(usage);
         }

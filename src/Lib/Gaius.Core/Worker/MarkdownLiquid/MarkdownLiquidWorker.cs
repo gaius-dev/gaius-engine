@@ -138,10 +138,17 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return Path.Combine(gaiusConfiguration.NamedThemeDirectoryFullPath, LAYOUTS_DIRECTORY);
         }
 
-        private static readonly string ROOT_PREFIX_LIQUID_TAG = "{{" + nameof(LiquidTemplateModel.root) + "}}";
         private string MarkdownPreProcess(string markdownContent)
         {
-            return markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, GaiusConfiguration.GenerationUrlRootPrefix);
+            return GenerationUrlRootPrefixPreProcessor(markdownContent);
+        }
+
+        private static readonly string ROOT_PREFIX_LIQUID_TAG = "{{" + nameof(LiquidTemplateModel.root) + "}}";
+        private string GenerationUrlRootPrefixPreProcessor(string markdownContent)
+        {
+            return GaiusConfiguration.IsTestCommand
+                        ? markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, string.Empty)
+                        : markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, GaiusConfiguration.GenerationUrlRootPrefix);
         }
 
         private string GetTransformId(FileSystemInfo fsInfo)
