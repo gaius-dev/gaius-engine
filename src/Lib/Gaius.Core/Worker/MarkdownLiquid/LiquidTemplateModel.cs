@@ -5,15 +5,15 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 {
     public class LiquidTemplateModel
     {
-        public LiquidTemplateModel(string transformId, IFrontMatter frontMatter, string html, GaiusConfiguration gaiusConfiguration)
+        public LiquidTemplateModel(IFrontMatter frontMatter, PageData pageData, GaiusConfiguration gaiusConfiguration)
         {
-            pageId = transformId;
             title = frontMatter.Title;
             author = frontMatter.Author;
             keywords = frontMatter.Keywords;
             description = frontMatter.Description;
             draft = frontMatter.Draft;
-            content = html;
+            pageId = pageData.Id;
+            content = pageData.Html;
             root = gaiusConfiguration.IsTestMode ? string.Empty : gaiusConfiguration.GenerationUrlRootPrefix;
         }
 

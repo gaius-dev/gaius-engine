@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Parsing.Yaml;
 using System.Collections.Generic;
 using System.Linq;
+using Gaius.Core.Models;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
@@ -70,13 +71,17 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             var yamlFrontMatter = _frontMatterParser.DeserializeFromContent(markdownContent);
             var layoutName = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : "default";
 
-            var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
+            var markdownHtml = Markdown.ToHtml(markdownContent, _markdownPipeline);
+            var pageData = new PageData() 
+            {
+                Html = markdownHtml,
+                Id = GetTransformId(task.FSInfo)
+            };
+
+            var liquidModel = new LiquidTemplateModel(yamlFrontMatter, pageData, GaiusConfiguration);
 
             var liquidSourcePath = Path.Combine(GetLayoutsDirFullPath(GaiusConfiguration), $"{layoutName}.liquid");
             var liquidSource = File.ReadAllText(liquidSourcePath);
-
-            var transformId = GetTransformId(task.FSInfo);
-            var liquidModel = new LiquidTemplateModel(transformId, yamlFrontMatter, html, GaiusConfiguration);
 
             if (FluidTemplate.TryParse(liquidSource, out var template))
             {
@@ -87,7 +92,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 return template.Render(context);
             }
 
-            return html;
+            return markdownHtml;
         }
 
         public override string GetTarget(FileSystemInfo fsInfo)
