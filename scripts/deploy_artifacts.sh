@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script deploy Gaius engine binaries, CLI wrappers, and Github Actions to a specific location
+# Script deploy Gaius engine binaries, Gaius server binaries, CLI wrappers, and Github Actions to a specific location
 
 function main()
 {
@@ -13,12 +13,13 @@ function main()
 
 function deploy-artifacts() {
 
-	build-deploy-xplatform-engine-bin $1
+	build-deploy-engine-bin $1
+	build-deploy-server-bin $1
 	deploy-cli-wrapper $1
 	deploy-github-actions $1
 }
 
-function build-deploy-xplatform-engine-bin() {
+function build-deploy-engine-bin() {
 
 	if [[ -d $1/bin/gaius ]]; then
 		echo "Deleting existing Gaius engine binaries in '$1/bin/gaius'..."
@@ -28,7 +29,20 @@ function build-deploy-xplatform-engine-bin() {
 	mkdir -p $1/bin/gaius
 
 	echo "Deploying Gaius engine binaries in '$1/bin/gaius'..."
-	./build_xplatform.sh $1/bin/gaius
+	./build_xplatform-engine.sh $1/bin/gaius
+}
+
+function build-deploy-server-bin() {
+
+	if [[ -d $1/bin/gaius-server ]]; then
+		echo "Deleting existing Gaius server binaries in '$1/bin/gaius-server'..."
+		rm -rf $1/bin/gaius-server
+	fi
+
+	mkdir -p $1/bin/gaius-server
+
+	echo "Deploying Gaius server binaries in '$1/bin/gaius-server'..."
+	./build_xplatform-server.sh $1/bin/gaius-server
 }
 
 function deploy-cli-wrapper() {

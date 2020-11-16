@@ -5,7 +5,7 @@ if [ "$#" -ne "1" ]; then
 	exit 1
 fi
 
-echo "Building xplatform gaius engine binaries..."
+echo "Building xplatform Gaius engine binaries..."
 dotnet publish ../src/Gaius/Gaius.csproj -c Release --self-contained false -p:DebugType=None -o $1
 
-echo "Xplatform gaius engine binaries built and copied to: $1"
+echo "Xplatform Gaius engine binaries built and copied to: $1"

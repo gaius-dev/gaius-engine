@@ -1,18 +1,30 @@
 #!/bin/bash
 # Gaius CLI wrapper for Linux/OSX
 
-VERSION="0.0.14"
+VERSION="0.0.20"
 
 function main() {
 
+    if [[ ! -d ./bin/gaius ]]; then
+        echo "No Gaius engine binaries detected in ./bin/gaius ..."
+        exit 1
+    fi
+
+    if [[ ! -d ./bin/gaius-server ]]; then
+        echo "No Gaius server binaries detected in ./bin/gaius-server ..."
+        exit 1
+    fi
+
     if [[ "$1" == "version" ]]; then
         dotnet ./bin/gaius/gaius.dll version
+        dotnet ./bin/gaius-server/gaius-server.dll version
         echo "Gaius CLI wrapper version $VERSION"
         exit 0
     fi
 
     if [[ "$1" == "update-all" ]]; then
         update-engine
+        update-server
         update-github-actions
         update-cli
         exit 0
@@ -20,6 +32,11 @@ function main() {
 
     if [[ "$1" == "update-engine" ]]; then
         update-engine
+        exit 0
+    fi
+
+    if [[ "$1" == "update-server" ]]; then
+        update-server
         exit 0
     fi
 
@@ -33,12 +50,12 @@ function main() {
         exit 0
     fi
 
-    if [[ ! -d ./bin/gaius ]]; then
-        echo "No Gaius engine binaries detected in ./bin/gaius ..."
-        update-engine
+    if [[ "$1" == "test" ]]; then
+        dotnet ./bin/gaius/gaius.dll process-test -y
+        dotnet ./bin/gaius-server/gaius-server.dll
+    else
+        dotnet ./bin/gaius/gaius.dll "$@"
     fi
-
-    dotnet ./bin/gaius/gaius.dll "$@"
 }
 
 function update-engine() {
@@ -56,6 +73,23 @@ function update-engine() {
     echo "Extracting latest release of Gaius engine binaries to ./bin/gaius ..."
     unzip gaius-engine-bin.zip -d ./bin/gaius
     rm gaius-engine-bin.zip
+}
+
+function update-server() {
+
+    if [[ -d ./bin/gaius-server ]]; then
+        echo "Deleting existing Gaius server binaries in ./bin/gaius-server ..."
+        rm -rf ./bin/gaius-server
+    fi
+
+    mkdir -p ./bin/gaius-server
+
+    echo "Downloading latest release of Gaius server binaries..."
+    curl -O -L https://github.com/gaius-dev/gaius-engine/releases/latest/download/gaius-server-bin.zip
+
+    echo "Extracting latest release of Gaius server binaries to ./bin/gaius-server ..."
+    unzip gaius-server-bin.zip -d ./bin/gaius-server
+    rm gaius-server-bin.zip
 }
 
 function update-cli() {

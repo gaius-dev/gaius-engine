@@ -8,10 +8,8 @@ using Gaius.Core.Configuration;
 using Gaius.Core.Processing;
 using Gaius.Core.Processing.FileSystem;
 using Gaius.Utilities.Colors;
-using Gaius.Utilities.Reflection;
 using Gaius.Utilities.DataStructures;
 using Gaius.Utilities.Terminal;
-using Figgle;
 using Newtonsoft.Json;
 using Gaius.Core.Worker;
 
@@ -543,8 +541,16 @@ namespace Gaius.Core.Terminal
 
         private static void PrintStylizedApplicationName()
         {
-            var assemblyTitleFiggle = FiggleFonts.Standard.Render(AssemblyUtilities.GetAssemblyTitle(AssemblyUtilities.EntryAssembly).ToLowerInvariant());
-            Colorful.Console.WriteLine(assemblyTitleFiggle, Color.Gold);
+            var stylizedApplicationName =
+@"
+              _           
+   __ _  __ _(_)_   _ ___ 
+  / _` |/ _` | | | | / __|
+ | (_| | (_| | | |_| \__ \
+  \__, |\__,_|_|\__,_|___/
+  |___/                   
+";
+            Colorful.Console.WriteLine(stylizedApplicationName, Color.Gold);
         }
         
         public void PrintSiteContainerDirectoryNotValid(List<string> validationErrors)
@@ -577,42 +583,39 @@ namespace Gaius.Core.Terminal
 @"
 Usage: gaius [command] [options]
 
-Commands:
+Commands (Gaius Engine):
+
   version                Show version information.
   help                   Show help information.
   showconfig [path]      Show the configuration in [path].
 
-  test [path]            Process the source data in [path] using the config file [path]/gaius.json.
+  process-test [path]    Process the source data in [path] using the config file [path]/gaius.json.
                            This does *not* prepend the 'GenerationUrlRootPrefix' config param to URLs.
                            This allows for the local testing of generated sites (e.g. http://localhost).
 
   process [path]         Process the source data in [path] using the config file [path]/gaius.json.
 
+Commands (Gaius Server):
+
+  test                   Runs process-test command in current directory.
+                         Starts a local web server which serves up generated site content in [path/_generated].
+                            By default local web server is accessible on http://localhost:5000
+
 Note: if no [path] is provided, [path] defaults to current directory.
 
 Commands (CLI wrapper):
-  update-all             Update the Gaius engine binaries, Github Actions workflow, and the CLI wrappers.
+
+  update-all             Update the Gaius engine binaries, Gaius server binaries,
+                           Github Actions workflow, and the CLI wrappers (recommended).
+
   update-engine          Only update the Gaius engine binaries.
+  update-server          Only update the Gaius server binaries.
   update-cli             Only update the Gaius CLI wrappers.
   update-github-actions  Only update the Gaius Github Actions workflow.
 
 Options:
   -y                     Automatically answer 'yes' for all questions.
                            This allows for automatic processing of source data.
-
-Example: gaius process
-
-         Processes the source data in the current directory using the config file in the current directory.
-
-Example: gaius test -y
-
-         Processes the source data in the current directory using the config file in the current directory
-         in order to support local testing of the generated site (e.g. http://localhost).
-         Automatically answers yes for all questions (automatically processes all source data).
-
-Example: gaius process ~/mysite
-
-         Processes the source data in [~/mysite] using the config file in [~/mysite]
 ";
             System.Console.WriteLine(usage);
         }

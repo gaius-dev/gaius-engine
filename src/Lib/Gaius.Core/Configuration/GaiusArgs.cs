@@ -41,7 +41,7 @@ namespace Gaius.Core.Configuration
         public bool IsVersionCommand => Command == "version";
         public bool IsHelpCommand => Command == "help";
         public bool IsShowConfigCommand => Command == "showconfig";
-        public bool IsTestCommand => Command == "test";
+        public bool IsTestCommand => Command == "process-test";
         public bool IsProcessCommand => Command == "process";
     }
 }

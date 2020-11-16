@@ -12,34 +12,33 @@ namespace Gaius
 {
     public class Gaius
     {
-        public static IConfigurationRoot CreateConfiguration(string basePath)
+        private static IConfigurationRoot BuildConfiguration(string basePath)
         {
             basePath = !string.IsNullOrEmpty(basePath) ? basePath : Directory.GetCurrentDirectory();
 
             return new ConfigurationBuilder()
                 .SetBasePath(basePath)
                 .AddJsonFile("gaius.json", optional : true, reloadOnChange : true)
-                .AddEnvironmentVariables()
                 .Build();
         }
 
-        public static (IServiceCollection, bool) ConfigureServices(IConfigurationRoot config, string basePath, bool isTestCommand)
+        private static (IServiceCollection, bool) ConfigureServices(IConfigurationRoot configRoot, string basePath, bool isTestCommand)
         {
             var serviceCollection = new ServiceCollection()
                 .AddOptions()
                 .Configure<GaiusConfiguration>(overrideConfig => 
                 {
                     overrideConfig.SiteContainerFullPath = basePath;
-                    overrideConfig.IsTestCommand = isTestCommand;
+                    overrideConfig.IsTestMode = isTestCommand;
                 })
-                .Configure<GaiusConfiguration>(config)
+                .Configure<GaiusConfiguration>(configRoot.GetSection("GaiusEngine"))
                 .AddSingleton<ITerminalOutputService, TerminalOutputService>()
                 .AddSingleton<IFSProcessor, FSProcessor>();
 
             var gaiusConfiguration = new GaiusConfiguration();
             gaiusConfiguration.SiteContainerFullPath = basePath;
-            gaiusConfiguration.IsTestCommand = isTestCommand;
-            config.Bind(gaiusConfiguration);
+            gaiusConfiguration.IsTestMode = isTestCommand;
+            configRoot.GetSection("GaiusEngine").Bind(gaiusConfiguration);
 
             var workerConfigured = false;
             if (gaiusConfiguration.Worker.Equals("Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
@@ -51,14 +50,14 @@ namespace Gaius
             return (serviceCollection, workerConfigured);
         }
 
-        public static (IConfigurationRoot, IServiceCollection, bool) ConfigureConsoleApplication(string basePath, bool isTestCommand)
+        private static (IConfigurationRoot, IServiceCollection, bool) ConfigureConsoleApplication(string basePath, bool isTestCommand)
         {
-            var config = CreateConfiguration(basePath);
+            var config = BuildConfiguration(basePath);
             var serviceCollection = ConfigureServices(config, basePath, isTestCommand);
             return (config, serviceCollection.Item1, serviceCollection.Item2);
         }
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             var gaiusArgs = new GaiusArgs(args);
 

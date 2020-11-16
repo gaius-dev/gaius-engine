@@ -1,4 +1,6 @@
 {
-    "Worker" : "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker",
-    "GenerationUrlRootPrefix" : ""
+    "GaiusEngine" : {
+        "Worker" : "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker",
+        "GenerationUrlRootPrefix" : ""
+    }
 }

@@ -14,7 +14,7 @@ namespace Gaius.Core.Configuration
         public string Worker { get; set; } = MARKDOWN_LIQUID_PIPELINE;
         public string SiteContainerFullPath { get; set; }
         public string GenerationUrlRootPrefix { get; set; } = string.Empty;
-        public bool IsTestCommand { get; set; } = false;
+        public bool IsTestMode { get; set; } = false;
 
         [JsonIgnore]
         public string GenerationDirectoryFullPath => Path.Combine(SiteContainerFullPath, GenerationDirectoryName);
