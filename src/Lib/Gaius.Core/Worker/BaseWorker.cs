@@ -2,12 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Gaius.Core.Configuration;
+using Gaius.Core.Models;
 using Gaius.Utilities.FileSystem;
+using Gaius.Utilities.Reflection;
 
 namespace Gaius.Core.Worker
 {
     public abstract class BaseWorker : IWorker
     {
+        protected static readonly GenerationInfo GenerationInfo = new GenerationInfo()
+        {
+            GenerationDateTime = DateTime.UtcNow,
+            GaiusVersion = AssemblyUtilities.GetAssemblyVersion(AssemblyUtilities.EntryAssembly)
+        };
+
         private const string DOT_GIT_DIR_NAME = ".git";
         protected List<string> RequiredDirectories;
         protected GaiusConfiguration GaiusConfiguration;

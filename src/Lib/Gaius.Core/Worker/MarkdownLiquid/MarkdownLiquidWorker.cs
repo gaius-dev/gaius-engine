@@ -78,7 +78,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 Id = GetTransformId(task.FSInfo)
             };
 
-            var liquidModel = new LiquidTemplateModel(yamlFrontMatter, pageData, GaiusConfiguration);
+            var liquidModel = new LiquidTemplateModel(yamlFrontMatter, pageData, GaiusConfiguration, GenerationInfo);
 
             var liquidSourcePath = Path.Combine(GetLayoutsDirFullPath(GaiusConfiguration), $"{layoutName}.liquid");
             var liquidSource = File.ReadAllText(liquidSourcePath);
@@ -87,7 +87,8 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             {
                 var context = new TemplateContext();
                 context.FileProvider = _liquidTemplatePhysicalFileProvider;
-                context.MemberAccessStrategy.Register(liquidModel.GetType());
+                context.MemberAccessStrategy.Register<LiquidTemplateModel>();
+                context.MemberAccessStrategy.Register<LiquidTemplateModel_GaiusInfo>();
                 context.Model = liquidModel;
                 return template.Render(context);
             }
