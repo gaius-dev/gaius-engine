@@ -18,7 +18,8 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             
             gaius = new LiquidTemplateModel_GaiusInfo()
             {
-                version = generationInfo.GaiusVersion
+                version = generationInfo.GaiusVersion,
+                genDate = generationInfo.GenerationDateTime.ToString("u")
             };
         }
 
@@ -35,6 +36,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
     public class LiquidTemplateModel_GaiusInfo 
     {
-        public string version { get; set;}
+        public string version { get; set; }
+        public string genDate { get; set; }
     }
 }
