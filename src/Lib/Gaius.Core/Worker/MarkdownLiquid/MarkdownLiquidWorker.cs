@@ -88,6 +88,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 var context = new TemplateContext();
                 context.FileProvider = _liquidTemplatePhysicalFileProvider;
                 context.MemberAccessStrategy.Register<LiquidTemplateModel>();
+                context.MemberAccessStrategy.Register<LiquidTemplateModel_Page>();
                 context.MemberAccessStrategy.Register<LiquidTemplateModel_GaiusInfo>();
                 context.Model = liquidModel;
                 return template.Render(context);
