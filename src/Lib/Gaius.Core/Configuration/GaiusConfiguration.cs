@@ -10,6 +10,8 @@ namespace Gaius.Core.Configuration
         public string SourceDirectoryName { get; set; } = "_source";
         public string GenerationDirectoryName { get; set; } = "_generated";
         public string ThemesDirectoryName { get; set; } = "_themes";
+        public string PostsDirectoryName { get; set; } = "_posts";
+        public List<string> AlwaysKeep { get; set; } = new List<string>{ ".git" };
         public string ThemeName { get; set; } = "default";
         public string Worker { get; set; } = MARKDOWN_LIQUID_PIPELINE;
         public string SiteContainerFullPath { get; set; }
@@ -18,12 +20,19 @@ namespace Gaius.Core.Configuration
 
         [JsonIgnore]
         public string GenerationDirectoryFullPath => Path.Combine(SiteContainerFullPath, GenerationDirectoryName);
+        
         [JsonIgnore]
         public string SourceDirectoryFullPath => Path.Combine(SiteContainerFullPath, SourceDirectoryName);
+
         [JsonIgnore]
         public string NamedThemeDirectoryFullPath => Path.Combine(SiteContainerFullPath, ThemesDirectoryName, ThemeName);
 
         [JsonIgnore]
+        public string PostsDirectoryFullPath => Path.Combine(SiteContainerFullPath, SourceDirectoryName, PostsDirectoryName);
+
+        [JsonIgnore]
         public List<string> SupportedWorkers => new List<string>() { MARKDOWN_LIQUID_PIPELINE };
+
+        public string GetGenerationUrlRootPrefix() => IsTestMode ? string.Empty : GenerationUrlRootPrefix;
     }
 }

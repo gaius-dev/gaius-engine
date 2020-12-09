@@ -5,36 +5,41 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 {
     public class LiquidTemplateModel
     {
-        public LiquidTemplateModel(IFrontMatter frontMatter, PageData pageData, GaiusConfiguration gaiusConfiguration, GenerationInfo generationInfo)
+        public LiquidTemplateModel(PageData pageData, GenerationInfo generationInfo, GaiusConfiguration gaiusConfiguration)
         {
-            root = gaiusConfiguration.IsTestMode ? string.Empty : gaiusConfiguration.GenerationUrlRootPrefix;
-
             page = new LiquidTemplateModel_Page() 
             {
                 id = pageData.Id,
-                title = frontMatter.Title,
-                author = frontMatter.Author,
-                keywords = frontMatter.Keywords,
-                description = frontMatter.Description,
-                draft = frontMatter.Draft,
+                url = pageData.Url,
+                title = pageData.FrontMatter.Title,
+                author = pageData.FrontMatter.Author,
+                keywords = pageData.FrontMatter.Keywords,
+                description = pageData.FrontMatter.Description,
+                draft = pageData.FrontMatter.Draft,
                 content = pageData.Html
             };
             
+            site = new LiquidTemplateModel_Site() 
+            {
+                url = gaiusConfiguration.GetGenerationUrlRootPrefix(),
+                time = generationInfo.GenerationDateTime.ToString("u")
+            };
+
             gaius = new LiquidTemplateModel_GaiusInfo()
             {
-                version = generationInfo.GaiusVersion,
-                gendate = generationInfo.GenerationDateTime.ToString("u")
+                version = generationInfo.GaiusVersion
             };
         }
 
-        public string root { get; set; }
         public LiquidTemplateModel_Page page { get; set;}
+        public LiquidTemplateModel_Site site { get; set; }
         public LiquidTemplateModel_GaiusInfo gaius { get; set; }
     }
 
     public class LiquidTemplateModel_Page
     {
         public string id { get; set; }
+        public string url { get; set; }
         public string title { get;set; }
         public string author { get; set; }
         public string keywords { get;set; }
@@ -43,9 +48,14 @@ namespace Gaius.Core.Worker.MarkdownLiquid
         public string content { get; set; }
     }
 
+    public class LiquidTemplateModel_Site
+    {
+        public string url { get; set; }
+        public string time { get; set; }
+    }
+
     public class LiquidTemplateModel_GaiusInfo 
     {
         public string version { get; set; }
-        public string gendate { get; set; }
     }
 }

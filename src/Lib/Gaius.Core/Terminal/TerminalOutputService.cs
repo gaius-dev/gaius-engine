@@ -146,7 +146,7 @@ namespace Gaius.Core.Terminal
             Console.Write(outdent);
             PrintOperation(treeNode.Data);
             Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.WorkerTask.Target, GetColorForTreeNodeDestination(treeNode));
+            Colorful.Console.Write(treeNode.Data.WorkerTask.TargetFSName, GetColorForTreeNodeDestination(treeNode));
             Console.WriteLine();
         }
 
@@ -159,7 +159,7 @@ namespace Gaius.Core.Terminal
             Console.Write(outdent);
             PrintOperation(treeNode.Data);
             Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.WorkerTask.Target, GetColorForTreeNodeDestination(treeNode));
+            Colorful.Console.Write(treeNode.Data.WorkerTask.TargetFSName, GetColorForTreeNodeDestination(treeNode));
             Console.WriteLine();
         }
 
@@ -342,14 +342,10 @@ namespace Gaius.Core.Terminal
                 case FSOperationType.CreateNew:
                 case FSOperationType.Overwrite:
 
-                    switch(op.WorkerTask.TransformType)
+                    switch(op.WorkerTask.WorkType)
                     {
                         case WorkType.Transform:
-                            Console.Write(" tran  ");
-                            break;
-
-                        case WorkType.Transpile:
-                            Console.Write(" tpile ");
+                            Console.Write(" trans ");
                             break;
 
                         default:
@@ -468,7 +464,7 @@ namespace Gaius.Core.Terminal
             var fsInfo = op.Data.FSInfo;
 
             if(fsInfo is FileInfo)
-                return GetColorFromFileName(op.Data.WorkerTask.Target);
+                return GetColorFromFileName(op.Data.WorkerTask.TargetFSName);
             
             return GetColorForTreeNodeSource(op);
         }

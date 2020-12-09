@@ -1,6 +1,14 @@
 {
     "GaiusEngine" : {
-        "Worker" : "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker",
-        "GenerationUrlRootPrefix" : ""
+        "SourceDirectoryName" : "_source",
+        "GenerationDirectoryName" : "_generated",
+        "ThemesDirectoryName" : "_themes",
+        "PostsDirectoryName" : "_posts",
+        "ThemeName" : "default",
+        "GenerationUrlRootPrefix" : "",
+        "AlwaysKeep" : [
+            ".git"
+        ],
+        "Worker" : "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker"
     }
 }

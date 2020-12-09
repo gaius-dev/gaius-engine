@@ -103,7 +103,7 @@ namespace Gaius.Core.Processing.FileSystem
                 else if(hasMatch && _worker.ShouldSkip(sourceFile))
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.SkipDelete));
 
-                else if(hasMatch && _worker.ShouldSkip(sourceFile, true))
+                else if(hasMatch && _worker.IsDraft(sourceFile))
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.SkipDraft));
 
                 else if(hasMatch)
@@ -112,7 +112,7 @@ namespace Gaius.Core.Processing.FileSystem
                 else if(!hasMatch && _worker.ShouldSkip(sourceFile))
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.Skip));
 
-                else if(!hasMatch && _worker.ShouldSkip(sourceFile, true))
+                else if(!hasMatch && _worker.IsDraft(sourceFile))
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.SkipDraft));
 
                 else startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFile, FSOperationType.CreateNew));
@@ -203,7 +203,7 @@ namespace Gaius.Core.Processing.FileSystem
             {
                 //rs: we have another Op in the named theme tree node that renders the delete Op in the source tree node invalid
                 if(namedThemeTreeNode.Any(ntTn => 
-                    (ntTn.Data.WorkerTask != null && ntTn.Data.WorkerTask.Target == sourceTreeNodeDeleteOp.Data.Name)
+                    (ntTn.Data.WorkerTask != null && ntTn.Data.WorkerTask.TargetFSName == sourceTreeNodeDeleteOp.Data.Name)
                     && ntTn.Level == sourceTreeNodeDeleteOp.Level
                     && (ntTn.Data.FSOperationType == FSOperationType.CreateNew || ntTn.Data.FSOperationType == FSOperationType.Overwrite)))
                     {
@@ -223,7 +223,7 @@ namespace Gaius.Core.Processing.FileSystem
             {
                 //rs: we have another Op in the source tree node that renders the delete Op in the named theme tree node invalid
                 if(sourceTreeNode.Any(srcTn =>
-                    (srcTn.Data.WorkerTask != null && srcTn.Data.WorkerTask.Target == namedThemeDeleteOp.Data.Name)
+                    (srcTn.Data.WorkerTask != null && srcTn.Data.WorkerTask.TargetFSName == namedThemeDeleteOp.Data.Name)
                     && srcTn.Level == namedThemeDeleteOp.Level
                     && (srcTn.Data.FSOperationType == FSOperationType.CreateNew || srcTn.Data.FSOperationType == FSOperationType.Overwrite)))
                     {
@@ -298,7 +298,7 @@ namespace Gaius.Core.Processing.FileSystem
 
         private string ProcessDirectoryFSOpTreeNode(TreeNode<FSOperation> treeNode, string parentDirFullPath)
         {
-            var newDirFullPath = Path.Combine(parentDirFullPath, treeNode.Data.WorkerTask.Target);
+            var newDirFullPath = Path.Combine(parentDirFullPath, treeNode.Data.WorkerTask.TargetFSName);
             var newDir = Directory.CreateDirectory(newDirFullPath).FullName;
             treeNode.Data.Status = OperationStatus.Complete;
             return newDir;
@@ -308,17 +308,17 @@ namespace Gaius.Core.Processing.FileSystem
         {
             var file = treeNode.Data.FSInfo as FileInfo;
 
-            if(treeNode.Data.WorkerTask.TransformType == WorkType.None)
+            if(treeNode.Data.WorkerTask.WorkType == WorkType.None)
             {
-                var fileName = Path.Combine(parentDirFullPath, treeNode.Data.WorkerTask.Target);
+                var fileName = Path.Combine(parentDirFullPath, treeNode.Data.WorkerTask.TargetFSName);
                 file.CopyTo(fileName, true);
                 treeNode.Data.Status = OperationStatus.Complete;
             }
 
             else
             {
-                var fileContent = _worker.PerformTransform(treeNode.Data.WorkerTask);
-                var fileName = Path.Combine(parentDirFullPath, treeNode.Data.WorkerTask.Target);
+                var fileContent = _worker.PerformWork(treeNode.Data.WorkerTask);
+                var fileName = Path.Combine(parentDirFullPath, treeNode.Data.WorkerTask.TargetFSName);
 
                 using (var streamWriter = new StreamWriter(fileName))
                 {

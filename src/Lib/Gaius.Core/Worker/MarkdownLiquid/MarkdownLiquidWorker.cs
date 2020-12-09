@@ -51,13 +51,13 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
         public override WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo)
         {
-            return new WorkerTask(fsInfo, GetTransformType(fsInfo), GetTarget(fsInfo));
+            return new WorkerTask(fsInfo, GetTransformType(fsInfo), GetTarget(fsInfo), GaiusConfiguration);
         }
 
-        public override string PerformTransform(WorkerTask task)
+        public override string PerformWork(WorkerTask task)
         {
-            if(task.TransformType != WorkType.Transform)
-                throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.WorkerTransformType == TransformConvert");
+            if(task.WorkType != WorkType.Transform)
+                throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.WorkType == Transform");
 
             if(!task.FSInfo.IsMarkdownFile())
                 throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.FSInput is a markdown file");
@@ -72,13 +72,10 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             var layoutName = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : "default";
 
             var markdownHtml = Markdown.ToHtml(markdownContent, _markdownPipeline);
-            var pageData = new PageData() 
-            {
-                Html = markdownHtml,
-                Id = GetTransformId(task.FSInfo)
-            };
 
-            var liquidModel = new LiquidTemplateModel(yamlFrontMatter, pageData, GaiusConfiguration, GenerationInfo);
+            var pageData = new PageData(yamlFrontMatter, markdownHtml, task);
+
+            var liquidModel = new LiquidTemplateModel(pageData, GenerationInfo, GaiusConfiguration);
 
             var liquidSourcePath = Path.Combine(GetLayoutsDirFullPath(GaiusConfiguration), $"{layoutName}.liquid");
             var liquidSource = File.ReadAllText(liquidSourcePath);
@@ -89,6 +86,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 context.FileProvider = _liquidTemplatePhysicalFileProvider;
                 context.MemberAccessStrategy.Register<LiquidTemplateModel>();
                 context.MemberAccessStrategy.Register<LiquidTemplateModel_Page>();
+                context.MemberAccessStrategy.Register<LiquidTemplateModel_Site>();
                 context.MemberAccessStrategy.Register<LiquidTemplateModel_GaiusInfo>();
                 context.Model = liquidModel;
                 return template.Render(context);
@@ -112,9 +110,9 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return base.ShouldKeep(fsInfo);
         }
 
-        public override bool ShouldSkip(FileSystemInfo fsInfo, bool checkDraft = false)
+        public override bool ShouldSkip(FileSystemInfo fsInfo)
         {
-            if(base.ShouldSkip(fsInfo, checkDraft))
+            if(base.ShouldSkip(fsInfo))
                 return true;
 
             if(fsInfo.Name.Equals(LAYOUTS_DIRECTORY, StringComparison.InvariantCultureIgnoreCase))
@@ -157,22 +155,10 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return GenerationUrlRootPrefixPreProcessor(markdownContent);
         }
 
-        private static readonly string ROOT_PREFIX_LIQUID_TAG = "{{" + nameof(LiquidTemplateModel.root) + "}}";
+        private static readonly string ROOT_PREFIX_LIQUID_TAG = "{{site.url}}";
         private string GenerationUrlRootPrefixPreProcessor(string markdownContent)
         {
-            return GaiusConfiguration.IsTestMode
-                        ? markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, string.Empty)
-                        : markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, GaiusConfiguration.GenerationUrlRootPrefix);
-        }
-
-        private string GetTransformId(FileSystemInfo fsInfo)
-        {
-            var nameWithoutExt = fsInfo.GetNameWithoutExtension();
-            var pathSegments = fsInfo.GetPathSegments();
-            pathSegments[pathSegments.Length - 1] = nameWithoutExt;
-
-            var sourceDirIndex = Array.IndexOf(pathSegments, GaiusConfiguration.SourceDirectoryName);
-            return string.Join(".", pathSegments.Skip(sourceDirIndex + 1));
+            return markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, GaiusConfiguration.GetGenerationUrlRootPrefix());
         }
     }
 }

@@ -1,6 +1,6 @@
 # Gaius CLI wrapper for Windows
 
-$version = "0.0.24"
+$version = "0.0.30"
 
 function Main() {
 

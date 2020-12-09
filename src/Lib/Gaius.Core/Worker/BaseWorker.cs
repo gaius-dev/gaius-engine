@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Gaius.Core.Configuration;
 using Gaius.Core.Models;
 using Gaius.Utilities.FileSystem;
@@ -16,35 +17,38 @@ namespace Gaius.Core.Worker
             GaiusVersion = AssemblyUtilities.GetAssemblyVersion(AssemblyUtilities.EntryAssembly)
         };
 
-        private const string DOT_GIT_DIR_NAME = ".git";
         protected List<string> RequiredDirectories;
         protected GaiusConfiguration GaiusConfiguration;
         public abstract WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo);
         public virtual string GetTarget(FileSystemInfo fsInfo)
         {
-            if (fsInfo.IsDirectory()
-                && (fsInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
-                    || fsInfo.FullName.Equals(GaiusConfiguration.NamedThemeDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)))
-                return GaiusConfiguration.GenerationDirectoryName;
+            if (fsInfo.IsDirectory())
+            {
+                if(fsInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
+                    || fsInfo.FullName.Equals(GaiusConfiguration.NamedThemeDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
+                    return GaiusConfiguration.GenerationDirectoryName;
+
+                if(fsInfo.FullName.Equals(GaiusConfiguration.PostsDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
+                    return GaiusConfiguration.PostsDirectoryName.TrimStart('_');
+
+                return fsInfo.Name;
+            }
 
             else return fsInfo.Name;
         }
 
-        public abstract string PerformTransform(WorkerTask workerOperation);
+        public abstract string PerformWork(WorkerTask task);
         public virtual bool ShouldKeep(FileSystemInfo fsInfo)
         {
-            if(fsInfo.Name.Equals(DOT_GIT_DIR_NAME, StringComparison.InvariantCultureIgnoreCase))
+            if(GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fsInfo.Name, StringComparison.InvariantCultureIgnoreCase)))
                 return true;
 
             return false;
         }
 
-        public virtual bool ShouldSkip(FileSystemInfo fsInfo, bool checkDraft = false)
+        public virtual bool ShouldSkip(FileSystemInfo fsInfo)
         {
             if(fsInfo.Name.StartsWith("."))
-                return true;
-
-            if(checkDraft && IsDraft(fsInfo))
                 return true;
 
             return false;
