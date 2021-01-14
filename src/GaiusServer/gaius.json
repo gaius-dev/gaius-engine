@@ -13,6 +13,7 @@
     "ThemesDirectoryName" : "_themes",
     "PostsDirectoryName" : "_posts",
     "ThemeName" : "default",
+    "Pagination" : 5,
     "GenerationUrlRootPrefix" : "",
     "AlwaysKeep" : [
         ".git"

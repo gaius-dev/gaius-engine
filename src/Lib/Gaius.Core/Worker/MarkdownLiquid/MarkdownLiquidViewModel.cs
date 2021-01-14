@@ -3,11 +3,11 @@ using Gaius.Core.Models;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
-    public class LiquidTemplateModel
+    public class MarkdownLiquidViewModel
     {
-        public LiquidTemplateModel(PageData pageData, GenerationInfo generationInfo, GaiusConfiguration gaiusConfiguration)
+        public MarkdownLiquidViewModel(PageData pageData, GenerationInfo generationInfo, GaiusConfiguration gaiusConfiguration)
         {
-            page = new LiquidTemplateModel_Page() 
+            page = new MarkdownLiquidViewModel_Page() 
             {
                 id = pageData.Id,
                 url = pageData.Url,
@@ -19,24 +19,24 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 content = pageData.Html
             };
             
-            site = new LiquidTemplateModel_Site() 
+            site = new MarkdownLiquidViewModel_Site() 
             {
                 url = gaiusConfiguration.GetGenerationUrlRootPrefix(),
                 time = generationInfo.GenerationDateTime.ToString("u")
             };
 
-            gaius = new LiquidTemplateModel_GaiusInfo()
+            gaius = new MarkdownLiquidViewModel_GaiusInfo()
             {
                 version = generationInfo.GaiusVersion
             };
         }
 
-        public LiquidTemplateModel_Page page { get; set;}
-        public LiquidTemplateModel_Site site { get; set; }
-        public LiquidTemplateModel_GaiusInfo gaius { get; set; }
+        public MarkdownLiquidViewModel_Page page { get; set;}
+        public MarkdownLiquidViewModel_Site site { get; set; }
+        public MarkdownLiquidViewModel_GaiusInfo gaius { get; set; }
     }
 
-    public class LiquidTemplateModel_Page
+    public class MarkdownLiquidViewModel_Page
     {
         public string id { get; set; }
         public string url { get; set; }
@@ -48,13 +48,13 @@ namespace Gaius.Core.Worker.MarkdownLiquid
         public string content { get; set; }
     }
 
-    public class LiquidTemplateModel_Site
+    public class MarkdownLiquidViewModel_Site
     {
         public string url { get; set; }
         public string time { get; set; }
     }
 
-    public class LiquidTemplateModel_GaiusInfo 
+    public class MarkdownLiquidViewModel_GaiusInfo 
     {
         public string version { get; set; }
     }

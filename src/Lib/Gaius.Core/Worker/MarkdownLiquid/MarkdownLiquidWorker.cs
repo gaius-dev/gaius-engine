@@ -17,7 +17,10 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 {
     public class MarkdownLiquidWorker : BaseWorker, IWorker
     {
-        private const string LAYOUTS_DIRECTORY = "_layouts";
+        private const string _layoutsDirectory = "_layouts";
+        private const string _defaultLayoutId = "default";
+        private readonly IFrontMatterParser _frontMatterParser;
+        private readonly Dictionary<string, MarkdownLiquidLayoutInfo> LayoutInfoDictionary = new Dictionary<string, MarkdownLiquidLayoutInfo>();
         private static readonly MarkdownPipeline _markdownPipeline 
                                                         = new MarkdownPipelineBuilder()
                                                                 .UseYamlFrontMatter() //Markdig extension to parse YAML
@@ -33,10 +36,12 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                                                                 
         private static IFileProvider _liquidTemplatePhysicalFileProvider;
 
-        public MarkdownLiquidWorker(IOptions<GaiusConfiguration> gaiusConfigurationOptions)
+        public MarkdownLiquidWorker(IFrontMatterParser frontMatterParser, IOptions<GaiusConfiguration> gaiusConfigurationOptions)
         {
+            _frontMatterParser = frontMatterParser;
             GaiusConfiguration = gaiusConfigurationOptions.Value;
             RequiredDirectories = new List<string> { GetLayoutsDirFullPath(GaiusConfiguration) };
+            BuildLayoutInfoDictionary();
         }
 
         public static IServiceCollection ConfigureServicesForWorker(IServiceCollection serviceCollection)
@@ -67,30 +72,28 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             var markdownContent = MarkdownPreProcess(File.ReadAllText(markdownFile.FullName));
 
             var yamlFrontMatter = task.FSInfo.FrontMatter;
-            var layoutName = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : "default";
+            var layoutId = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : _defaultLayoutId;
 
-            var markdownHtml = Markdown.ToHtml(markdownContent, _markdownPipeline);
+            var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
+            var pageData = new PageData(yamlFrontMatter, html, task);
+            var viewModel = new MarkdownLiquidViewModel(pageData, GenerationInfo, GaiusConfiguration);
 
-            var pageData = new PageData(yamlFrontMatter, markdownHtml, task);
+            if (!LayoutInfoDictionary.TryGetValue(layoutId, out var layoutInfo))
+                throw new Exception($"Unable to find layout: {layoutId}");
 
-            var liquidModel = new LiquidTemplateModel(pageData, GenerationInfo, GaiusConfiguration);
-
-            var liquidSourcePath = Path.Combine(GetLayoutsDirFullPath(GaiusConfiguration), $"{layoutName}.liquid");
-            var liquidSource = File.ReadAllText(liquidSourcePath);
-
-            if (FluidTemplate.TryParse(liquidSource, out var template))
+            if (FluidTemplate.TryParse(layoutInfo.LayoutContent, out var liquidTemplate))
             {
                 var context = new TemplateContext();
                 context.FileProvider = _liquidTemplatePhysicalFileProvider;
-                context.MemberAccessStrategy.Register<LiquidTemplateModel>();
-                context.MemberAccessStrategy.Register<LiquidTemplateModel_Page>();
-                context.MemberAccessStrategy.Register<LiquidTemplateModel_Site>();
-                context.MemberAccessStrategy.Register<LiquidTemplateModel_GaiusInfo>();
-                context.Model = liquidModel;
-                return template.Render(context);
+                context.MemberAccessStrategy.Register<MarkdownLiquidViewModel>();
+                context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Page>();
+                context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Site>();
+                context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_GaiusInfo>();
+                context.Model = viewModel;
+                return liquidTemplate.Render(context);
             }
 
-            return markdownHtml;
+            return html;
         }
 
         public override string GetTarget(FileSystemInfo fileSystemInfo)
@@ -103,22 +106,35 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return targetName;
         }
 
-        public override bool HasFrontMatter(FileSystemInfo fileSystemInfo)
+        public override WorkerFSMetaInfo GetWorkerFSMetaInfo(FileSystemInfo fileSystemInfo)
         {
-            return fileSystemInfo.IsMarkdownFile();
+            var fsMetaInfo = new WorkerFSMetaInfo()
+            {
+                ShouldSkip = ShouldSkip(fileSystemInfo),
+                ShouldKeep = ShouldKeep(fileSystemInfo),
+            };
+
+            if (fileSystemInfo.IsMarkdownFile())
+            {
+                fsMetaInfo.IsPost = IsPost(fileSystemInfo);
+                fsMetaInfo.FrontMatter = _frontMatterParser.DeserializeFromContent(File.ReadAllText(fileSystemInfo.FullName));
+
+                if (!LayoutInfoDictionary.TryGetValue(fsMetaInfo.FrontMatter.Layout, out var layoutInfo)
+                    && !LayoutInfoDictionary.TryGetValue(_defaultLayoutId, out layoutInfo))
+                    throw new Exception($"Unable to find layout information for: {fsMetaInfo.FrontMatter.Layout} or {_defaultLayoutId}");
+
+                fsMetaInfo.ContainsPagination = layoutInfo.ContainsPagination;
+            }
+
+            return fsMetaInfo;
         }
 
-        public override bool IsPost(FileSystemInfo fileSystemInfo)
-        {
-            return base.IsPost(fileSystemInfo) && fileSystemInfo.IsMarkdownFile();
-        }
-
-        public override bool ShouldSkip(FileSystemInfo fileSystemInfo)
+        protected override bool ShouldSkip(FileSystemInfo fileSystemInfo)
         {
             if(base.ShouldSkip(fileSystemInfo))
                 return true;
 
-            if(fileSystemInfo.Name.Equals(LAYOUTS_DIRECTORY, StringComparison.InvariantCultureIgnoreCase))
+            if(fileSystemInfo.Name.Equals(_layoutsDirectory, StringComparison.InvariantCultureIgnoreCase))
                 return true;
 
             if(fileSystemInfo.IsLiquidFile())
@@ -137,7 +153,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
         private static string GetLayoutsDirFullPath(GaiusConfiguration gaiusConfiguration)
         {
-            return Path.Combine(gaiusConfiguration.NamedThemeDirectoryFullPath, LAYOUTS_DIRECTORY);
+            return Path.Combine(gaiusConfiguration.NamedThemeDirectoryFullPath, _layoutsDirectory);
         }
 
         private string MarkdownPreProcess(string markdownContent)
@@ -145,10 +161,25 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return GenerationUrlRootPrefixPreProcessor(markdownContent);
         }
 
-        private static readonly string ROOT_PREFIX_LIQUID_TAG = "{{site.url}}";
+        private const string _rootPrefixLiquidTag = "{{site.url}}";
         private string GenerationUrlRootPrefixPreProcessor(string markdownContent)
         {
-            return markdownContent.Replace(ROOT_PREFIX_LIQUID_TAG, GaiusConfiguration.GetGenerationUrlRootPrefix());
+            //TODO: Replace with RegEx
+            return markdownContent.Replace(_rootPrefixLiquidTag, GaiusConfiguration.GetGenerationUrlRootPrefix());
+        }
+
+        private void BuildLayoutInfoDictionary()
+        {
+            var layoutsDirectory = new DirectoryInfo(GetLayoutsDirFullPath(GaiusConfiguration));
+
+            foreach(var file in layoutsDirectory.EnumerateFiles())
+            {
+                if(!file.IsLiquidFile())
+                    continue;
+
+                var layoutInfo = new MarkdownLiquidLayoutInfo(file);
+                LayoutInfoDictionary.Add(layoutInfo.Id, layoutInfo);
+            }
         }
     }
 }

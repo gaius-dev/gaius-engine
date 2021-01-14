@@ -53,6 +53,14 @@ namespace Gaius.Core.Worker
             return (sourceDirExists && otherReqDirsExist, validationErrors);
         }
 
+        public bool ShouldKeep(FileSystemInfo fsInfo)
+        {
+            if(GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fsInfo.Name, StringComparison.InvariantCultureIgnoreCase)))
+                return true;
+
+            return false;
+        }
+
         public virtual string GetTarget(FileSystemInfo fsInfo)
         {
             if (fsInfo.IsDirectory())
@@ -70,9 +78,9 @@ namespace Gaius.Core.Worker
             else return fsInfo.Name;
         }
 
-        public abstract bool HasFrontMatter(FileSystemInfo fileSystemInfo);
-
-        public virtual bool IsPost(FileSystemInfo fileSystemInfo)
+        public abstract WorkerFSMetaInfo GetWorkerFSMetaInfo(FileSystemInfo fileSystemInfo);
+        
+        protected bool IsPost(FileSystemInfo fileSystemInfo)
         {
             if(fileSystemInfo.IsFile() && fileSystemInfo.GetParentDirectory().Name.Equals(GaiusConfiguration.PostsDirectoryName))
                 return true;
@@ -80,17 +88,9 @@ namespace Gaius.Core.Worker
             return false;
         }
 
-        public virtual bool ShouldSkip(FileSystemInfo fsInfo)
+        protected virtual bool ShouldSkip(FileSystemInfo fsInfo)
         {
             if(fsInfo.Name.StartsWith("."))
-                return true;
-
-            return false;
-        }
-
-        public virtual bool ShouldKeep(FileSystemInfo fsInfo)
-        {
-            if(GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fsInfo.Name, StringComparison.InvariantCultureIgnoreCase)))
                 return true;
 
             return false;

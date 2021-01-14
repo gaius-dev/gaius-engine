@@ -5,27 +5,28 @@ using Microsoft.Extensions.Options;
 using Gaius.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using Gaius.Core.Parsing;
 
 namespace Gaius.Core.Processing.FileSystem
 {
     public class FSInfo
     {
         private readonly IWorker _worker;
-        private readonly IFrontMatterParser _frontMatterParser;
         private readonly GaiusConfiguration _gaiusConfig;
 
-        public FSInfo(IWorker worker, IFrontMatterParser frontMatterParser, IOptions<GaiusConfiguration> gaiusConfig, FileSystemInfo fileSystemInfo)
+        public FSInfo(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FileSystemInfo fileSystemInfo)
         {
             _worker = worker;
-            _frontMatterParser = frontMatterParser;
             _gaiusConfig = gaiusConfig.Value;
 
             FileSystemInfo = fileSystemInfo;
-            FrontMatter = _frontMatterParser.GetFrontMatter(FileSystemInfo);
-            IsPost = _worker.IsPost(FileSystemInfo);
-            ShouldSkip = _worker.ShouldSkip(FileSystemInfo);
-            ShouldKeep = _worker.ShouldKeep(FileSystemInfo);
+
+            var fsMetaInfo = _worker.GetWorkerFSMetaInfo(FileSystemInfo);
+
+            FrontMatter = fsMetaInfo.FrontMatter;
+            IsPost = fsMetaInfo.IsPost;
+            ShouldSkip = fsMetaInfo.ShouldSkip;
+            ShouldKeep = fsMetaInfo.ShouldKeep;
+            ContainsPagination = fsMetaInfo.ContainsPagination;
         }
 
         public static FSInfo CreateInstance(IServiceProvider provider, FileSystemInfo fileSystemInfo)
@@ -41,5 +42,6 @@ namespace Gaius.Core.Processing.FileSystem
         public bool ShouldSkip { get; private set; }
         public bool ShouldKeep { get; private set; }
         public bool ShouldSkipKeep => ShouldSkip && ShouldKeep;
+        public bool ContainsPagination { get; private set; }
     }
 }

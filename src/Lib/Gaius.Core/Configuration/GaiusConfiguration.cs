@@ -11,11 +11,12 @@ namespace Gaius.Core.Configuration
         public string GenerationDirectoryName { get; set; } = "_generated";
         public string ThemesDirectoryName { get; set; } = "_themes";
         public string PostsDirectoryName { get; set; } = "_posts";
-        public List<string> AlwaysKeep { get; set; } = new List<string>{ ".git" };
         public string ThemeName { get; set; } = "default";
+        public int Pagination { get; set; } = 5;
+        public string GenerationUrlRootPrefix { get; set; } = string.Empty;
+        public List<string> AlwaysKeep { get; set; } = new List<string>{ ".git" };
         public string Worker { get; set; } = MARKDOWN_LIQUID_PIPELINE;
         public string SiteContainerFullPath { get; set; }
-        public string GenerationUrlRootPrefix { get; set; } = string.Empty;
         public bool IsTestMode { get; set; } = false;
 
         [JsonIgnore]

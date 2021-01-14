@@ -12,10 +12,8 @@ namespace Gaius.Core.Worker
         (bool, List<string>) ValidateSiteContainerDirectory();
 
         //rs: methods that work with FileSystemInfo
-        string GetTarget(FileSystemInfo fileSystemInfo);
-        bool HasFrontMatter(FileSystemInfo fileSystemInfo);
-        bool IsPost(FileSystemInfo fileSystemInfo);
         bool ShouldKeep(FileSystemInfo fileSystemInfo);
-        bool ShouldSkip(FileSystemInfo fileSystemInfo);        
+        string GetTarget(FileSystemInfo fileSystemInfo);
+        WorkerFSMetaInfo GetWorkerFSMetaInfo(FileSystemInfo fileSystemInfo);
     }
 }
