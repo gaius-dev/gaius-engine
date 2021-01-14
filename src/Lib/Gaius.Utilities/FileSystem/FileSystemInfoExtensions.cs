@@ -5,65 +5,70 @@ namespace Gaius.Utilities.FileSystem
 {
     public static class FileSystemInfoExtensions
     {
-        public static bool IsFile(this FileSystemInfo fsInfo)
+        public static bool IsFile(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo is FileInfo;
+            return fileSystemInfo is FileInfo;
         }
 
-        public static bool IsDirectory(this FileSystemInfo fsInfo)
+        public static bool IsDirectory(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo is DirectoryInfo;
+            return fileSystemInfo is DirectoryInfo;
         }
 
-        public static bool FileHasExtension(this FileSystemInfo fsInfo, string extension)
+        public static bool FileHasExtension(this FileSystemInfo fileSystemInfo, string extension)
         {
-            if(!fsInfo.IsFile())
+            if(!fileSystemInfo.IsFile())
                 return false;
 
-            return (fsInfo as FileInfo).Extension.Equals(extension, StringComparison.InvariantCultureIgnoreCase);
+            return (fileSystemInfo as FileInfo).Extension.Equals(extension, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public static string GetNameWithoutExtension(this FileSystemInfo fsInfo)
+        public static string GetNameWithoutExtension(this FileSystemInfo fileSystemInfo)
         {
-            if(!fsInfo.IsFile())
-                return fsInfo.Name;
+            if(!fileSystemInfo.IsFile())
+                return fileSystemInfo.Name;
 
-            return Path.GetFileNameWithoutExtension(fsInfo.Name);
+            return Path.GetFileNameWithoutExtension(fileSystemInfo.Name);
         }
 
-        public static bool IsMarkdownFile(this FileSystemInfo fsInfo)
+        public static bool IsMarkdownFile(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo.FileHasExtension(".md");
+            return fileSystemInfo.FileHasExtension(".md");
         }
 
-        public static bool IsJSFile(this FileSystemInfo fsInfo)
+        public static bool IsJSFile(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo.FileHasExtension(".js");
+            return fileSystemInfo.FileHasExtension(".js");
         }
 
-        public static bool IsCSSFile(this FileSystemInfo fsInfo)
+        public static bool IsCSSFile(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo.FileHasExtension(".css");
+            return fileSystemInfo.FileHasExtension(".css");
         }
 
-        public static bool IsLiquidFile(this FileSystemInfo fsInfo)
+        public static bool IsLiquidFile(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo.FileHasExtension(".liquid");
+            return fileSystemInfo.FileHasExtension(".liquid");
         }
 
-        public static bool IsLessFile(this FileSystemInfo fsInfo)
+        public static bool IsLessFile(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo.FileHasExtension(".less");
+            return fileSystemInfo.FileHasExtension(".less");
         }
         
-        public static bool IsSassFile(this FileSystemInfo fsInfo)
+        public static bool IsSassFile(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo.FileHasExtension(".sass");
+            return fileSystemInfo.FileHasExtension(".sass");
         }
 
-        public static string[] GetPathSegments(this FileSystemInfo fsInfo)
+        public static string[] GetPathSegments(this FileSystemInfo fileSystemInfo)
         {
-            return fsInfo.FullName.Split(Path.DirectorySeparatorChar);
+            return fileSystemInfo.FullName.Split(Path.DirectorySeparatorChar);
+        }
+
+        public static DirectoryInfo GetParentDirectory(this FileSystemInfo fileSystemInfo)
+        {
+            return Directory.GetParent(fileSystemInfo.FullName);
         }
     }
 }

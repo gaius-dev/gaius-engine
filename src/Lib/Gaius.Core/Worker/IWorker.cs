@@ -1,16 +1,21 @@
 using System.Collections.Generic;
 using System.IO;
+using Gaius.Core.Models;
+using Gaius.Core.Processing.FileSystem;
 
 namespace Gaius.Core.Worker
 {
     public interface IWorker
     {
-        WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo);
+        WorkerTask GenerateWorkerTask(FSInfo fsInfo);
         string PerformWork(WorkerTask task);
-        string GetTarget(FileSystemInfo fsInfo);
-        bool ShouldKeep(FileSystemInfo fsInfo);
-        bool ShouldSkip(FileSystemInfo fsInfo);        
-        bool IsDraft(FileSystemInfo fsInfo);
         (bool, List<string>) ValidateSiteContainerDirectory();
+
+        //rs: methods that work with FileSystemInfo
+        string GetTarget(FileSystemInfo fileSystemInfo);
+        bool HasFrontMatter(FileSystemInfo fileSystemInfo);
+        bool IsPost(FileSystemInfo fileSystemInfo);
+        bool ShouldKeep(FileSystemInfo fileSystemInfo);
+        bool ShouldSkip(FileSystemInfo fileSystemInfo);        
     }
 }

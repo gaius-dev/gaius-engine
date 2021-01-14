@@ -15,7 +15,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 author = pageData.FrontMatter.Author,
                 keywords = pageData.FrontMatter.Keywords,
                 description = pageData.FrontMatter.Description,
-                draft = pageData.FrontMatter.Draft,
+                draft = pageData.FrontMatter.IsDraft,
                 content = pageData.Html
             };
             

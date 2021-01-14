@@ -10,15 +10,14 @@ using Gaius.Utilities.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Parsing.Yaml;
 using System.Collections.Generic;
-using System.Linq;
 using Gaius.Core.Models;
+using Gaius.Core.Processing.FileSystem;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
     public class MarkdownLiquidWorker : BaseWorker, IWorker
     {
         private const string LAYOUTS_DIRECTORY = "_layouts";
-        private readonly IFrontMatterParser _frontMatterParser;
         private static readonly MarkdownPipeline _markdownPipeline 
                                                         = new MarkdownPipelineBuilder()
                                                                 .UseYamlFrontMatter() //Markdig extension to parse YAML
@@ -34,9 +33,8 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                                                                 
         private static IFileProvider _liquidTemplatePhysicalFileProvider;
 
-        public MarkdownLiquidWorker(IFrontMatterParser frontMatterParser, IOptions<GaiusConfiguration> gaiusConfigurationOptions)
+        public MarkdownLiquidWorker(IOptions<GaiusConfiguration> gaiusConfigurationOptions)
         {
-            _frontMatterParser = frontMatterParser;
             GaiusConfiguration = gaiusConfigurationOptions.Value;
             RequiredDirectories = new List<string> { GetLayoutsDirFullPath(GaiusConfiguration) };
         }
@@ -49,9 +47,9 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return serviceCollection;
         }
 
-        public override WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo)
+        public override WorkerTask GenerateWorkerTask(FSInfo fsInfo)
         {
-            return new WorkerTask(fsInfo, GetTransformType(fsInfo), GetTarget(fsInfo), GaiusConfiguration);
+            return new WorkerTask(fsInfo, GetTransformType(fsInfo.FileSystemInfo), GetTarget(fsInfo.FileSystemInfo), GaiusConfiguration);
         }
 
         public override string PerformWork(WorkerTask task)
@@ -59,16 +57,16 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             if(task.WorkType != WorkType.Transform)
                 throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.WorkType == Transform");
 
-            if(!task.FSInfo.IsMarkdownFile())
+            if(!task.FSInfo.FileSystemInfo.IsMarkdownFile())
                 throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.FSInput is a markdown file");
             
             if(_liquidTemplatePhysicalFileProvider == null)
                 _liquidTemplatePhysicalFileProvider = new PhysicalFileProvider(GetLayoutsDirFullPath(GaiusConfiguration));
                 
-            var markdownFile = task.FSInfo as FileInfo;
+            var markdownFile = task.FSInfo.FileSystemInfo as FileInfo;
             var markdownContent = MarkdownPreProcess(File.ReadAllText(markdownFile.FullName));
 
-            var yamlFrontMatter = _frontMatterParser.DeserializeFromContent(markdownContent);
+            var yamlFrontMatter = task.FSInfo.FrontMatter;
             var layoutName = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : "default";
 
             var markdownHtml = Markdown.ToHtml(markdownContent, _markdownPipeline);
@@ -95,51 +93,43 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return markdownHtml;
         }
 
-        public override string GetTarget(FileSystemInfo fsInfo)
+        public override string GetTarget(FileSystemInfo fileSystemInfo)
         {
-            var targetName = base.GetTarget(fsInfo);
+            var targetName = base.GetTarget(fileSystemInfo);
 
-            if(fsInfo.IsMarkdownFile())
-                return $"{Path.GetFileNameWithoutExtension(fsInfo.Name)}.html";
+            if(fileSystemInfo.IsMarkdownFile())
+                return $"{Path.GetFileNameWithoutExtension(fileSystemInfo.Name)}.html";
 
             return targetName;
         }
 
-        public override bool ShouldKeep(FileSystemInfo fsInfo)
+        public override bool HasFrontMatter(FileSystemInfo fileSystemInfo)
         {
-            return base.ShouldKeep(fsInfo);
+            return fileSystemInfo.IsMarkdownFile();
         }
 
-        public override bool ShouldSkip(FileSystemInfo fsInfo)
+        public override bool IsPost(FileSystemInfo fileSystemInfo)
         {
-            if(base.ShouldSkip(fsInfo))
+            return base.IsPost(fileSystemInfo) && fileSystemInfo.IsMarkdownFile();
+        }
+
+        public override bool ShouldSkip(FileSystemInfo fileSystemInfo)
+        {
+            if(base.ShouldSkip(fileSystemInfo))
                 return true;
 
-            if(fsInfo.Name.Equals(LAYOUTS_DIRECTORY, StringComparison.InvariantCultureIgnoreCase))
+            if(fileSystemInfo.Name.Equals(LAYOUTS_DIRECTORY, StringComparison.InvariantCultureIgnoreCase))
                 return true;
 
-            if(fsInfo.IsLiquidFile())
+            if(fileSystemInfo.IsLiquidFile())
                 return true;
 
             return false;
         }
 
-        public override bool IsDraft(FileSystemInfo fsInfo)
+        private static WorkType GetTransformType(FileSystemInfo fileSystemInfo)
         {
-            if (!fsInfo.IsMarkdownFile())
-                return false;
-
-            var markdownFile = fsInfo as FileInfo;
-            var markdownContent = File.ReadAllText(markdownFile.FullName);
-
-            var yamlFrontMatter = _frontMatterParser.DeserializeFromContent(markdownContent);
-
-            return yamlFrontMatter.Draft;
-        }
-
-        private static WorkType GetTransformType(FileSystemInfo fsInfo)
-        {
-            if (fsInfo.IsMarkdownFile())
+            if (fileSystemInfo.IsMarkdownFile())
                 return WorkType.Transform;
 
             return WorkType.None;

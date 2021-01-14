@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Gaius.Core.Configuration;
 using Gaius.Core.Models;
+using Gaius.Core.Processing.FileSystem;
 using Gaius.Utilities.FileSystem;
 using Gaius.Utilities.Reflection;
 
@@ -19,43 +20,11 @@ namespace Gaius.Core.Worker
 
         protected List<string> RequiredDirectories;
         protected GaiusConfiguration GaiusConfiguration;
-        public abstract WorkerTask GenerateWorkerTask(FileSystemInfo fsInfo);
-        public virtual string GetTarget(FileSystemInfo fsInfo)
-        {
-            if (fsInfo.IsDirectory())
-            {
-                if(fsInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
-                    || fsInfo.FullName.Equals(GaiusConfiguration.NamedThemeDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
-                    return GaiusConfiguration.GenerationDirectoryName;
-
-                if(fsInfo.FullName.Equals(GaiusConfiguration.PostsDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
-                    return GaiusConfiguration.PostsDirectoryName.TrimStart('_');
-
-                return fsInfo.Name;
-            }
-
-            else return fsInfo.Name;
-        }
-
+        
+        public abstract WorkerTask GenerateWorkerTask(FSInfo fsInfo);
+        
         public abstract string PerformWork(WorkerTask task);
-        public virtual bool ShouldKeep(FileSystemInfo fsInfo)
-        {
-            if(GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fsInfo.Name, StringComparison.InvariantCultureIgnoreCase)))
-                return true;
-
-            return false;
-        }
-
-        public virtual bool ShouldSkip(FileSystemInfo fsInfo)
-        {
-            if(fsInfo.Name.StartsWith("."))
-                return true;
-
-            return false;
-        }
-
-        public abstract bool IsDraft(FileSystemInfo fsInfo);
-
+        
         public (bool, List<string>) ValidateSiteContainerDirectory()
         {
             var validationErrors = new List<string>();
@@ -82,6 +51,49 @@ namespace Gaius.Core.Worker
             }
 
             return (sourceDirExists && otherReqDirsExist, validationErrors);
+        }
+
+        public virtual string GetTarget(FileSystemInfo fsInfo)
+        {
+            if (fsInfo.IsDirectory())
+            {
+                if(fsInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
+                    || fsInfo.FullName.Equals(GaiusConfiguration.NamedThemeDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
+                    return GaiusConfiguration.GenerationDirectoryName;
+
+                if(fsInfo.FullName.Equals(GaiusConfiguration.PostsDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
+                    return GaiusConfiguration.PostsDirectoryName.TrimStart('_');
+
+                return fsInfo.Name;
+            }
+
+            else return fsInfo.Name;
+        }
+
+        public abstract bool HasFrontMatter(FileSystemInfo fileSystemInfo);
+
+        public virtual bool IsPost(FileSystemInfo fileSystemInfo)
+        {
+            if(fileSystemInfo.IsFile() && fileSystemInfo.GetParentDirectory().Name.Equals(GaiusConfiguration.PostsDirectoryName))
+                return true;
+
+            return false;
+        }
+
+        public virtual bool ShouldSkip(FileSystemInfo fsInfo)
+        {
+            if(fsInfo.Name.StartsWith("."))
+                return true;
+
+            return false;
+        }
+
+        public virtual bool ShouldKeep(FileSystemInfo fsInfo)
+        {
+            if(GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fsInfo.Name, StringComparison.InvariantCultureIgnoreCase)))
+                return true;
+
+            return false;
         }
     }
 }

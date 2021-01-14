@@ -13,10 +13,10 @@ namespace Gaius.Core.Processing.FileSystem
         private readonly IWorker _worker;
         private readonly GaiusConfiguration _gaiusConfig;
 
-        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FileSystemInfo fsInfo, FSOperationType fsAction)
+        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FSInfo fsInfo, FSOperationType fsAction)
             : this(worker, gaiusConfig, fsInfo, fsAction, string.Empty) { }
 
-        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FileSystemInfo fsInfo, FSOperationType fsAction, string overrideName)
+        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FSInfo fsInfo, FSOperationType fsAction, string overrideName)
         {
             _worker = worker;
             _gaiusConfig = gaiusConfig.Value;
@@ -31,7 +31,7 @@ namespace Gaius.Core.Processing.FileSystem
             _overrideName = overrideName;
         }
 
-        public static FSOperation CreateInstance(IServiceProvider provider, FileSystemInfo fsInfo, FSOperationType fSAction, string overrideString = null)
+        public static FSOperation CreateInstance(IServiceProvider provider, FSInfo fsInfo, FSOperationType fSAction, string overrideString = null)
         {
             if(!string.IsNullOrEmpty(overrideString))
                 return ActivatorUtilities.CreateInstance<FSOperation>(provider, fsInfo, fSAction, overrideString);
@@ -40,8 +40,8 @@ namespace Gaius.Core.Processing.FileSystem
         }
 
         private string _overrideName;
-        public string Name => !string.IsNullOrEmpty(_overrideName) ? _overrideName : FSInfo.Name;
-        public FileSystemInfo FSInfo { get; private set; }
+        public string Name => !string.IsNullOrEmpty(_overrideName) ? _overrideName : FSInfo.FileSystemInfo.Name;
+        public FSInfo FSInfo { get; private set; }
         public FSOperationType FSOperationType { get; private set; }
         public WorkerTask WorkerTask { get; private set;}
         public OperationStatus Status { get; set; }
@@ -51,6 +51,6 @@ namespace Gaius.Core.Processing.FileSystem
                                             || FSOperationType == FSOperationType.Delete
                                             || FSOperationType == FSOperationType.SkipDelete
                                             || FSOperationType == FSOperationType.SkipDraft;
-        public bool IsDirectoryOp => FSInfo.IsDirectory();
+        public bool IsDirectoryOp => FSInfo.FileSystemInfo.IsDirectory();
     }
 }
