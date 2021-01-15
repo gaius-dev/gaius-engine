@@ -12,6 +12,7 @@ using Gaius.Core.Parsing.Yaml;
 using System.Collections.Generic;
 using Gaius.Core.Models;
 using Gaius.Core.Processing.FileSystem;
+using System.Text.RegularExpressions;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
@@ -161,11 +162,11 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return GenerationUrlRootPrefixPreProcessor(markdownContent);
         }
 
-        private const string _rootPrefixLiquidTag = "{{site.url}}";
+        private const string _siteUrlRegExStr = @"{{ *site.url *}}";
+        private static Regex _siteUrlRegEx = new Regex(_siteUrlRegExStr, RegexOptions.Compiled);
         private string GenerationUrlRootPrefixPreProcessor(string markdownContent)
         {
-            //TODO: Replace with RegEx
-            return markdownContent.Replace(_rootPrefixLiquidTag, GaiusConfiguration.GetGenerationUrlRootPrefix());
+            return _siteUrlRegEx.Replace(markdownContent, GaiusConfiguration.GetGenerationUrlRootPrefix());
         }
 
         private void BuildLayoutInfoDictionary()
