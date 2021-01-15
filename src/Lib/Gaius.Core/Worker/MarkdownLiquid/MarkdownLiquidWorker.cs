@@ -21,7 +21,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
         private const string _layoutsDirectory = "_layouts";
         private const string _defaultLayoutId = "default";
         private readonly IFrontMatterParser _frontMatterParser;
-        private readonly Dictionary<string, MarkdownLiquidLayoutInfo> LayoutInfoDictionary = new Dictionary<string, MarkdownLiquidLayoutInfo>();
+        private readonly Dictionary<string, IWorkerLayoutInfo> LayoutInfoDictionary = new Dictionary<string, IWorkerLayoutInfo>();
         private static readonly MarkdownPipeline _markdownPipeline 
                                                         = new MarkdownPipelineBuilder()
                                                                 .UseYamlFrontMatter() //Markdig extension to parse YAML
@@ -72,7 +72,11 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             var markdownFile = task.FSInfo.FileInfo;
             var markdownContent = MarkdownPreProcess(File.ReadAllText(markdownFile.FullName));
 
-            var yamlFrontMatter = task.FSInfo.FrontMatter;
+            var yamlFrontMatter = task.FSInfo.MetaInfo.GetFrontMatter();
+
+            if(yamlFrontMatter == null)
+                throw new Exception($"MarkdownLiquidWorker attempting to perform work on a markdown file '{task.FSInfo.FileSystemInfo.Name}' without YAML front matter!");
+
             var layoutId = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : _defaultLayoutId;
 
             var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
@@ -107,32 +111,29 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return targetName;
         }
 
-        public override WorkerFSMetaInfo GetWorkerFSMetaInfo(FileSystemInfo fileSystemInfo)
+        public override WorkerMetaInfo GetWorkerMetaInfo(FileSystemInfo fileSystemInfo)
         {
-            var fsMetaInfo = new WorkerFSMetaInfo()
-            {
-                ShouldSkip = ShouldSkip(fileSystemInfo),
-                ShouldKeep = ShouldKeep(fileSystemInfo),
-            };
+            IFrontMatter frontMatter = null;
+            IWorkerLayoutInfo layoutInfo = null;
+            var isPost = GetIsPost(fileSystemInfo);
+            var shouldSkip = GetShouldSkip(fileSystemInfo);
+            var shouldKeep = GetShouldKeep(fileSystemInfo);
 
             if (fileSystemInfo.IsMarkdownFile())
             {
-                fsMetaInfo.IsPost = IsPost(fileSystemInfo);
-                fsMetaInfo.FrontMatter = _frontMatterParser.DeserializeFromContent(File.ReadAllText(fileSystemInfo.FullName));
+                frontMatter = _frontMatterParser.DeserializeFromContent(File.ReadAllText(fileSystemInfo.FullName));
 
-                if (!LayoutInfoDictionary.TryGetValue(fsMetaInfo.FrontMatter.Layout, out var layoutInfo)
+                if (!LayoutInfoDictionary.TryGetValue(frontMatter.Layout, out layoutInfo)
                     && !LayoutInfoDictionary.TryGetValue(_defaultLayoutId, out layoutInfo))
-                    throw new Exception($"Unable to find layout information for: {fsMetaInfo.FrontMatter.Layout} or {_defaultLayoutId}");
-
-                fsMetaInfo.PaginatorIds = layoutInfo.PaginatorIds;
+                    throw new Exception($"Unable to find layout information for: {frontMatter.Layout} or {_defaultLayoutId}");
             }
 
-            return fsMetaInfo;
+            return new WorkerMetaInfo(layoutInfo, frontMatter, isPost, shouldSkip, shouldKeep);
         }
 
-        protected override bool ShouldSkip(FileSystemInfo fileSystemInfo)
+        protected override bool GetShouldSkip(FileSystemInfo fileSystemInfo)
         {
-            if(base.ShouldSkip(fileSystemInfo))
+            if(base.GetShouldSkip(fileSystemInfo))
                 return true;
 
             if(fileSystemInfo.Name.Equals(_layoutsDirectory, StringComparison.InvariantCultureIgnoreCase))
@@ -142,6 +143,11 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 return true;
 
             return false;
+        }
+
+        protected override bool GetIsPost(FileSystemInfo fileSystemInfo)
+        {
+            return base.GetIsPost(fileSystemInfo) && fileSystemInfo.IsMarkdownFile();
         }
 
         private static WorkType GetTransformType(FileSystemInfo fileSystemInfo)

@@ -1,25 +1,26 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Linq;
 using Gaius.Utilities.FileSystem;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
-    public class MarkdownLiquidLayoutInfo 
+    public class MarkdownLiquidLayoutInfo : IWorkerLayoutInfo
     {
         public MarkdownLiquidLayoutInfo(FileInfo fileInfo)
         {
             Id = fileInfo.GetNameWithoutExtension();
             LayoutContent = File.ReadAllText(fileInfo.FullName);
-            PaginatorIds = new List<string>();
 
             if(LayoutContentContainsPaginator(LayoutContent))
-                PaginatorIds.AddRange(GetPaginatiatorIds(LayoutContent));
+                PaginatorId = GetPaginatiatorIdForLayout(Id, LayoutContent);
         }
 
         public string Id { get; private set; }
-        public List<string> PaginatorIds { get; private set; }
-        public bool ContainsPaginator => PaginatorIds.Count > 0;
+        public string PaginatorId { get; private set; }
+        public bool ContainsPaginator => !string.IsNullOrEmpty(PaginatorId);
         public string LayoutContent { get; private set; }
 
         private const string _paginatorRegExStr = @"{.*paginator\..*}";
@@ -32,7 +33,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
         private const string _paginatorIdsRegExStr = @"{.*paginator\.(?<paginator_id>[a-zA-Z0-9-_]+) .*}";
         private static Regex _paginatorIdRegEx = new Regex(_paginatorIdsRegExStr, RegexOptions.Compiled);
-        private static List<string> GetPaginatiatorIds(string layoutContent)
+        private static string GetPaginatiatorIdForLayout(string layoutId, string layoutContent)
         {
             var allPaginatorIds = new List<string>();
 
@@ -47,7 +48,10 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                     allPaginatorIds.Add(extractedPagId);
             }
 
-            return allPaginatorIds;
+            if (allPaginatorIds.Count > 1)
+                throw new Exception($"Layout '{layoutId}' contains paginator(s) with more than one ID: '{string.Join(',', allPaginatorIds)}'");
+
+            return allPaginatorIds.FirstOrDefault();
         }
     }
 }

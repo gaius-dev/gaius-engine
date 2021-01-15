@@ -94,25 +94,25 @@ namespace Gaius.Core.Processing.FileSystem
 
                 var sourceFSInfo = FSInfo.CreateInstance(_provider, sourceFile);
 
-                if(hasMatch && sourceFSInfo.ShouldSkipKeep)
+                if(hasMatch && sourceFSInfo.MetaInfo.ShouldSkipKeep)
                 {
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.Skip));
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.Keep));
                 }
 
-                else if(hasMatch && sourceFSInfo.ShouldSkip)
+                else if(hasMatch && sourceFSInfo.MetaInfo.ShouldSkip)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.SkipDelete));
 
-                else if(hasMatch && sourceFSInfo.IsDraft)
+                else if(hasMatch && sourceFSInfo.MetaInfo.IsDraft)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.SkipDraft));
 
                 else if(hasMatch)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.Overwrite));
 
-                else if(!hasMatch && sourceFSInfo.ShouldSkip)
+                else if(!hasMatch && sourceFSInfo.MetaInfo.ShouldSkip)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.Skip));
 
-                else if(!hasMatch && sourceFSInfo.IsDraft)
+                else if(!hasMatch && sourceFSInfo.MetaInfo.IsDraft)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.SkipDraft));
 
                 else startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.CreateNew));
@@ -125,7 +125,7 @@ namespace Gaius.Core.Processing.FileSystem
                 var orphanGenFSInfo = FSInfo.CreateInstance(_provider, orphanGenFile);
 
                 //rs: is this a special file that should be kept despite being orphaned?
-                if(orphanGenFSInfo.ShouldKeep)
+                if(orphanGenFSInfo.MetaInfo.ShouldKeep)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFSInfo, FSOperationType.Keep));
 
                 else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFSInfo, FSOperationType.Delete));
@@ -150,19 +150,19 @@ namespace Gaius.Core.Processing.FileSystem
 
                 var sourceDirFSInfo = FSInfo.CreateInstance(_provider, sourceDir);
 
-                if(hasMatch && sourceDirFSInfo.ShouldSkipKeep)
+                if(hasMatch && sourceDirFSInfo.MetaInfo.ShouldSkipKeep)
                 {
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.Skip));
                     startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.Keep));
                 }
 
-                else if(hasMatch && sourceDirFSInfo.ShouldSkip)
+                else if(hasMatch && sourceDirFSInfo.MetaInfo.ShouldSkip)
                     newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.SkipDelete));
 
                 else if(hasMatch)
                     newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.Overwrite));
                 
-                else if(!hasMatch && sourceDirFSInfo.ShouldSkip)
+                else if(!hasMatch && sourceDirFSInfo.MetaInfo.ShouldSkip)
                     newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.Skip));
 
                 else newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.CreateNew));
@@ -177,7 +177,7 @@ namespace Gaius.Core.Processing.FileSystem
                 var orphanGenDirFSInfo = FSInfo.CreateInstance(_provider, orphanGenDir);
 
                 //rs: is this a special dir that should be kept despite being orphaned?
-                if(orphanGenDirFSInfo.ShouldKeep)
+                if(orphanGenDirFSInfo.MetaInfo.ShouldKeep)
                     startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDirFSInfo, FSOperationType.Keep));
 
                 else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDirFSInfo, FSOperationType.Delete));
@@ -260,7 +260,7 @@ namespace Gaius.Core.Processing.FileSystem
             //rs: delete *almost* all contained directories and files in the generation directory
             foreach(var containedFsInfo in allContainedFsInfos)
             {
-                if(_worker.ShouldKeep(containedFsInfo))
+                if(_worker.GetShouldKeep(containedFsInfo))
                     continue;
 
                 if(containedFsInfo.IsDirectory())
@@ -296,10 +296,7 @@ namespace Gaius.Core.Processing.FileSystem
                 }
             }
 
-            else
-            {
-                ProcessFileFSOpTreeNode(opTreeNode, parentDirFullPath);
-            }
+            else ProcessFileFSOpTreeNode(opTreeNode, parentDirFullPath);
         }
 
         private string ProcessDirectoryFSOpTreeNode(TreeNode<FSOperation> treeNode, string parentDirFullPath)

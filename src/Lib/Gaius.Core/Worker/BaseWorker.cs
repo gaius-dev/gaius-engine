@@ -53,47 +53,38 @@ namespace Gaius.Core.Worker
             return (sourceDirExists && otherReqDirsExist, validationErrors);
         }
 
-        public bool ShouldKeep(FileSystemInfo fsInfo)
+        public virtual string GetTarget(FileSystemInfo fileSystemInfo)
         {
-            if(GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fsInfo.Name, StringComparison.InvariantCultureIgnoreCase)))
-                return true;
-
-            return false;
-        }
-
-        public virtual string GetTarget(FileSystemInfo fsInfo)
-        {
-            if (fsInfo.IsDirectory())
+            if (fileSystemInfo.IsDirectory())
             {
-                if(fsInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
-                    || fsInfo.FullName.Equals(GaiusConfiguration.NamedThemeDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
+                if(fileSystemInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
+                    || fileSystemInfo.FullName.Equals(GaiusConfiguration.NamedThemeDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
                     return GaiusConfiguration.GenerationDirectoryName;
 
-                if(fsInfo.FullName.Equals(GaiusConfiguration.PostsDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
+                if(fileSystemInfo.FullName.Equals(GaiusConfiguration.PostsDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
                     return GaiusConfiguration.PostsDirectoryName.TrimStart('_');
 
-                return fsInfo.Name;
+                return fileSystemInfo.Name;
             }
 
-            else return fsInfo.Name;
+            return fileSystemInfo.Name;
         }
 
-        public abstract WorkerFSMetaInfo GetWorkerFSMetaInfo(FileSystemInfo fileSystemInfo);
-        
-        protected bool IsPost(FileSystemInfo fileSystemInfo)
-        {
-            if(fileSystemInfo.IsFile() && fileSystemInfo.GetParentDirectory().Name.Equals(GaiusConfiguration.PostsDirectoryName))
-                return true;
+        public abstract WorkerMetaInfo GetWorkerMetaInfo(FileSystemInfo fileSystemInfo);
 
-            return false;
+        public virtual bool GetShouldKeep(FileSystemInfo fileSystemInfo)
+        {
+            return GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fileSystemInfo.Name, StringComparison.InvariantCultureIgnoreCase));
         }
 
-        protected virtual bool ShouldSkip(FileSystemInfo fsInfo)
+        protected virtual bool GetShouldSkip(FileSystemInfo fileSystemInfo)
         {
-            if(fsInfo.Name.StartsWith("."))
-                return true;
+            return fileSystemInfo.Name.StartsWith(".");
+        }
 
-            return false;
+        protected virtual bool GetIsPost(FileSystemInfo fileSystemInfo)
+        {
+            return fileSystemInfo.IsFile() && fileSystemInfo.GetParentDirectory().Name.Equals(GaiusConfiguration.PostsDirectoryName);
         }
     }
 }
