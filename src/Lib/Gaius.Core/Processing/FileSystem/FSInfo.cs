@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Gaius.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 
 namespace Gaius.Core.Processing.FileSystem
 {
@@ -12,6 +13,7 @@ namespace Gaius.Core.Processing.FileSystem
     {
         private readonly IWorker _worker;
         private readonly GaiusConfiguration _gaiusConfig;
+        private readonly WorkerFSMetaInfo _fsMetaInfo;
 
         public FSInfo(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FileSystemInfo fileSystemInfo)
         {
@@ -19,14 +21,7 @@ namespace Gaius.Core.Processing.FileSystem
             _gaiusConfig = gaiusConfig.Value;
 
             FileSystemInfo = fileSystemInfo;
-
-            var fsMetaInfo = _worker.GetWorkerFSMetaInfo(FileSystemInfo);
-
-            FrontMatter = fsMetaInfo.FrontMatter;
-            IsPost = fsMetaInfo.IsPost;
-            ShouldSkip = fsMetaInfo.ShouldSkip;
-            ShouldKeep = fsMetaInfo.ShouldKeep;
-            ContainsPagination = fsMetaInfo.ContainsPagination;
+            _fsMetaInfo = _worker.GetWorkerFSMetaInfo(FileSystemInfo);
         }
 
         public static FSInfo CreateInstance(IServiceProvider provider, FileSystemInfo fileSystemInfo)
@@ -36,12 +31,14 @@ namespace Gaius.Core.Processing.FileSystem
 
         public FileSystemInfo FileSystemInfo { get; private set; }
         public DirectoryInfo DirectoryInfo => FileSystemInfo as DirectoryInfo;
-        public IFrontMatter FrontMatter { get; private set; }
+        public FileInfo FileInfo => FileSystemInfo as FileInfo;
+        public IFrontMatter FrontMatter => _fsMetaInfo.FrontMatter;
         public bool IsDraft => FrontMatter?.IsDraft ?? false;
-        public bool IsPost { get; private set; }
-        public bool ShouldSkip { get; private set; }
-        public bool ShouldKeep { get; private set; }
+        public bool IsPost => _fsMetaInfo.IsPost;
+        public bool ShouldSkip => _fsMetaInfo.ShouldSkip;
+        public bool ShouldKeep => _fsMetaInfo.ShouldKeep;
         public bool ShouldSkipKeep => ShouldSkip && ShouldKeep;
-        public bool ContainsPagination { get; private set; }
+        public List<string> PaginatorIds => _fsMetaInfo.PaginatorIds;
+        public bool ContainsPagination => _fsMetaInfo.ContainsPaginator;
     }
 }

@@ -314,7 +314,7 @@ namespace Gaius.Core.Processing.FileSystem
 
         private void ProcessFileFSOpTreeNode(TreeNode<FSOperation> treeNode, string parentDirFullPath)
         {
-            var file = treeNode.Data.FSInfo.FileSystemInfo as FileInfo;
+            var file = treeNode.Data.FSInfo.FileInfo;
 
             if(treeNode.Data.WorkerTask.WorkType == WorkType.None)
             {

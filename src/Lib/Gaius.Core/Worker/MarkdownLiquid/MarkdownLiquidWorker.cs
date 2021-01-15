@@ -69,7 +69,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             if(_liquidTemplatePhysicalFileProvider == null)
                 _liquidTemplatePhysicalFileProvider = new PhysicalFileProvider(GetLayoutsDirFullPath(GaiusConfiguration));
                 
-            var markdownFile = task.FSInfo.FileSystemInfo as FileInfo;
+            var markdownFile = task.FSInfo.FileInfo;
             var markdownContent = MarkdownPreProcess(File.ReadAllText(markdownFile.FullName));
 
             var yamlFrontMatter = task.FSInfo.FrontMatter;
@@ -124,7 +124,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                     && !LayoutInfoDictionary.TryGetValue(_defaultLayoutId, out layoutInfo))
                     throw new Exception($"Unable to find layout information for: {fsMetaInfo.FrontMatter.Layout} or {_defaultLayoutId}");
 
-                fsMetaInfo.ContainsPagination = layoutInfo.ContainsPagination;
+                fsMetaInfo.PaginatorIds = layoutInfo.PaginatorIds;
             }
 
             return fsMetaInfo;
