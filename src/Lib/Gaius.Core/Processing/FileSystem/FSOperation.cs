@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Gaius.Core.Configuration;
@@ -14,9 +13,6 @@ namespace Gaius.Core.Processing.FileSystem
         private readonly GaiusConfiguration _gaiusConfig;
 
         public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FSInfo fsInfo, FSOperationType fsAction)
-            : this(worker, gaiusConfig, fsInfo, fsAction, string.Empty) { }
-
-        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FSInfo fsInfo, FSOperationType fsAction, string overrideName)
         {
             _worker = worker;
             _gaiusConfig = gaiusConfig.Value;
@@ -27,20 +23,25 @@ namespace Gaius.Core.Processing.FileSystem
 
             if(!IsWorkerOmittedForOp)
                 WorkerTask = _worker.GenerateWorkerTask(fsInfo);
-
-            _overrideName = overrideName;
         }
 
-        public static FSOperation CreateInstance(IServiceProvider provider, FSInfo fsInfo, FSOperationType fSAction, string overrideString = null)
+        public static FSOperation CreateInstance(IServiceProvider provider, FSInfo fsInfo, FSOperationType fSAction)
         {
-            if(!string.IsNullOrEmpty(overrideString))
-                return ActivatorUtilities.CreateInstance<FSOperation>(provider, fsInfo, fSAction, overrideString);
-
             return ActivatorUtilities.CreateInstance<FSOperation>(provider, fsInfo, fSAction);
         }
 
-        private string _overrideName;
-        public string Name => !string.IsNullOrEmpty(_overrideName) ? _overrideName : FSInfo.FileSystemInfo.Name;
+        public string Name
+        {
+            get
+            {
+                //rs: override the operation name for the named theme directory (this is used when displaying the operation)
+                if (FSInfo.FileSystemInfo.IsDirectory() && FSInfo.FileSystemInfo.FullName.Equals(_gaiusConfig.NamedThemeDirectoryFullPath))
+                    return $"{_gaiusConfig.ThemesDirectoryName}/{FSInfo.FileSystemInfo.Name}";
+
+                return FSInfo.FileSystemInfo.Name;
+            }
+        }
+
         public FSInfo FSInfo { get; private set; }
         public FSOperationType FSOperationType { get; private set; }
         public WorkerTask WorkerTask { get; private set;}

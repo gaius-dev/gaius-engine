@@ -35,6 +35,7 @@ namespace Gaius.Core.Processing.FileSystem
         public IFrontMatter FrontMatter => _fsMetaInfo.FrontMatter;
         public bool IsDraft => FrontMatter?.IsDraft ?? false;
         public bool IsPost => _fsMetaInfo.IsPost;
+        public bool IsPostListing => _fsMetaInfo.PaginatorIds.Contains("posts");
         public bool ShouldSkip => _fsMetaInfo.ShouldSkip;
         public bool ShouldKeep => _fsMetaInfo.ShouldKeep;
         public bool ShouldSkipKeep => ShouldSkip && ShouldKeep;
