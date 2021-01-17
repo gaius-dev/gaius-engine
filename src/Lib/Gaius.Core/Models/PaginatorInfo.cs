@@ -1,6 +1,6 @@
-namespace Gaius.Core.Worker
+namespace Gaius.Core.Models
 {
-    public class WorkerPaginatorInfo
+    public class PaginatorInfo
     {
         public string PaginatorId { get; private set; }
         public int PageNumber { get; private set; }

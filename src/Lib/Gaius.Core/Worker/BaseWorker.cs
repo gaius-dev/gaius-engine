@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using Gaius.Core.Configuration;
 using Gaius.Core.Models;
-using Gaius.Core.Processing.FileSystem;
 using Gaius.Utilities.FileSystem;
 using Gaius.Utilities.Reflection;
 
@@ -12,19 +11,16 @@ namespace Gaius.Core.Worker
 {
     public abstract class BaseWorker : IWorker
     {
+        protected List<string> RequiredDirectories;
+        protected GaiusConfiguration GaiusConfiguration;
         protected static readonly GenerationInfo GenerationInfo = new GenerationInfo()
         {
             GenerationDateTime = DateTime.UtcNow,
             GaiusVersion = AssemblyUtilities.GetAssemblyVersion(AssemblyUtilities.EntryAssembly)
         };
 
-        protected List<string> RequiredDirectories;
-        protected GaiusConfiguration GaiusConfiguration;
-        
-        public abstract WorkerTask GenerateWorkerTask(FSInfo fsInfo);
-        
-        public abstract string PerformWork(WorkerTask task);
-        
+        public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
+        public abstract string PerformWork(WorkerTask workerTask);
         public (bool, List<string>) ValidateSiteContainerDirectory()
         {
             var validationErrors = new List<string>();
@@ -52,7 +48,6 @@ namespace Gaius.Core.Worker
 
             return (sourceDirExists && otherReqDirsExist, validationErrors);
         }
-
         public virtual string GetTarget(FileSystemInfo fileSystemInfo)
         {
             if (fileSystemInfo.IsDirectory())
@@ -69,9 +64,6 @@ namespace Gaius.Core.Worker
 
             return fileSystemInfo.Name;
         }
-
-        public abstract WorkerMetaInfo GetWorkerMetaInfo(FileSystemInfo fileSystemInfo);
-
         public virtual bool GetShouldKeep(FileSystemInfo fileSystemInfo)
         {
             return GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fileSystemInfo.Name, StringComparison.InvariantCultureIgnoreCase));
@@ -81,7 +73,6 @@ namespace Gaius.Core.Worker
         {
             return fileSystemInfo.Name.StartsWith(".");
         }
-
         protected virtual bool GetIsPost(FileSystemInfo fileSystemInfo)
         {
             return fileSystemInfo.IsFile() && fileSystemInfo.GetParentDirectory().Name.Equals(GaiusConfiguration.PostsDirectoryName);

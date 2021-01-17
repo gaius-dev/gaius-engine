@@ -11,8 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Parsing.Yaml;
 using System.Collections.Generic;
 using Gaius.Core.Models;
-using Gaius.Core.Processing.FileSystem;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
@@ -53,35 +53,26 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return serviceCollection;
         }
 
-        public override WorkerTask GenerateWorkerTask(FSInfo fsInfo)
+        public override string PerformWork(WorkerTask workerTask)
         {
-            return new WorkerTask(fsInfo, GetTransformType(fsInfo.FileSystemInfo), GetTarget(fsInfo.FileSystemInfo), GaiusConfiguration);
-        }
-
-        public override string PerformWork(WorkerTask task)
-        {
-            if(task.WorkType != WorkType.Transform)
+            if(workerTask.WorkType != WorkType.Transform)
                 throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.WorkType == Transform");
 
-            if(!task.FSInfo.FileSystemInfo.IsMarkdownFile())
+            if(!workerTask.FileSystemInfo.IsMarkdownFile())
                 throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.FSInput is a markdown file");
             
             if(_liquidTemplatePhysicalFileProvider == null)
                 _liquidTemplatePhysicalFileProvider = new PhysicalFileProvider(GetLayoutsDirFullPath(GaiusConfiguration));
                 
-            var markdownFile = task.FSInfo.FileInfo;
+            var markdownFile = workerTask.FileInfo;
             var markdownContent = MarkdownPreProcess(File.ReadAllText(markdownFile.FullName));
 
-            var yamlFrontMatter = task.FSInfo.MetaInfo.GetFrontMatter();
-
-            if(yamlFrontMatter == null)
-                throw new Exception($"MarkdownLiquidWorker attempting to perform work on a markdown file '{task.FSInfo.FileSystemInfo.Name}' without YAML front matter!");
-
-            var layoutId = !string.IsNullOrEmpty(yamlFrontMatter.Layout) ? yamlFrontMatter.Layout : _defaultLayoutId;
+            var layoutId = !string.IsNullOrEmpty(workerTask.LayoutId) ? workerTask.LayoutId : _defaultLayoutId;
 
             var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
-            var pageData = new PageData(yamlFrontMatter, html, task);
-            var viewModel = new MarkdownLiquidViewModel(pageData, GenerationInfo, GaiusConfiguration);
+
+            var viewModelData = new ViewModelData(workerTask, GenerationInfo, html);
+            var viewModel = new MarkdownLiquidViewModel(viewModelData, GaiusConfiguration);
 
             if (!LayoutInfoDictionary.TryGetValue(layoutId, out var layoutInfo))
                 throw new Exception($"Unable to find layout: {layoutId}");
@@ -100,7 +91,6 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
             return html;
         }
-
         public override string GetTarget(FileSystemInfo fileSystemInfo)
         {
             var targetName = base.GetTarget(fileSystemInfo);
@@ -110,14 +100,16 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
             return targetName;
         }
-
-        public override WorkerMetaInfo GetWorkerMetaInfo(FileSystemInfo fileSystemInfo)
+        public override WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo)
         {
             IFrontMatter frontMatter = null;
             IWorkerLayoutInfo layoutInfo = null;
+            var workType = GetWorkType(fileSystemInfo);
             var isPost = GetIsPost(fileSystemInfo);
             var shouldSkip = GetShouldSkip(fileSystemInfo);
             var shouldKeep = GetShouldKeep(fileSystemInfo);
+            var targetFSName = GetTarget(fileSystemInfo);
+            (var targetUrl, var targetId) = GetTargetUrlAndId(fileSystemInfo, targetFSName);
 
             if (fileSystemInfo.IsMarkdownFile())
             {
@@ -128,7 +120,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                     throw new Exception($"Unable to find layout information for: {frontMatter.Layout} or {_defaultLayoutId}");
             }
 
-            return new WorkerMetaInfo(layoutInfo, frontMatter, isPost, shouldSkip, shouldKeep);
+            return new WorkerTask(fileSystemInfo, layoutInfo, frontMatter, workType, isPost, shouldSkip, shouldKeep, targetFSName, targetUrl, targetId);
         }
 
         protected override bool GetShouldSkip(FileSystemInfo fileSystemInfo)
@@ -144,37 +136,61 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
             return false;
         }
-
         protected override bool GetIsPost(FileSystemInfo fileSystemInfo)
         {
             return base.GetIsPost(fileSystemInfo) && fileSystemInfo.IsMarkdownFile();
         }
 
-        private static WorkType GetTransformType(FileSystemInfo fileSystemInfo)
+        private (string, string) GetTargetUrlAndId(FileSystemInfo fileSystemInfo, string targetFSName)
+        {
+            if(fileSystemInfo.IsDirectory())
+                return (string.Empty, string.Empty);
+
+            var pathSegments = fileSystemInfo.GetPathSegments();
+
+            var sourceDirIndex = Array.IndexOf(pathSegments, GaiusConfiguration.SourceDirectoryName);
+            var skipAmt = sourceDirIndex + 1;
+
+            if(skipAmt > pathSegments.Length)
+                return (string.Empty, string.Empty);
+
+            var pathSegmentsToKeep = pathSegments.Skip(skipAmt).ToList();
+
+            if(pathSegmentsToKeep.Count == 0)
+                return (string.Empty, string.Empty);
+            
+            pathSegmentsToKeep[pathSegmentsToKeep.Count - 1] = targetFSName;
+
+            var targetUrl = $"{GaiusConfiguration.GetGenerationUrlRootPrefix()}/{string.Join("/", pathSegmentsToKeep)}";
+
+            var targetWithoutExt = Path.GetFileNameWithoutExtension(targetFSName);
+            pathSegmentsToKeep[pathSegmentsToKeep.Count - 1] = targetWithoutExt;
+
+            var targetId = $"{string.Join(".", pathSegmentsToKeep)}";
+
+            return (targetUrl, targetId);
+        }
+        private static WorkType GetWorkType(FileSystemInfo fileSystemInfo)
         {
             if (fileSystemInfo.IsMarkdownFile())
                 return WorkType.Transform;
 
             return WorkType.None;
         }
-
         private static string GetLayoutsDirFullPath(GaiusConfiguration gaiusConfiguration)
         {
             return Path.Combine(gaiusConfiguration.NamedThemeDirectoryFullPath, _layoutsDirectory);
         }
-
         private string MarkdownPreProcess(string markdownContent)
         {
             return GenerationUrlRootPrefixPreProcessor(markdownContent);
         }
-
         private const string _siteUrlRegExStr = @"{{ *site.url *}}";
         private static Regex _siteUrlRegEx = new Regex(_siteUrlRegExStr, RegexOptions.Compiled);
         private string GenerationUrlRootPrefixPreProcessor(string markdownContent)
         {
             return _siteUrlRegEx.Replace(markdownContent, GaiusConfiguration.GetGenerationUrlRootPrefix());
         }
-
         private void BuildLayoutInfoDictionary()
         {
             var layoutsDirectory = new DirectoryInfo(GetLayoutsDirFullPath(GaiusConfiguration));

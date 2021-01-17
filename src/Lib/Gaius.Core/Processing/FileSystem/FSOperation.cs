@@ -12,20 +12,17 @@ namespace Gaius.Core.Processing.FileSystem
         private readonly IWorker _worker;
         private readonly GaiusConfiguration _gaiusConfig;
 
-        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, FSInfo fsInfo, FSOperationType fsAction)
+        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, WorkerTask workerTask, FSOperationType fsAction)
         {
             _worker = worker;
             _gaiusConfig = gaiusConfig.Value;
 
-            FSInfo = fsInfo;
+            WorkerTask = workerTask;
             FSOperationType = fsAction;
             Status = OperationStatus.Pending;
-
-            if(!IsWorkerOmittedForOp)
-                WorkerTask = _worker.GenerateWorkerTask(fsInfo);
         }
 
-        public static FSOperation CreateInstance(IServiceProvider provider, FSInfo fsInfo, FSOperationType fSAction)
+        public static FSOperation CreateInstance(IServiceProvider provider, WorkerTask fsInfo, FSOperationType fSAction)
         {
             return ActivatorUtilities.CreateInstance<FSOperation>(provider, fsInfo, fSAction);
         }
@@ -35,16 +32,15 @@ namespace Gaius.Core.Processing.FileSystem
             get
             {
                 //rs: override the operation name for the named theme directory (this is used when displaying the operation)
-                if (FSInfo.FileSystemInfo.IsDirectory() && FSInfo.FileSystemInfo.FullName.Equals(_gaiusConfig.NamedThemeDirectoryFullPath))
-                    return $"{_gaiusConfig.ThemesDirectoryName}/{FSInfo.FileSystemInfo.Name}";
+                if (WorkerTask.FileSystemInfo.IsDirectory() && WorkerTask.FileSystemInfo.FullName.Equals(_gaiusConfig.NamedThemeDirectoryFullPath))
+                    return $"{_gaiusConfig.ThemesDirectoryName}/{WorkerTask.FileSystemInfo.Name}";
 
-                return FSInfo.FileSystemInfo.Name;
+                return WorkerTask.FileSystemInfo.Name;
             }
         }
 
-        public FSInfo FSInfo { get; private set; }
+        public WorkerTask WorkerTask { get; private set; }
         public FSOperationType FSOperationType { get; private set; }
-        public WorkerTask WorkerTask { get; private set;}
         public OperationStatus Status { get; set; }
         public bool IsUnsafe => FSOperationType == FSOperationType.Delete;
         public bool IsWorkerOmittedForOp => FSOperationType == FSOperationType.Skip 
@@ -52,6 +48,6 @@ namespace Gaius.Core.Processing.FileSystem
                                             || FSOperationType == FSOperationType.Delete
                                             || FSOperationType == FSOperationType.SkipDelete
                                             || FSOperationType == FSOperationType.SkipDraft;
-        public bool IsDirectoryOp => FSInfo.FileSystemInfo.IsDirectory();
+        public bool IsDirectoryOp => WorkerTask.FileSystemInfo.IsDirectory();
     }
 }

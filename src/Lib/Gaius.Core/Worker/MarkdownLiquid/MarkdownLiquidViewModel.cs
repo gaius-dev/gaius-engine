@@ -5,29 +5,29 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 {
     public class MarkdownLiquidViewModel
     {
-        public MarkdownLiquidViewModel(PageData pageData, GenerationInfo generationInfo, GaiusConfiguration gaiusConfiguration)
+        public MarkdownLiquidViewModel(ViewModelData viewModelData, GaiusConfiguration gaiusConfiguration)
         {
             page = new MarkdownLiquidViewModel_Page() 
             {
-                id = pageData.Id,
-                url = pageData.Url,
-                title = pageData.FrontMatter.Title,
-                author = pageData.FrontMatter.Author,
-                keywords = pageData.FrontMatter.Keywords,
-                description = pageData.FrontMatter.Description,
-                draft = pageData.FrontMatter.IsDraft,
-                content = pageData.Html
+                id = viewModelData.Id,
+                url = viewModelData.Url,
+                title = viewModelData.FrontMatter.Title,
+                author = viewModelData.FrontMatter.Author,
+                keywords = viewModelData.FrontMatter.Keywords,
+                description = viewModelData.FrontMatter.Description,
+                draft = viewModelData.FrontMatter.IsDraft,
+                content = viewModelData.Html
             };
             
             site = new MarkdownLiquidViewModel_Site() 
             {
                 url = gaiusConfiguration.GetGenerationUrlRootPrefix(),
-                time = generationInfo.GenerationDateTime.ToString("u")
+                time = viewModelData.GenerationInfo.GenerationDateTime.ToString("u")
             };
 
             gaius = new MarkdownLiquidViewModel_GaiusInfo()
             {
-                version = generationInfo.GaiusVersion
+                version = viewModelData.GenerationInfo.GaiusVersion
             };
         }
 

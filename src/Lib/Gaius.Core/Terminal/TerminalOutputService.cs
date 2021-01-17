@@ -88,7 +88,7 @@ namespace Gaius.Core.Terminal
 
         private void PrintRootOperationTreeNode(TreeNode<FSOperation> treeNode)
         {
-            var siteDirectoryFullPath = treeNode.Data.FSInfo.FileSystemInfo.FullName;
+            var siteDirectoryFullPath = treeNode.Data.WorkerTask.FileSystemInfo.FullName;
             Console.WriteLine($"[ Site Directory] {siteDirectoryFullPath}");
             Console.WriteLine($"[ Src. Directory] {_gaiusConfiguration.SourceDirectoryFullPath}");
             Console.WriteLine($"[Theme Directory] {_gaiusConfiguration.NamedThemeDirectoryFullPath}");
@@ -375,7 +375,7 @@ namespace Gaius.Core.Terminal
             for(var i=0; i < unsafeOps.Count; i++)
             {
                 Colorful.Console.Write($"{i+1}. ", RED_COLOR);
-                Console.WriteLine(unsafeOps[i].Data.FSInfo.FileSystemInfo.FullName);
+                Console.WriteLine(unsafeOps[i].Data.WorkerTask.FileSystemInfo.FullName);
             }
 
             Console.WriteLine();
@@ -448,7 +448,7 @@ namespace Gaius.Core.Terminal
 
         private static Color GetColorForTreeNodeSource(TreeNode<FSOperation> op)
         {
-            var fileSystemInfo = op.Data.FSInfo.FileSystemInfo;
+            var fileSystemInfo = op.Data.WorkerTask.FileSystemInfo;
 
             if(fileSystemInfo is DirectoryInfo)
                 return DIRECTORY_COLOR;
@@ -461,7 +461,7 @@ namespace Gaius.Core.Terminal
 
         private static Color GetColorForTreeNodeDestination(TreeNode<FSOperation> op)
         {
-            var fileSystemInfo = op.Data.FSInfo.FileSystemInfo;
+            var fileSystemInfo = op.Data.WorkerTask.FileSystemInfo;
 
             if(fileSystemInfo is FileInfo)
                 return GetColorFromFileName(op.Data.WorkerTask.TargetFSName);

@@ -25,9 +25,9 @@ namespace Gaius.Core.Processing.FileSystem
 
         public TreeNode<FSOperation> CreateFSOperationTree()
         {
-            var rootSiteDirInfo = FSInfo.CreateInstance(_provider, new DirectoryInfo(_gaiusConfiguration.SiteContainerFullPath));
-            var sourceDirInfo = FSInfo.CreateInstance(_provider, new DirectoryInfo(_gaiusConfiguration.SourceDirectoryFullPath));
-            var namedThemeDirInfo = FSInfo.CreateInstance(_provider, new DirectoryInfo(_gaiusConfiguration.NamedThemeDirectoryFullPath));
+            var rootSiteDirTask = _worker.CreateWorkerTask(new DirectoryInfo(_gaiusConfiguration.SiteContainerFullPath));
+            var sourceDirTask = _worker.CreateWorkerTask(new DirectoryInfo(_gaiusConfiguration.SourceDirectoryFullPath));
+            var namedThemeDirTask = _worker.CreateWorkerTask(new DirectoryInfo(_gaiusConfiguration.NamedThemeDirectoryFullPath));
 
             var genDirectoryFullPath = _gaiusConfiguration.GenerationDirectoryFullPath;
             DirectoryInfo genDirInfo = null;
@@ -36,18 +36,18 @@ namespace Gaius.Core.Processing.FileSystem
             FSOperation sourceDirOp = null;
             FSOperation namedThemeDirOp = null;
 
-            rootOp = FSOperation.CreateInstance(_provider, rootSiteDirInfo, FSOperationType.Root);
+            rootOp = FSOperation.CreateInstance(_provider, rootSiteDirTask, FSOperationType.Root);
 
             if(!Directory.Exists(genDirectoryFullPath))
             {
-                 sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.CreateNew);
-                 namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.CreateNew);
+                 sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.CreateNew);
+                 namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirTask, FSOperationType.CreateNew);
             }
                 
             else
             {
-                sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirInfo, FSOperationType.Overwrite);
-                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirInfo, FSOperationType.Overwrite);
+                sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Overwrite);
+                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirTask, FSOperationType.Overwrite);
                 genDirInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
             }
 
@@ -65,10 +65,10 @@ namespace Gaius.Core.Processing.FileSystem
             var opTree = new TreeNode<FSOperation>(rootOp);
 
             var sourceDirTreeNode = opTree.AddChild(sourceDirOp);
-            AddOperationsToTreeNode(sourceDirTreeNode, sourceDirInfo.DirectoryInfo, genDirInfo);
+            AddOperationsToTreeNode(sourceDirTreeNode, sourceDirTask.DirectoryInfo, genDirInfo);
 
             var namedThemeDirTreeNode = opTree.AddChild(namedThemeDirOp);
-            AddOperationsToTreeNode(namedThemeDirTreeNode, namedThemeDirInfo.DirectoryInfo, genDirInfo);
+            AddOperationsToTreeNode(namedThemeDirTreeNode, namedThemeDirTask.DirectoryInfo, genDirInfo);
 
             RemoveFalsePositiveDeleteOps(sourceDirTreeNode, namedThemeDirTreeNode);
 
@@ -92,43 +92,43 @@ namespace Gaius.Core.Processing.FileSystem
                     matchingGenFiles.Add(matchingGenFile);
                 }
 
-                var sourceFSInfo = FSInfo.CreateInstance(_provider, sourceFile);
+                var sourceFileTask = _worker.CreateWorkerTask(sourceFile);
 
-                if(hasMatch && sourceFSInfo.MetaInfo.ShouldSkipKeep)
+                if(hasMatch && sourceFileTask.ShouldSkipKeep)
                 {
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.Skip));
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.Keep));
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.Skip));
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.Keep));
                 }
 
-                else if(hasMatch && sourceFSInfo.MetaInfo.ShouldSkip)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.SkipDelete));
+                else if(hasMatch && sourceFileTask.ShouldSkip)
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.SkipDelete));
 
-                else if(hasMatch && sourceFSInfo.MetaInfo.IsDraft)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.SkipDraft));
+                else if(hasMatch && sourceFileTask.IsDraft)
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.SkipDraft));
 
                 else if(hasMatch)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.Overwrite));
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.Overwrite));
 
-                else if(!hasMatch && sourceFSInfo.MetaInfo.ShouldSkip)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.Skip));
+                else if(!hasMatch && sourceFileTask.ShouldSkip)
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.Skip));
 
-                else if(!hasMatch && sourceFSInfo.MetaInfo.IsDraft)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.SkipDraft));
+                else if(!hasMatch && sourceFileTask.IsDraft)
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.SkipDraft));
 
-                else startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFSInfo, FSOperationType.CreateNew));
+                else startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.CreateNew));
             }
 
             //rs: all other files in the generation dir are considered orphaned
             foreach(var orphanGenFile in genStartDir?.EnumerateFiles()
                 .Where(file => !matchingGenFiles.Any(exFile => exFile.Name.Equals(file.Name))) ?? Enumerable.Empty<FileInfo>())
             {
-                var orphanGenFSInfo = FSInfo.CreateInstance(_provider, orphanGenFile);
+                var orphanGenFileTask = _worker.CreateWorkerTask(orphanGenFile);
 
                 //rs: is this a special file that should be kept despite being orphaned?
-                if(orphanGenFSInfo.MetaInfo.ShouldKeep)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFSInfo, FSOperationType.Keep));
+                if(orphanGenFileTask.ShouldKeep)
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFileTask, FSOperationType.Keep));
 
-                else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFSInfo, FSOperationType.Delete));
+                else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFileTask, FSOperationType.Delete));
             }
 
             // Directories ====================================================
@@ -148,24 +148,24 @@ namespace Gaius.Core.Processing.FileSystem
 
                 TreeNode<FSOperation> newOpTreeNode = null;
 
-                var sourceDirFSInfo = FSInfo.CreateInstance(_provider, sourceDir);
+                var sourceDirTask = _worker.CreateWorkerTask(sourceDir);
 
-                if(hasMatch && sourceDirFSInfo.MetaInfo.ShouldSkipKeep)
+                if(hasMatch && sourceDirTask.ShouldSkipKeep)
                 {
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.Skip));
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.Keep));
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Skip));
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Keep));
                 }
 
-                else if(hasMatch && sourceDirFSInfo.MetaInfo.ShouldSkip)
-                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.SkipDelete));
+                else if(hasMatch && sourceDirTask.ShouldSkip)
+                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.SkipDelete));
 
                 else if(hasMatch)
-                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.Overwrite));
+                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Overwrite));
                 
-                else if(!hasMatch && sourceDirFSInfo.MetaInfo.ShouldSkip)
-                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.Skip));
+                else if(!hasMatch && sourceDirTask.ShouldSkip)
+                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Skip));
 
-                else newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirFSInfo, FSOperationType.CreateNew));
+                else newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.CreateNew));
 
                 if(newOpTreeNode != null)
                     AddOperationsToTreeNode(newOpTreeNode, sourceDir, matchingGenDir);
@@ -174,13 +174,13 @@ namespace Gaius.Core.Processing.FileSystem
             foreach(var orphanGenDir in genStartDir?.EnumerateDirectories()
                 .Where(dir => !matchingGenDirs.Any(exDir=> exDir.Name.Equals(dir.Name))) ?? Enumerable.Empty<DirectoryInfo>())
             {
-                var orphanGenDirFSInfo = FSInfo.CreateInstance(_provider, orphanGenDir);
+                var orphanGenDirTask = _worker.CreateWorkerTask(orphanGenDir);
 
                 //rs: is this a special dir that should be kept despite being orphaned?
-                if(orphanGenDirFSInfo.MetaInfo.ShouldKeep)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDirFSInfo, FSOperationType.Keep));
+                if(orphanGenDirTask.ShouldKeep)
+                    startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDirTask, FSOperationType.Keep));
 
-                else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDirFSInfo, FSOperationType.Delete));
+                else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDirTask, FSOperationType.Delete));
             }
         }
 
@@ -309,7 +309,7 @@ namespace Gaius.Core.Processing.FileSystem
 
         private void ProcessFileFSOpTreeNode(TreeNode<FSOperation> treeNode, string parentDirFullPath)
         {
-            var file = treeNode.Data.FSInfo.FileInfo;
+            var file = treeNode.Data.WorkerTask.FileInfo;
 
             if(treeNode.Data.WorkerTask.WorkType == WorkType.None)
             {
