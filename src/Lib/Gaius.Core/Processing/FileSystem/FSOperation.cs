@@ -1,6 +1,3 @@
-using System;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Gaius.Core.Configuration;
 using Gaius.Utilities.FileSystem;
 using Gaius.Core.Worker;
@@ -9,31 +6,31 @@ namespace Gaius.Core.Processing.FileSystem
 {
     public class FSOperation
     {
-        private readonly IWorker _worker;
-        private readonly GaiusConfiguration _gaiusConfig;
+        private readonly GaiusConfiguration _gaiusConfiguration;
 
-        public FSOperation(IWorker worker, IOptions<GaiusConfiguration> gaiusConfig, WorkerTask workerTask, FSOperationType fsAction)
+        public FSOperation(WorkerTask workerTask, FSOperationType fsAction, GaiusConfiguration gaiusConfiguration)
         {
-            _worker = worker;
-            _gaiusConfig = gaiusConfig.Value;
+            _gaiusConfiguration = gaiusConfiguration;
 
             WorkerTask = workerTask;
             FSOperationType = fsAction;
             Status = OperationStatus.Pending;
         }
 
+        /*
         public static FSOperation CreateInstance(IServiceProvider provider, WorkerTask fsInfo, FSOperationType fSAction)
         {
             return ActivatorUtilities.CreateInstance<FSOperation>(provider, fsInfo, fSAction);
         }
+        */
 
         public string Name
         {
             get
             {
                 //rs: override the operation name for the named theme directory (this is used when displaying the operation)
-                if (WorkerTask.FileSystemInfo.IsDirectory() && WorkerTask.FileSystemInfo.FullName.Equals(_gaiusConfig.NamedThemeDirectoryFullPath))
-                    return $"{_gaiusConfig.ThemesDirectoryName}/{WorkerTask.FileSystemInfo.Name}";
+                if (WorkerTask.FileSystemInfo.IsDirectory() && WorkerTask.FileSystemInfo.FullName.Equals(_gaiusConfiguration.NamedThemeDirectoryFullPath))
+                    return $"{_gaiusConfiguration.ThemesDirectoryName}/{WorkerTask.FileSystemInfo.Name}";
 
                 return WorkerTask.FileSystemInfo.Name;
             }
@@ -49,5 +46,6 @@ namespace Gaius.Core.Processing.FileSystem
                                             || FSOperationType == FSOperationType.SkipDelete
                                             || FSOperationType == FSOperationType.SkipDraft;
         public bool IsDirectoryOp => WorkerTask.FileSystemInfo.IsDirectory();
+        public bool IsListingOp => WorkerTask.IsListing;
     }
 }

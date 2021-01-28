@@ -9,6 +9,7 @@ namespace Gaius.Core.Processing.FileSystem
         Root,
         Skip,
         SkipDelete,
-        SkipDraft
+        SkipDraft,
+        AdditionalListingPage
     }
 }

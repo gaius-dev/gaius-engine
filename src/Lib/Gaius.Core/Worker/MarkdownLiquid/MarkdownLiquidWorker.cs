@@ -21,7 +21,8 @@ namespace Gaius.Core.Worker.MarkdownLiquid
         private const string _layoutsDirectory = "_layouts";
         private const string _defaultLayoutId = "default";
         private readonly IFrontMatterParser _frontMatterParser;
-        private readonly Dictionary<string, IWorkerLayoutInfo> LayoutInfoDictionary = new Dictionary<string, IWorkerLayoutInfo>();
+        private readonly Dictionary<string, IWorkerLayoutData> LayoutDataDictionary = new Dictionary<string, IWorkerLayoutData>();
+        private readonly Dictionary<string, BaseViewModelData> ViewModelDictionary = new Dictionary<string, BaseViewModelData>();
         private static readonly MarkdownPipeline _markdownPipeline 
                                                         = new MarkdownPipelineBuilder()
                                                                 .UseYamlFrontMatter() //Markdig extension to parse YAML
@@ -61,66 +62,67 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             if(!workerTask.FileSystemInfo.IsMarkdownFile())
                 throw new Exception("The MarkdownLiquidWorker can only be assigned WorkerTasks where WorkerTask.FSInput is a markdown file");
             
-            if(_liquidTemplatePhysicalFileProvider == null)
-                _liquidTemplatePhysicalFileProvider = new PhysicalFileProvider(GetLayoutsDirFullPath(GaiusConfiguration));
-                
-            var markdownFile = workerTask.FileInfo;
-            var markdownContent = MarkdownPreProcess(File.ReadAllText(markdownFile.FullName));
+            var viewModelData = CreateViewModelData(workerTask);
+
+            var markdownLiquidViewModel = new MarkdownLiquidViewModel(viewModelData, GenerationInfo, GaiusConfiguration);
 
             var layoutId = !string.IsNullOrEmpty(workerTask.LayoutId) ? workerTask.LayoutId : _defaultLayoutId;
-
-            var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
-
-            var viewModelData = new ViewModelData(workerTask, GenerationInfo, html);
-            var viewModel = new MarkdownLiquidViewModel(viewModelData, GaiusConfiguration);
-
-            if (!LayoutInfoDictionary.TryGetValue(layoutId, out var layoutInfo))
+            if (!LayoutDataDictionary.TryGetValue(layoutId, out var layoutData))
                 throw new Exception($"Unable to find layout: {layoutId}");
 
-            if (FluidTemplate.TryParse(layoutInfo.LayoutContent, out var liquidTemplate))
+            if(_liquidTemplatePhysicalFileProvider == null)
+                _liquidTemplatePhysicalFileProvider = new PhysicalFileProvider(GetLayoutsDirFullPath(GaiusConfiguration));
+
+            if (FluidTemplate.TryParse(layoutData.LayoutContent, out var liquidTemplate))
             {
                 var context = new TemplateContext();
                 context.FileProvider = _liquidTemplatePhysicalFileProvider;
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Page>();
+                context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Paginator>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Site>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_GaiusInfo>();
-                context.Model = viewModel;
+                context.Model = markdownLiquidViewModel;
                 return liquidTemplate.Render(context);
             }
 
-            return html;
+            return viewModelData.Content;
         }
-        public override string GetTarget(FileSystemInfo fileSystemInfo)
+        public override string GetTarget(FileSystemInfo fileSystemInfo, int page)
         {
-            var targetName = base.GetTarget(fileSystemInfo);
+            var targetName = base.GetTarget(fileSystemInfo, 1);
 
             if(fileSystemInfo.IsMarkdownFile())
-                return $"{Path.GetFileNameWithoutExtension(fileSystemInfo.Name)}.html";
-
+            {
+                return page > 1 
+                    ? $"{Path.GetFileNameWithoutExtension(fileSystemInfo.Name)}{page}.html"
+                    : $"{Path.GetFileNameWithoutExtension(fileSystemInfo.Name)}.html";
+            }
+                
             return targetName;
         }
+
         public override WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo)
         {
-            IFrontMatter frontMatter = null;
-            IWorkerLayoutInfo layoutInfo = null;
-            var workType = GetWorkType(fileSystemInfo);
-            var isPost = GetIsPost(fileSystemInfo);
-            var shouldSkip = GetShouldSkip(fileSystemInfo);
-            var shouldKeep = GetShouldKeep(fileSystemInfo);
-            var targetFSName = GetTarget(fileSystemInfo);
-            (var targetUrl, var targetId) = GetTargetUrlAndId(fileSystemInfo, targetFSName);
+            return CreateWorkerTaskInternal(fileSystemInfo, 1);
+        }
 
-            if (fileSystemInfo.IsMarkdownFile())
-            {
-                frontMatter = _frontMatterParser.DeserializeFromContent(File.ReadAllText(fileSystemInfo.FullName));
+        public override void AddPaginatorDataToWorkerTask(WorkerTask workerTask, PaginatorData paginatorData, List<WorkerTask> paginatorWorkerTasks)
+        {
+            AddPrevAndNextUrlsToPaginatorData(paginatorData, workerTask.FileSystemInfo);
+            workerTask.AddPaginatorData(paginatorData);
+            workerTask.AddPaginatorWorkerTasks(paginatorWorkerTasks);
+        }
 
-                if (!LayoutInfoDictionary.TryGetValue(frontMatter.Layout, out layoutInfo)
-                    && !LayoutInfoDictionary.TryGetValue(_defaultLayoutId, out layoutInfo))
-                    throw new Exception($"Unable to find layout information for: {frontMatter.Layout} or {_defaultLayoutId}");
-            }
+        public override WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, PaginatorData paginatorData, List<WorkerTask> paginatorWorkerTasks)
+        {
+            var workerTask = CreateWorkerTaskInternal(fileSystemInfo, paginatorData.PageNumber);
 
-            return new WorkerTask(fileSystemInfo, layoutInfo, frontMatter, workType, isPost, shouldSkip, shouldKeep, targetFSName, targetUrl, targetId);
+            AddPrevAndNextUrlsToPaginatorData(paginatorData, fileSystemInfo);
+            workerTask.AddPaginatorData(paginatorData);
+            workerTask.AddPaginatorWorkerTasks(paginatorWorkerTasks);
+
+            return workerTask;
         }
 
         protected override bool GetShouldSkip(FileSystemInfo fileSystemInfo)
@@ -141,6 +143,81 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             return base.GetIsPost(fileSystemInfo) && fileSystemInfo.IsMarkdownFile();
         }
 
+        private WorkerTask CreateWorkerTaskInternal(FileSystemInfo fileSystemInfo, int page)
+        {
+            IFrontMatter frontMatter = null;
+            IWorkerLayoutData layoutInfo = null;
+            var workType = GetWorkType(fileSystemInfo);
+            var isPost = GetIsPost(fileSystemInfo);
+            var shouldSkip = GetShouldSkip(fileSystemInfo);
+            var shouldKeep = GetShouldKeep(fileSystemInfo);
+            var targetFSName = GetTarget(fileSystemInfo, page);
+            (var targetUrl, var targetId) = GetTargetUrlAndId(fileSystemInfo, targetFSName);
+
+            if (fileSystemInfo.IsMarkdownFile())
+            {
+                frontMatter = _frontMatterParser.DeserializeFromContent(File.ReadAllText(fileSystemInfo.FullName));
+
+                if (!LayoutDataDictionary.TryGetValue(frontMatter.Layout, out layoutInfo)
+                    && !LayoutDataDictionary.TryGetValue(_defaultLayoutId, out layoutInfo))
+                    throw new Exception($"Unable to find layout information for: {frontMatter.Layout} or {_defaultLayoutId}");
+            }
+
+            return new WorkerTask(fileSystemInfo, layoutInfo, frontMatter, workType, isPost, shouldSkip, shouldKeep, targetFSName, targetUrl, targetId);
+        }
+        private void AddPrevAndNextUrlsToPaginatorData(PaginatorData paginatorData, FileSystemInfo fileSystemInfo)
+        {
+            string prevUrl = null;
+            string nextUrl = null;
+
+            if (paginatorData.HasPrev)
+            {
+                var targetPrev = GetTarget(fileSystemInfo, paginatorData.PageNumber - 1);
+                (var targetPrevUrl, var targetPrevId) = GetTargetUrlAndId(fileSystemInfo, targetPrev);
+                prevUrl = targetPrevUrl;
+            }
+
+            if (paginatorData.HasNext)
+            {
+                var targetNext = GetTarget(fileSystemInfo, paginatorData.PageNumber + 1);
+                (var targetNextUrl, var targetNextId) = GetTargetUrlAndId(fileSystemInfo, targetNext);
+                nextUrl = targetNextUrl;
+            }
+
+            paginatorData.AddPrevAndNextUrls(prevUrl, nextUrl);
+        }
+        private ViewModelData CreateViewModelData(WorkerTask workerTask)
+        {
+            var baseViewModel = CreateBaseViewModelData(workerTask);
+
+            if(workerTask.HasPaginatorData && workerTask.HasPaginatorWorkerTasks)
+            {
+                var paginatorViewModels = new List<BaseViewModelData>();
+
+                foreach(var paginatorWorkerTask in workerTask.GetPaginatorWorkerTasks())
+                {
+                    var paginatorViewModel = CreateBaseViewModelData(paginatorWorkerTask);
+                    paginatorViewModels.Add(paginatorViewModel);
+                }
+
+                return new ViewModelData(workerTask, baseViewModel.Content, workerTask.GetPaginatorData(), paginatorViewModels);
+            }
+                
+            return new ViewModelData(workerTask, baseViewModel.Content);
+        }
+        private BaseViewModelData CreateBaseViewModelData(WorkerTask workerTask)
+        {
+            if(ViewModelDictionary.TryGetValue(workerTask.TargetId, out var baseViewModel))
+                return baseViewModel;
+
+            var markdownFile = workerTask.FileInfo;
+            var markdownContent = MarkdownPreProcess(File.ReadAllText(markdownFile.FullName));
+            var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
+            baseViewModel = new BaseViewModelData(workerTask, html);
+
+            ViewModelDictionary.Add(workerTask.TargetId, baseViewModel);
+            return baseViewModel;
+        }
         private (string, string) GetTargetUrlAndId(FileSystemInfo fileSystemInfo, string targetFSName)
         {
             if(fileSystemInfo.IsDirectory())
@@ -160,6 +237,11 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 return (string.Empty, string.Empty);
             
             pathSegmentsToKeep[pathSegmentsToKeep.Count - 1] = targetFSName;
+
+            //rs: special handling for IDs and URLs for posts
+            var indexOfPostsSegment = pathSegmentsToKeep.IndexOf(GaiusConfiguration.PostsDirectoryName);
+            if(indexOfPostsSegment > -1)
+                pathSegmentsToKeep[indexOfPostsSegment] = GaiusConfiguration.PostsDirectoryName.TrimStart('_');
 
             var targetUrl = $"{GaiusConfiguration.GetGenerationUrlRootPrefix()}/{string.Join("/", pathSegmentsToKeep)}";
 
@@ -200,8 +282,8 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 if(!file.IsLiquidFile())
                     continue;
 
-                var layoutInfo = new MarkdownLiquidLayoutInfo(file);
-                LayoutInfoDictionary.Add(layoutInfo.Id, layoutInfo);
+                var layoutInfo = new MarkdownLiquidLayoutData(file);
+                LayoutDataDictionary.Add(layoutInfo.Id, layoutInfo);
             }
         }
     }

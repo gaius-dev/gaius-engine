@@ -7,9 +7,9 @@ using Gaius.Utilities.FileSystem;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
-    public class MarkdownLiquidLayoutInfo : IWorkerLayoutInfo
+    public class MarkdownLiquidLayoutData : IWorkerLayoutData
     {
-        public MarkdownLiquidLayoutInfo(FileInfo fileInfo)
+        public MarkdownLiquidLayoutData(FileInfo fileInfo)
         {
             Id = fileInfo.GetNameWithoutExtension();
             LayoutContent = File.ReadAllText(fileInfo.FullName);
@@ -20,7 +20,8 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
         public string Id { get; private set; }
         public string PaginatorId { get; private set; }
-        public bool ContainsPaginator => !string.IsNullOrEmpty(PaginatorId);
+        public bool IsListing => !string.IsNullOrWhiteSpace(PaginatorId);
+        public bool IsDefaultPostListing => IsListing && PaginatorId.Equals("posts");
         public string LayoutContent { get; private set; }
 
         private const string _paginatorRegExStr = @"{.*paginator\..*}";

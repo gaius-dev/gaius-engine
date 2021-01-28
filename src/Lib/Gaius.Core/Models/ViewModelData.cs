@@ -1,22 +1,17 @@
+using System.Collections.Generic;
 using Gaius.Core.Worker;
 
 namespace Gaius.Core.Models
 {
-    public class ViewModelData
+    public class ViewModelData : BaseViewModelData
     {
-        public ViewModelData(WorkerTask workerTask, GenerationInfo generationInfo, string html)
+        public ViewModelData(WorkerTask workerTask, string content, PaginatorData paginatorData = null, List<BaseViewModelData> paginatorViewModels = null) : base(workerTask, content)
         {
-            Id = workerTask.TargetId;
-            Url = workerTask.TargetUrl;
-            FrontMatter = workerTask.GetFrontMatter();
-            GenerationInfo = generationInfo;
-            Html = html;
+            PaginatorData = paginatorData;
+            PaginatorViewModels = paginatorViewModels;
         }
 
-        public string Id { get; private set; }
-        public string Url { get; private set; }
-        public IFrontMatter FrontMatter { get; private set; }
-        public GenerationInfo GenerationInfo { get; private set; }
-        public string Html { get; private set; }
+        public PaginatorData PaginatorData { get; private set; }
+        public List<BaseViewModelData> PaginatorViewModels { get; private set;}
     }
 }

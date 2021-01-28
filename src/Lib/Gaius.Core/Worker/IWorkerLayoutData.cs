@@ -1,11 +1,11 @@
 namespace Gaius.Core.Worker
 {
-    public interface IWorkerLayoutInfo
+    public interface IWorkerLayoutData
     {
         string Id { get; }
         string PaginatorId { get; }
-        bool ContainsPaginator { get; }
         string LayoutContent { get; }
-        bool IsPostListing => PaginatorId.Equals("post");
+        bool IsListing { get; }
+        bool IsDefaultPostListing { get; }
     }
 }

@@ -2,7 +2,7 @@ using System;
 
 namespace Gaius.Core.Models
 {
-    public class GenerationInfo
+    public class GenerationData
     {
         public string GaiusVersion { get; set; }
         public DateTime GenerationDateTime { get; set;}

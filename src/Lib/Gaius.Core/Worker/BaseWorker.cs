@@ -13,13 +13,15 @@ namespace Gaius.Core.Worker
     {
         protected List<string> RequiredDirectories;
         protected GaiusConfiguration GaiusConfiguration;
-        protected static readonly GenerationInfo GenerationInfo = new GenerationInfo()
+        protected static readonly GenerationData GenerationInfo = new GenerationData()
         {
             GenerationDateTime = DateTime.UtcNow,
             GaiusVersion = AssemblyUtilities.GetAssemblyVersion(AssemblyUtilities.EntryAssembly)
         };
 
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
+        public abstract void AddPaginatorDataToWorkerTask(WorkerTask workerTask, PaginatorData paginatorData, List<WorkerTask> paginatorWorkerTasks);
+        public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, PaginatorData paginatorData, List<WorkerTask> paginatorWorkerTasks);
         public abstract string PerformWork(WorkerTask workerTask);
         public (bool, List<string>) ValidateSiteContainerDirectory()
         {
@@ -48,7 +50,7 @@ namespace Gaius.Core.Worker
 
             return (sourceDirExists && otherReqDirsExist, validationErrors);
         }
-        public virtual string GetTarget(FileSystemInfo fileSystemInfo)
+        public virtual string GetTarget(FileSystemInfo fileSystemInfo, int page = 1)
         {
             if (fileSystemInfo.IsDirectory())
             {

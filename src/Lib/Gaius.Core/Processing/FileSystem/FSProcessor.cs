@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -7,18 +6,17 @@ using Gaius.Core.Configuration;
 using Gaius.Utilities.DataStructures;
 using Gaius.Utilities.FileSystem;
 using Gaius.Core.Worker;
+using Gaius.Core.Models;
 
 namespace Gaius.Core.Processing.FileSystem
 {
     public class FSProcessor : IFSProcessor
     {
-        private readonly IServiceProvider _provider;
         private readonly IWorker _worker;
         private readonly GaiusConfiguration _gaiusConfiguration;
 
-        public FSProcessor(IServiceProvider provider, IWorker worker, IOptions<GaiusConfiguration> gaiusConfigurationOptions)
+        public FSProcessor(IWorker worker, IOptions<GaiusConfiguration> gaiusConfigurationOptions)
         {
-            _provider = provider;
             _worker = worker;
             _gaiusConfiguration = gaiusConfigurationOptions.Value;
         }
@@ -36,18 +34,18 @@ namespace Gaius.Core.Processing.FileSystem
             FSOperation sourceDirOp = null;
             FSOperation namedThemeDirOp = null;
 
-            rootOp = FSOperation.CreateInstance(_provider, rootSiteDirTask, FSOperationType.Root);
+            rootOp = new FSOperation(rootSiteDirTask, FSOperationType.Root, _gaiusConfiguration);
 
             if(!Directory.Exists(genDirectoryFullPath))
             {
-                 sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.CreateNew);
-                 namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirTask, FSOperationType.CreateNew);
+                 sourceDirOp = new FSOperation(sourceDirTask, FSOperationType.CreateNew, _gaiusConfiguration);
+                 namedThemeDirOp = new FSOperation(namedThemeDirTask, FSOperationType.CreateNew, _gaiusConfiguration);
             }
                 
             else
             {
-                sourceDirOp = FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Overwrite);
-                namedThemeDirOp = FSOperation.CreateInstance(_provider, namedThemeDirTask, FSOperationType.Overwrite);
+                sourceDirOp = new FSOperation(sourceDirTask, FSOperationType.Overwrite, _gaiusConfiguration);
+                namedThemeDirOp = new FSOperation(namedThemeDirTask, FSOperationType.Overwrite, _gaiusConfiguration);
                 genDirInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
             }
 
@@ -70,6 +68,8 @@ namespace Gaius.Core.Processing.FileSystem
             var namedThemeDirTreeNode = opTree.AddChild(namedThemeDirOp);
             AddOperationsToTreeNode(namedThemeDirTreeNode, namedThemeDirTask.DirectoryInfo, genDirInfo);
 
+            AddAdditionalPostListingPaginatorOps(sourceDirTreeNode);
+
             RemoveFalsePositiveDeleteOps(sourceDirTreeNode, namedThemeDirTreeNode);
 
             return opTree;            
@@ -80,7 +80,7 @@ namespace Gaius.Core.Processing.FileSystem
             // Files ==========================================================
             var matchingGenFiles = new List<FileInfo>();
 
-            foreach(var sourceFile in sourceStartDir?.EnumerateFiles() ?? Enumerable.Empty<FileInfo>())
+            foreach(var sourceFile in sourceStartDir?.EnumerateFiles().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<FileInfo>())
             {
                 var hasMatch = false;
                 var matchingGenFile = FindMachingGenerationFile(genStartDir, sourceFile);
@@ -96,26 +96,26 @@ namespace Gaius.Core.Processing.FileSystem
 
                 if(hasMatch && sourceFileTask.ShouldSkipKeep)
                 {
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.Skip));
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.Keep));
+                    startNode.AddChild(new FSOperation(sourceFileTask, FSOperationType.Skip, _gaiusConfiguration));
+                    startNode.AddChild(new FSOperation(sourceFileTask, FSOperationType.Keep, _gaiusConfiguration));
                 }
 
                 else if(hasMatch && sourceFileTask.ShouldSkip)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.SkipDelete));
+                    startNode.AddChild(new FSOperation(sourceFileTask, FSOperationType.SkipDelete, _gaiusConfiguration));
 
                 else if(hasMatch && sourceFileTask.IsDraft)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.SkipDraft));
+                    startNode.AddChild(new FSOperation(sourceFileTask, FSOperationType.SkipDraft, _gaiusConfiguration));
 
                 else if(hasMatch)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.Overwrite));
+                    startNode.AddChild(new FSOperation(sourceFileTask, FSOperationType.Overwrite, _gaiusConfiguration));
 
                 else if(!hasMatch && sourceFileTask.ShouldSkip)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.Skip));
+                    startNode.AddChild(new FSOperation(sourceFileTask, FSOperationType.Skip, _gaiusConfiguration));
 
                 else if(!hasMatch && sourceFileTask.IsDraft)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.SkipDraft));
+                    startNode.AddChild(new FSOperation(sourceFileTask, FSOperationType.SkipDraft, _gaiusConfiguration));
 
-                else startNode.AddChild(FSOperation.CreateInstance(_provider, sourceFileTask, FSOperationType.CreateNew));
+                else startNode.AddChild(new FSOperation(sourceFileTask, FSOperationType.CreateNew, _gaiusConfiguration));
             }
 
             //rs: all other files in the generation dir are considered orphaned
@@ -126,9 +126,9 @@ namespace Gaius.Core.Processing.FileSystem
 
                 //rs: is this a special file that should be kept despite being orphaned?
                 if(orphanGenFileTask.ShouldKeep)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFileTask, FSOperationType.Keep));
+                    startNode.AddChild(new FSOperation(orphanGenFileTask, FSOperationType.Keep, _gaiusConfiguration));
 
-                else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenFileTask, FSOperationType.Delete));
+                else startNode.AddChild(new FSOperation(orphanGenFileTask, FSOperationType.Delete, _gaiusConfiguration));
             }
 
             // Directories ====================================================
@@ -152,20 +152,20 @@ namespace Gaius.Core.Processing.FileSystem
 
                 if(hasMatch && sourceDirTask.ShouldSkipKeep)
                 {
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Skip));
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Keep));
+                    startNode.AddChild(new FSOperation(sourceDirTask, FSOperationType.Skip, _gaiusConfiguration));
+                    startNode.AddChild(new FSOperation(sourceDirTask, FSOperationType.Keep, _gaiusConfiguration));
                 }
 
                 else if(hasMatch && sourceDirTask.ShouldSkip)
-                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.SkipDelete));
+                    newOpTreeNode = startNode.AddChild(new FSOperation(sourceDirTask, FSOperationType.SkipDelete, _gaiusConfiguration));
 
                 else if(hasMatch)
-                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Overwrite));
+                    newOpTreeNode = startNode.AddChild(new FSOperation(sourceDirTask, FSOperationType.Overwrite, _gaiusConfiguration));
                 
                 else if(!hasMatch && sourceDirTask.ShouldSkip)
-                    newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.Skip));
+                    newOpTreeNode = startNode.AddChild(new FSOperation(sourceDirTask, FSOperationType.Skip, _gaiusConfiguration));
 
-                else newOpTreeNode = startNode.AddChild(FSOperation.CreateInstance(_provider, sourceDirTask, FSOperationType.CreateNew));
+                else newOpTreeNode = startNode.AddChild(new FSOperation(sourceDirTask, FSOperationType.CreateNew, _gaiusConfiguration));
 
                 if(newOpTreeNode != null)
                     AddOperationsToTreeNode(newOpTreeNode, sourceDir, matchingGenDir);
@@ -178,9 +178,9 @@ namespace Gaius.Core.Processing.FileSystem
 
                 //rs: is this a special dir that should be kept despite being orphaned?
                 if(orphanGenDirTask.ShouldKeep)
-                    startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDirTask, FSOperationType.Keep));
+                    startNode.AddChild(new FSOperation(orphanGenDirTask, FSOperationType.Keep, _gaiusConfiguration));
 
-                else startNode.AddChild(FSOperation.CreateInstance(_provider, orphanGenDirTask, FSOperationType.Delete));
+                else startNode.AddChild(new FSOperation(orphanGenDirTask, FSOperationType.Delete, _gaiusConfiguration));
             }
         }
 
@@ -244,6 +244,46 @@ namespace Gaius.Core.Processing.FileSystem
             }
         }
 
+        private void AddAdditionalPostListingPaginatorOps(TreeNode<FSOperation> sourceTreeNode)
+        {
+            //rs: get all post ops worker tasks
+            var allPostWorkerTasks = sourceTreeNode.Where(tn => tn.Data.WorkerTask.IsPost).Select(tn => tn.Data.WorkerTask).ToList();
+
+            var allDefaultPostListingsNodes = sourceTreeNode.Where(tn => tn.Data.IsListingOp && tn.Data.WorkerTask.IsDefaultPostListing).ToList();
+
+            //rs: add additional paginator ops for any default post listing pages
+            foreach(var defaultPostListingNode in allDefaultPostListingsNodes)
+            {
+                AddAdditionalPostListingPaginatorOpsForId(defaultPostListingNode, "posts", allPostWorkerTasks);
+            }
+        }
+
+        private void AddAdditionalPostListingPaginatorOpsForId(TreeNode<FSOperation> pageListTreeNode, string paginatorId, List<WorkerTask> postWorkerTasks)
+        {
+            if(postWorkerTasks.Count == 0)
+                return;
+
+            var itemsPerPage = _gaiusConfiguration.Pagination;
+            var totalItems = postWorkerTasks.Count;
+            var totalPages = totalItems / itemsPerPage;
+
+            if(totalItems % itemsPerPage > 0)
+                totalPages++;
+
+            var firstPagePostWorkerTasks = postWorkerTasks.Take(itemsPerPage).ToList();
+            var firstPagePaginatorData = new PaginatorData(paginatorId, itemsPerPage, 1, totalPages, totalItems);
+            _worker.AddPaginatorDataToWorkerTask(pageListTreeNode.Data.WorkerTask, firstPagePaginatorData, firstPagePostWorkerTasks);
+
+            for(var pg = 2; pg <= totalPages; pg++)
+            {
+                var pgPostWorkerTasks = postWorkerTasks.Skip((pg - 1) * itemsPerPage).Take(itemsPerPage).ToList();
+                var pgPaginatorData = new PaginatorData(paginatorId, itemsPerPage, pg, totalPages, totalItems);
+                var additionalWorkerTask = _worker.CreateWorkerTask(pageListTreeNode.Data.WorkerTask.FileSystemInfo, pgPaginatorData, pgPostWorkerTasks);
+                var additonalOp = new FSOperation(additionalWorkerTask, FSOperationType.AdditionalListingPage, _gaiusConfiguration);
+                pageListTreeNode.AddChild(additonalOp);
+            }
+        }
+
         public void ProcessFSOperationTree(TreeNode<FSOperation> opTree)
         {
             var siteDirFullPath = _gaiusConfiguration.SiteContainerFullPath;
@@ -280,13 +320,15 @@ namespace Gaius.Core.Processing.FileSystem
         private void ProcessFSOpTreeNode(TreeNode<FSOperation> opTreeNode, string parentDirFullPath)
         {
 
+            //rs: nothing to do for this particular op
             if(opTreeNode.Data.IsWorkerOmittedForOp)
             {
                 opTreeNode.Data.Status = OperationStatus.Complete;
                 return;
             }
 
-            if(opTreeNode.Data.IsDirectoryOp)
+            //rs: this is a directory op, process it, then each of it's child file ops
+            else if(opTreeNode.Data.IsDirectoryOp)
             {
                 var newParentDirFullPath = ProcessDirectoryFSOpTreeNode(opTreeNode, parentDirFullPath);
                 
@@ -296,6 +338,18 @@ namespace Gaius.Core.Processing.FileSystem
                 }
             }
 
+            //rs: this is a file listing op, process it, then each of it's children (in the same parent directory)
+            else if(opTreeNode.Data.IsListingOp)
+            {
+                ProcessFileFSOpTreeNode(opTreeNode, parentDirFullPath);
+
+                foreach(var childOpTreeNode in opTreeNode.Children)
+                {
+                    ProcessFileFSOpTreeNode(childOpTreeNode, parentDirFullPath);
+                }
+            }
+
+            //rs: this is a regular file op, process it
             else ProcessFileFSOpTreeNode(opTreeNode, parentDirFullPath);
         }
 

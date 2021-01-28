@@ -9,7 +9,7 @@ namespace Gaius.Utilities.DataStructures
     {
         public T Data { get; set; }
         public TreeNode<T> Parent { get; set; }
-        public ICollection<TreeNode<T>> Children { get; set; }
+        public IList<TreeNode<T>> Children { get; set; }
 
         public Boolean IsRoot
         {
@@ -59,7 +59,7 @@ namespace Gaius.Utilities.DataStructures
 
         #region Searching 
         
-        private ICollection<TreeNode<T>> ElementsIndex { get; set; }
+        private IList<TreeNode<T>> ElementsIndex { get; set; }
 
         private void RegisterChildForSearch(TreeNode<T> node)
         {

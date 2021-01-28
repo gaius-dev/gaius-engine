@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using Gaius.Core.Models;
 
@@ -5,17 +6,18 @@ namespace Gaius.Core.Worker
 {
     public class WorkerTask
     {
-        private IWorkerLayoutInfo _layoutInfo;
+        private IWorkerLayoutData _layoutData;
         private IFrontMatter _frontMatter;
-        private PaginatorInfo _paginatorInfo;
+        private PaginatorData _paginatorInfo;
+        private List<WorkerTask> _paginatorWorkerTasks;
 
-        public WorkerTask(FileSystemInfo fileSystemInfo, IWorkerLayoutInfo layoutInfo, IFrontMatter frontMatter, WorkType workType, bool isPost, bool shouldSkip, bool shouldKeep, string targetFSName, string targetUrl, string targetId)
+        public WorkerTask(FileSystemInfo fileSystemInfo, IWorkerLayoutData layoutData, IFrontMatter frontMatter, WorkType workType, bool isPost, bool shouldSkip, bool shouldKeep, string targetFSName, string targetUrl, string targetId)
         {
-            //rs: explicitly set the PaginatorInfo == null (for code understanding in the future)
             _paginatorInfo = null;
+            _paginatorWorkerTasks = null;
 
             FileSystemInfo = fileSystemInfo;
-            _layoutInfo = layoutInfo;
+            _layoutData = layoutData;
             _frontMatter = frontMatter;
             WorkType = workType;
             IsPost = isPost;
@@ -42,14 +44,20 @@ namespace Gaius.Core.Worker
         public bool IsDraft => _frontMatter?.IsDraft ?? false;
         public IFrontMatter GetFrontMatter() => _frontMatter;
 
-        //comes from ILayoutInfo
-        public string LayoutId => _layoutInfo?.Id ?? string.Empty;
-        public bool ContainsPaginator => _layoutInfo?.ContainsPaginator ?? false;
-        public string PaginatorId => _layoutInfo?.PaginatorId ?? string.Empty;
-        public bool IsPostListing => _layoutInfo?.IsPostListing ?? false;
+        //comes from IWorkerLayoutData
+        public string LayoutId => _layoutData?.Id ?? string.Empty;
+        public string PaginatorId => _layoutData?.PaginatorId ?? string.Empty;
+        public bool IsListing => _layoutData?.IsListing ?? false;
+        public bool IsDefaultPostListing => _layoutData?.IsDefaultPostListing ?? false;
 
-        //PaginatorInfo get/set
-        public void SetPaginatorInfo(PaginatorInfo paginatorInfo) => _paginatorInfo = paginatorInfo;
-        public PaginatorInfo GetPaginatorInfo() => _paginatorInfo;
+        //PaginatorData get/set
+        public void AddPaginatorData(PaginatorData paginatorInfo) => _paginatorInfo = paginatorInfo;
+        public PaginatorData GetPaginatorData() => _paginatorInfo;
+        public bool HasPaginatorData => _paginatorInfo != null;
+
+        //PaginatorWorkerTasks get/set
+        public void AddPaginatorWorkerTasks(List<WorkerTask> paginatorWorkerTasks) => _paginatorWorkerTasks = paginatorWorkerTasks;
+        public List<WorkerTask> GetPaginatorWorkerTasks() => _paginatorWorkerTasks;
+        public bool HasPaginatorWorkerTasks => _paginatorWorkerTasks != null;
     }
 }

@@ -100,11 +100,10 @@ namespace Gaius.Core.Terminal
         {
             PrintOperationStatus(treeNode.Data);
 
-            if(treeNode.Data.FSOperationType == FSOperationType.CreateNew)
-                PrintCreateNewOperationTreeNode(treeNode, maxSrcLength);
-
-            else if(treeNode.Data.FSOperationType == FSOperationType.Overwrite)
-                PrintOverwriteOperationTreeNode(treeNode, maxSrcLength);
+            if(treeNode.Data.FSOperationType == FSOperationType.CreateNew
+                || treeNode.Data.FSOperationType == FSOperationType.Overwrite
+                || treeNode.Data.FSOperationType == FSOperationType.AdditionalListingPage)
+                PrintCreateNewOrOverwriteOrAdditonalListingPageOperationTreeNode(treeNode, maxSrcLength);
 
             else if(treeNode.Data.FSOperationType == FSOperationType.Skip
                     || treeNode.Data.FSOperationType == FSOperationType.Root)
@@ -137,23 +136,10 @@ namespace Gaius.Core.Terminal
             return (indent, outdent);
         }
 
-        private static void PrintCreateNewOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        private static void PrintCreateNewOrOverwriteOrAdditonalListingPageOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
         {
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
             
-            Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.Name, GetColorForTreeNodeSource(treeNode));
-            Console.Write(outdent);
-            PrintOperation(treeNode.Data);
-            Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.WorkerTask.TargetFSName, GetColorForTreeNodeDestination(treeNode));
-            Console.WriteLine();
-        }
-
-        private static void PrintOverwriteOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
-        {
-            (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
-
             Console.Write(indent);
             Colorful.Console.Write(treeNode.Data.Name, GetColorForTreeNodeSource(treeNode));
             Console.Write(outdent);
@@ -285,6 +271,10 @@ namespace Gaius.Core.Terminal
                 case FSOperationType.SkipDraft:
                     Colorful.Console.Write(" d ", RED_COLOR);
                     break;
+
+                case FSOperationType.AdditionalListingPage:
+                    Colorful.Console.Write(" L ", GREEN_COLOR);
+                    break;
             }
         }
 
@@ -326,6 +316,10 @@ namespace Gaius.Core.Terminal
                 case FSOperationType.SkipDraft:
                     Console.Write("draft ");
                     break;
+
+                case FSOperationType.AdditionalListingPage:
+                    Console.Write("lst pg");
+                    break;
             }
         }
 
@@ -341,6 +335,7 @@ namespace Gaius.Core.Terminal
             {
                 case FSOperationType.CreateNew:
                 case FSOperationType.Overwrite:
+                case FSOperationType.AdditionalListingPage:
 
                     switch(op.WorkerTask.WorkType)
                     {

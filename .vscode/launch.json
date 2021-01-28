@@ -25,6 +25,26 @@
             }
         },
         {
+            "name": "Launch and debug Gaius server (serving gaius-starter)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/GaiusServer/bin/Debug/netcoreapp3.1/gaius-server.dll",
+            "args": [ "../../../gaius-starter"],
+            "cwd": "${workspaceFolder}/src/GaiusServer",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/src/GaiusServer/Views"
+            }
+        },
+        {
             "name": "Launch and debug Gaius engine (processing gaius-docs)",
             "type": "coreclr",
             "request": "launch",
@@ -32,6 +52,19 @@
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/src/Gaius/bin/Debug/netcoreapp3.1/gaius.dll",
             "args": [ "process-test", "../../../gaius-docs", "-y" ],
+            "cwd": "${workspaceFolder}/src/Gaius",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch and debug Gaius engine (processing gaius-starter)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/netcoreapp3.1/gaius.dll",
+            "args": [ "process-test", "../../../gaius-starter", "-y" ],
             "cwd": "${workspaceFolder}/src/Gaius",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
