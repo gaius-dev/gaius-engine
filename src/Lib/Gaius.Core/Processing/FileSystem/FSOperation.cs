@@ -5,18 +5,17 @@ namespace Gaius.Core.Processing.FileSystem
 {
     public class FSOperation
     {
-        public FSOperation(WorkerTask workerTask) : this(workerTask, FSOperationType.Undefined) { }
-        public FSOperation(WorkerTask workerTask, FSOperationType fsOperationType)
+        public FSOperation(WorkerTask workerTask, bool isOpInGenDir = false) : this(workerTask, FSOperationType.Undefined, isOpInGenDir) { }
+        public FSOperation(WorkerTask workerTask, FSOperationType fsOperationType, bool isOpInGenDir = false)
         {
             WorkerTask = workerTask;
 
             if(fsOperationType == FSOperationType.Undefined)
             {
-                if(WorkerTask.IsSkip)
-                    fsOperationType = FSOperationType.Skip;
+                if(isOpInGenDir)
+                    fsOperationType = WorkerTask.IsKeep ? FSOperationType.Keep : FSOperationType.Delete;
 
-                else if(WorkerTask.IsKeep)
-                    fsOperationType = FSOperationType.Keep;
+                else fsOperationType = WorkerTask.IsSkip ? FSOperationType.Skip : FSOperationType.CreateOverwrite;
             }
 
             FSOperationType = fsOperationType;
@@ -26,8 +25,7 @@ namespace Gaius.Core.Processing.FileSystem
         public WorkerTask WorkerTask { get; private set; }
         public FSOperationType FSOperationType { get; internal set; }
         public OperationStatus Status { get; internal set; }
-        public bool IsEmptyOp => FSOperationType != FSOperationType.CreateNew
-                                    && FSOperationType != FSOperationType.Overwrite;
+        public bool IsEmptyOp => FSOperationType != FSOperationType.CreateOverwrite;
         public bool IsUnsafe => FSOperationType == FSOperationType.Delete;
         public bool IsDirectoryOp => WorkerTask.FileSystemInfo.IsDirectory();
     }

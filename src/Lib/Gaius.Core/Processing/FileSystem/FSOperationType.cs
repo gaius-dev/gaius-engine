@@ -5,8 +5,7 @@ namespace Gaius.Core.Processing.FileSystem
         Undefined,
         Root,
         Skip,
-        CreateNew,
-        Overwrite,
+        CreateOverwrite,
         Keep,
         Delete
     }

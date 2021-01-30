@@ -23,9 +23,6 @@ namespace Gaius.Core.Worker
         public string TargetFileOrDirectoryName => TargetPathSegments.Last();
         public string TargetUrl { get; internal set; }
         public string TargetId { get; internal set; }
-        public string YearStr { get; internal set; }
-        public string MonthStr { get; internal set; }
-        public string DayStr { get; internal set; }
         public string SourceDisplayName { get; internal set; }
         public string TargetDisplayName { get; internal set; }
 

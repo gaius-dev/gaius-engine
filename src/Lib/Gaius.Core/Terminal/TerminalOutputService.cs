@@ -100,9 +100,8 @@ namespace Gaius.Core.Terminal
         {
             PrintOperationStatus(opNode.Data);
 
-            if(opNode.Data.FSOperationType == FSOperationType.CreateNew
-                || opNode.Data.FSOperationType == FSOperationType.Overwrite)
-                PrintCreateNewOrOverwriteOperationTreeNode(opNode, maxSrcLength);
+            if(opNode.Data.FSOperationType == FSOperationType.CreateOverwrite)
+                PrintCreateOverwriteOperationTreeNode(opNode, maxSrcLength);
 
             else if(opNode.Data.FSOperationType == FSOperationType.Skip
                     || opNode.Data.FSOperationType == FSOperationType.Root)
@@ -129,7 +128,7 @@ namespace Gaius.Core.Terminal
             return (indent, outdent);
         }
 
-        private static void PrintCreateNewOrOverwriteOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        private static void PrintCreateOverwriteOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
         {
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
             
@@ -164,6 +163,13 @@ namespace Gaius.Core.Terminal
             Colorful.Console.Write(treeNode.Data.WorkerTask.SourceDisplayName, GetColorForTreeNodeSource(treeNode));
             Console.Write(outdent);
             PrintOperation(treeNode.Data);
+            
+            if(!string.IsNullOrWhiteSpace(treeNode.Data.WorkerTask.TargetDisplayName))
+            {
+                Console.Write(indent);
+                Colorful.Console.Write(treeNode.Data.WorkerTask.TargetDisplayName, GetColorForTreeNodeDestination(treeNode));
+            }
+
             Console.WriteLine();
         }
 
@@ -210,12 +216,8 @@ namespace Gaius.Core.Terminal
 
             switch (op.FSOperationType)
             {
-                case FSOperationType.CreateNew:
+                case FSOperationType.CreateOverwrite:
                     Colorful.Console.Write(" + ", GREEN_COLOR);
-                    break;
-
-                case FSOperationType.Overwrite:
-                    Colorful.Console.Write(" @ ", GREEN_COLOR);
                     break;
 
                 case FSOperationType.Keep:
@@ -246,12 +248,8 @@ namespace Gaius.Core.Terminal
 
             switch (op.FSOperationType)
             {
-                case FSOperationType.CreateNew:
+                case FSOperationType.CreateOverwrite:
                     Console.Write("create");
-                    break;
-
-                case FSOperationType.Overwrite:
-                    Console.Write("overwr");
                     break;
 
                 case FSOperationType.Keep:
@@ -282,8 +280,7 @@ namespace Gaius.Core.Terminal
 
             switch(op.FSOperationType)
             {
-                case FSOperationType.CreateNew:
-                case FSOperationType.Overwrite:
+                case FSOperationType.CreateOverwrite:
 
                     switch(op.WorkerTask.WorkType)
                     {
@@ -334,11 +331,8 @@ namespace Gaius.Core.Terminal
         {
             var completedOps = treeNode.Where(node => node.Data.Status == OperationStatus.Complete).ToList();
 
-            var dirsCreated = completedOps.Count(node => node.Data.FSOperationType == FSOperationType.CreateNew && node.Data.IsDirectoryOp);
-            var filesCreated = completedOps.Count(node => node.Data.FSOperationType == FSOperationType.CreateNew && !node.Data.IsDirectoryOp);
-
-            var dirsOverwritten = completedOps.Count(node => node.Data.FSOperationType == FSOperationType.Overwrite && node.Data.IsDirectoryOp);
-            var filesOverwritten = completedOps.Count(node => node.Data.FSOperationType == FSOperationType.Overwrite && !node.Data.IsDirectoryOp);
+            var dirsCreatedOverwritten = completedOps.Count(node => node.Data.FSOperationType == FSOperationType.CreateOverwrite && node.Data.IsDirectoryOp);
+            var filesCreatedOverwritten = completedOps.Count(node => node.Data.FSOperationType == FSOperationType.CreateOverwrite && !node.Data.IsDirectoryOp);
 
             var dirsDeleted = completedOps.Count(node => node.Data.FSOperationType == FSOperationType.Delete && node.Data.IsDirectoryOp);
             var filesDeleted = completedOps.Count(node => node.Data.FSOperationType == FSOperationType.Delete && !node.Data.IsDirectoryOp);
@@ -355,14 +349,9 @@ namespace Gaius.Core.Terminal
                 Colorful.Console.WriteLine($"{completedOps.Count} operations were completed successfully.", GREEN_COLOR);
                 
                 Console.WriteLine();
-                Console.WriteLine("Create Operations:");
-                Console.WriteLine($"  {dirsCreated} new {(dirsCreated == 1 ? DIRECTORY_WAS : DIRECTORIES_WERE)} created.");
-                Console.WriteLine($"  {filesCreated} new {(filesCreated == 1 ? FILE_WAS : FILES_WERE)} created.");
-
-                Console.WriteLine();
-                Console.WriteLine("Overwrite Operations:");
-                Console.WriteLine($"  {dirsOverwritten} {(dirsOverwritten == 1 ? DIRECTORY_WAS : DIRECTORIES_WERE)} overwritten.");
-                Console.WriteLine($"  {filesOverwritten} {(filesOverwritten == 1 ? FILE_WAS : FILES_WERE)} overwritten.");
+                Console.WriteLine("Create/Overwrite Operations:");
+                Console.WriteLine($"  {dirsCreatedOverwritten} new {(dirsCreatedOverwritten == 1 ? DIRECTORY_WAS : DIRECTORIES_WERE)} created/overwritten.");
+                Console.WriteLine($"  {filesCreatedOverwritten} new {(filesCreatedOverwritten == 1 ? FILE_WAS : FILES_WERE)} created/overwritten.");
 
                 Console.WriteLine();
                 Console.WriteLine("Delete Operations:");

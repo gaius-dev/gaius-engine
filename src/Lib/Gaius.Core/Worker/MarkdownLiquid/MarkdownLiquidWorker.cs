@@ -150,6 +150,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
             if(fileSystemInfo.IsDirectory())
                 if(fileSystemInfo.Name.Equals(_layoutsDirectory, StringComparison.InvariantCultureIgnoreCase)
+                    || fileSystemInfo.Name.Equals(GaiusConfiguration.PostsDirectoryName, StringComparison.InvariantCultureIgnoreCase)
                     || fileSystemInfo.Name.Equals(GaiusConfiguration.DraftsDirectoryName, StringComparison.InvariantCultureIgnoreCase))
                     return true;
 
@@ -230,6 +231,8 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
             return fileSystemInfo.Name;
         }
+        private const string _dateTimePrefixRegExStr = @"\d{4}-\d{2}-\d{2}-";
+        private static Regex _dateTimePrefixRegEx = new Regex(_dateTimePrefixRegExStr, RegexOptions.Compiled);
         private (List<string>, string, string, string) GetTargets(FileSystemInfo fileSystemInfo, int pageNumber = 1)
         {
             var siteContainerDirectoryInfo = new DirectoryInfo(GaiusConfiguration.SiteContainerFullPath);
@@ -240,15 +243,20 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 if(fileSystemInfo.FullName.Equals(GaiusConfiguration.SiteContainerFullPath, StringComparison.InvariantCultureIgnoreCase))
                     return (siteContainerDirectoryInfo.GetPathSegments(), null, null, null);
 
+                if(fileSystemInfo.FullName.Equals(GaiusConfiguration.PostsDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
+                    return (genDirectoryInfo.GetPathSegments(), "yyyy/MM/dd", null, null);
+
                 if(fileSystemInfo.FullName.Equals(GaiusConfiguration.SourceDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
                     || fileSystemInfo.FullName.Equals(GaiusConfiguration.NamedThemeDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase)
+                    || fileSystemInfo.FullName.Equals(GaiusConfiguration.PostsDirectoryName, StringComparison.InvariantCultureIgnoreCase)
                     || fileSystemInfo.FullName.Equals(GaiusConfiguration.DraftsDirectoryFullPath, StringComparison.InvariantCultureIgnoreCase))
                     return (genDirectoryInfo.GetPathSegments(), GaiusConfiguration.GenerationDirectoryName, null, null);
             }
 
             var rawPath = fileSystemInfo.GetPathSegments();
 
-            var skipAmt = GetSkipAmtForChildOfSourceDirectory(rawPath);
+            var skipAmt = -1;
+            skipAmt = skipAmt > -1 ? skipAmt : GetSkipAmtForChildOfSourceDirectory(rawPath);
             skipAmt = skipAmt > -1 ? skipAmt : GetSkipAmtForChildOfNamedThemeDirectory(rawPath);
 
             //rs: we're dealing with a file / directory that's in the generation directory
@@ -264,6 +272,17 @@ namespace Gaius.Core.Worker.MarkdownLiquid
             var relativePath = rawPath.Skip(skipAmt).ToList();
 
             var targetFileOrDirectoryName = GetTargetFileOrDirectoryName(fileSystemInfo, pageNumber);
+            var targetDisplayName = targetFileOrDirectoryName;
+
+            if(GetIsPost(fileSystemInfo))
+            {
+                var dateTimePrefix = _dateTimePrefixRegEx.Match(fileSystemInfo.Name).Value;
+                var dateTimePathSegments = dateTimePrefix.Split('-', StringSplitOptions.RemoveEmptyEntries).ToList();
+                relativePath.Remove(GaiusConfiguration.PostsDirectoryName);
+                relativePath = dateTimePathSegments.Concat(relativePath).ToList();
+                targetDisplayName = string.Join('/', dateTimePathSegments.Concat(new string[] {targetDisplayName}));
+            }
+
             relativePath[relativePath.Count - 1] = targetFileOrDirectoryName;
 
             var targetPath = genDirectoryInfo.GetPathSegments().Concat(relativePath).ToList();
@@ -277,10 +296,14 @@ namespace Gaius.Core.Worker.MarkdownLiquid
                 targetId = Path.GetFileNameWithoutExtension(string.Join(".", relativePath));
             }
 
-            return (targetPath, targetFileOrDirectoryName, targetUrl, targetId);
+            return (targetPath, targetDisplayName, targetUrl, targetId);
         }
+
         private string GetTargetFileOrDirectoryName(FileSystemInfo fileSystemInfo, int pageNumber)
         {
+            if(GetIsPost(fileSystemInfo))
+                return $"{_dateTimePrefixRegEx.Replace(Path.GetFileNameWithoutExtension(fileSystemInfo.Name), string.Empty)}.html";
+
             if(fileSystemInfo.IsMarkdownFile())
             {
                 return pageNumber > 1 
