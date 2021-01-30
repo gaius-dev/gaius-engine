@@ -11,6 +11,7 @@ namespace Gaius.Core.Configuration
         public string GenerationDirectoryName { get; set; } = "_generated";
         public string ThemesDirectoryName { get; set; } = "_themes";
         public string PostsDirectoryName { get; set; } = "_posts";
+        public string DraftsDirectoryName { get; set; } = "_drafts";
         public string ThemeName { get; set; } = "default";
         public int Pagination { get; set; } = 5;
         public string GenerationUrlRootPrefix { get; set; } = string.Empty;
@@ -30,6 +31,9 @@ namespace Gaius.Core.Configuration
 
         [JsonIgnore]
         public string PostsDirectoryFullPath => Path.Combine(SiteContainerFullPath, SourceDirectoryName, PostsDirectoryName);
+
+        [JsonIgnore]
+        public string DraftsDirectoryFullPath => Path.Combine(SiteContainerFullPath, SourceDirectoryName, DraftsDirectoryName);
 
         [JsonIgnore]
         public List<string> SupportedWorkers => new List<string>() { MARKDOWN_LIQUID_PIPELINE };

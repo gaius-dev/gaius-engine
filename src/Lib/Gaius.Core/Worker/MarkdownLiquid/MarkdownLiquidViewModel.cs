@@ -8,11 +8,11 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 {
     public class MarkdownLiquidViewModel
     {
-        public MarkdownLiquidViewModel(ViewModelData viewModelData, GenerationData generationData, GaiusConfiguration gaiusConfiguration)
+        public MarkdownLiquidViewModel(ViewModel viewModelData, GenerationInfo generationData, GaiusConfiguration gaiusConfiguration)
         {
             page = new MarkdownLiquidViewModel_Page(viewModelData);
 
-            if(viewModelData.PaginatorData != null && viewModelData.PaginatorViewModels?.Count > 0)
+            if(viewModelData.Paginator != null && viewModelData.PaginatorViewModels?.Count > 0)
                 paginator = new MarkdownLiquidViewModel_Paginator(viewModelData);
             
             site = new MarkdownLiquidViewModel_Site() 
@@ -35,7 +35,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
     public class MarkdownLiquidViewModel_Page
     {
-        public MarkdownLiquidViewModel_Page(BaseViewModelData baseViewModel, bool generateTeaser = false)
+        public MarkdownLiquidViewModel_Page(BaseViewModel baseViewModel, bool generateTeaser = false)
         {
             id = baseViewModel.Id;
             url = baseViewModel.Url;
@@ -76,17 +76,17 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
     public class MarkdownLiquidViewModel_Paginator
     {
-        public MarkdownLiquidViewModel_Paginator (ViewModelData viewModelData)
+        public MarkdownLiquidViewModel_Paginator (ViewModel viewModelData)
         {
-            page = viewModelData.PaginatorData.PageNumber;
-            per_page = viewModelData.PaginatorData.ItemsPerPage;
+            page = viewModelData.Paginator.PageNumber;
+            per_page = viewModelData.Paginator.ItemsPerPage;
             posts = viewModelData.PaginatorViewModels.Select(pgViewModel => new MarkdownLiquidViewModel_Page(pgViewModel, true)).ToList();
-            total_posts = viewModelData.PaginatorData.TotalItems;
-            total_pages = viewModelData.PaginatorData.TotalPages;
-            previous_page = viewModelData.PaginatorData.PrevPageNumber;
-            previous_page_path = viewModelData.PaginatorData.PrevPageUrl;
-            next_page = viewModelData.PaginatorData.NextPageNumber;
-            next_page_path = viewModelData.PaginatorData.NextPageUrl;
+            total_posts = viewModelData.Paginator.TotalItems;
+            total_pages = viewModelData.Paginator.TotalPages;
+            previous_page = viewModelData.Paginator.PrevPageNumber;
+            previous_page_path = viewModelData.Paginator.PrevPageUrl;
+            next_page = viewModelData.Paginator.NextPageNumber;
+            next_page_path = viewModelData.Paginator.NextPageUrl;
         }
         public int page { get; set; }
         public int per_page { get; set; }

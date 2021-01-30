@@ -1,8 +1,8 @@
 namespace Gaius.Core.Models
 {
-    public class PaginatorData
+    public class Paginator
     {
-        public PaginatorData(string paginatorId, int itemsPerPage, int pageNumber, int totalPages, int totalItems)
+        public Paginator(string paginatorId, int itemsPerPage, int pageNumber, int totalPages, int totalItems)
         {
             PaginatorId = paginatorId;
             ItemsPerPage = itemsPerPage;

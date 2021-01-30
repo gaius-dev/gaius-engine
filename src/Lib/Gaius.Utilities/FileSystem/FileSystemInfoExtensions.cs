@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Gaius.Utilities.FileSystem
 {
@@ -61,9 +63,9 @@ namespace Gaius.Utilities.FileSystem
             return fileSystemInfo.FileHasExtension(".sass");
         }
 
-        public static string[] GetPathSegments(this FileSystemInfo fileSystemInfo)
+        public static List<string> GetPathSegments(this FileSystemInfo fileSystemInfo)
         {
-            return fileSystemInfo.FullName.Split(Path.DirectorySeparatorChar);
+            return fileSystemInfo.FullName.Split(Path.DirectorySeparatorChar).ToList();
         }
 
         public static DirectoryInfo GetParentDirectory(this FileSystemInfo fileSystemInfo)

@@ -1,6 +1,6 @@
 namespace Gaius.Core.Worker
 {
-    public interface IWorkerLayoutData
+    public interface IWorkerLayout
     {
         string Id { get; }
         string PaginatorId { get; }

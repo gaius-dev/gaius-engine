@@ -7,9 +7,9 @@ using Gaius.Utilities.FileSystem;
 
 namespace Gaius.Core.Worker.MarkdownLiquid
 {
-    public class MarkdownLiquidLayoutData : IWorkerLayoutData
+    public class MarkdownLiquidLayout : IWorkerLayout
     {
-        public MarkdownLiquidLayoutData(FileInfo fileInfo)
+        public MarkdownLiquidLayout(FileInfo fileInfo)
         {
             Id = fileInfo.GetNameWithoutExtension();
             LayoutContent = File.ReadAllText(fileInfo.FullName);

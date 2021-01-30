@@ -2,14 +2,12 @@ namespace Gaius.Core.Processing.FileSystem
 {
     public enum FSOperationType
     {
-        CreateNew,
-        Delete,
-        Keep,
-        Overwrite,
+        Undefined,
         Root,
         Skip,
-        SkipDelete,
-        SkipDraft,
-        AdditionalListingPage
+        CreateNew,
+        Overwrite,
+        Keep,
+        Delete
     }
 }

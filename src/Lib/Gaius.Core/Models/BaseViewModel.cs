@@ -2,13 +2,13 @@ using Gaius.Core.Worker;
 
 namespace Gaius.Core.Models
 {
-    public class BaseViewModelData
+    public class BaseViewModel
     {
-        public BaseViewModelData(WorkerTask workerTask, string content)
+        public BaseViewModel(WorkerTask workerTask, string content)
         {
             Id = workerTask.TargetId;
             Url = workerTask.TargetUrl;
-            FrontMatter = workerTask.GetFrontMatter();
+            FrontMatter = workerTask.FrontMatter;
             Content = content;
         }
 
