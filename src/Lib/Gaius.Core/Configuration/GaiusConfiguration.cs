@@ -6,7 +6,7 @@ namespace Gaius.Core.Configuration
 {
     public class GaiusConfiguration
     {
-        public const string MARKDOWN_LIQUID_PIPELINE = "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker";
+        public const string _markdownLiquidWorker = "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker";
         public string SourceDirectoryName { get; set; } = "_source";
         public string GenerationDirectoryName { get; set; } = "_generated";
         public string ThemesDirectoryName { get; set; } = "_themes";
@@ -16,7 +16,7 @@ namespace Gaius.Core.Configuration
         public int Pagination { get; set; } = 5;
         public string GenerationUrlRootPrefix { get; set; } = string.Empty;
         public List<string> AlwaysKeep { get; set; } = new List<string>{ ".git" };
-        public string Worker { get; set; } = MARKDOWN_LIQUID_PIPELINE;
+        public string Worker { get; set; } = _markdownLiquidWorker;
         public string SiteContainerFullPath { get; set; }
         public bool IsTestMode { get; set; } = false;
 
@@ -36,7 +36,7 @@ namespace Gaius.Core.Configuration
         public string DraftsDirectoryFullPath => Path.Combine(SiteContainerFullPath, SourceDirectoryName, DraftsDirectoryName);
 
         [JsonIgnore]
-        public List<string> SupportedWorkers => new List<string>() { MARKDOWN_LIQUID_PIPELINE };
+        public List<string> SupportedWorkers => new List<string>() { _markdownLiquidWorker };
 
         public string GetGenerationUrlRootPrefix() => IsTestMode ? string.Empty : GenerationUrlRootPrefix;
     }
