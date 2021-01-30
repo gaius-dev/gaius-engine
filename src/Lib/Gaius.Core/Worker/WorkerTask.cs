@@ -19,7 +19,8 @@ namespace Gaius.Core.Worker
         public bool IsKeep { get; internal set; }
         public List<string> TargetPathSegments { get; internal set; }
         public string TargetFullPath => string.Join(Path.DirectorySeparatorChar, TargetPathSegments);
-        public string TargetFileOrDirectoryName => TargetPathSegments[TargetPathSegments.Count - 1];
+        public string TargetParentDirectory => string.Join(Path.DirectorySeparatorChar, TargetPathSegments.Take(TargetPathSegments.Count - 1));
+        public string TargetFileOrDirectoryName => TargetPathSegments.Last();
         public string TargetUrl { get; internal set; }
         public string TargetId { get; internal set; }
         public string YearStr { get; internal set; }
@@ -31,8 +32,7 @@ namespace Gaius.Core.Worker
         //comes from IWorkerLayoutData
         public string LayoutId => Layout?.Id ?? string.Empty;
         public string PaginatorId => Layout?.PaginatorId ?? string.Empty;
-        public bool IsListing => Layout?.IsListing ?? false;
-        public bool IsDefaultPostListing => Layout?.IsDefaultPostListing ?? false;
+        public bool IsPostListing => Layout?.IsPostListing ?? false;
 
         //paginator data
         internal Paginator Paginator { get; set; }

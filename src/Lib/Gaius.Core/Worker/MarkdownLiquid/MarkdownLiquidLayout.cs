@@ -20,8 +20,7 @@ namespace Gaius.Core.Worker.MarkdownLiquid
 
         public string Id { get; private set; }
         public string PaginatorId { get; private set; }
-        public bool IsListing => !string.IsNullOrWhiteSpace(PaginatorId);
-        public bool IsDefaultPostListing => IsListing && PaginatorId.Equals("posts");
+        public bool IsPostListing => !string.IsNullOrEmpty(PaginatorId) && PaginatorId.Equals("posts");
         public string LayoutContent { get; private set; }
 
         private const string _paginatorRegExStr = @"{.*paginator\..*}";

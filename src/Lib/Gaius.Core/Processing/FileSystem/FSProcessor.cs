@@ -107,16 +107,16 @@ namespace Gaius.Core.Processing.FileSystem
             //rs: get all post ops worker tasks
             var allPostWorkerTasks = sourceTreeNode.Where(tn => tn.Data.WorkerTask.IsPost).Select(tn => tn.Data.WorkerTask).ToList();
 
-            var allDefaultPostListingsNodes = sourceTreeNode.Where(tn => tn.Data.WorkerTask.IsDefaultPostListing).ToList();
+            var allPostListOpNodes = sourceTreeNode.Where(tn => tn.Data.WorkerTask.IsPostListing).ToList();
 
             //rs: add additional paginator ops for any default post listing pages
-            foreach(var defaultPostListingNode in allDefaultPostListingsNodes)
+            foreach(var postListOpNode in allPostListOpNodes)
             {
-                AddAdditionalPostListingPaginatorOpsForId(defaultPostListingNode, "posts", allPostWorkerTasks);
+                AddAdditionalPostListingPaginatorOpsForId(postListOpNode, allPostWorkerTasks);
             }
         }
 
-        private void AddAdditionalPostListingPaginatorOpsForId(TreeNode<FSOperation> pageListTreeNode, string paginatorId, List<WorkerTask> postWorkerTasks)
+        private void AddAdditionalPostListingPaginatorOpsForId(TreeNode<FSOperation> postListOpNode, List<WorkerTask> postWorkerTasks)
         {
             if(postWorkerTasks.Count == 0)
                 return;
@@ -129,16 +129,16 @@ namespace Gaius.Core.Processing.FileSystem
                 totalPages++;
 
             var firstPagePostWorkerTasks = postWorkerTasks.Take(itemsPerPage).ToList();
-            var firstPagePaginatorData = new Paginator(paginatorId, itemsPerPage, 1, totalPages, totalItems);
-            _worker.AddPaginatorDataToWorkerTask(pageListTreeNode.Data.WorkerTask, firstPagePaginatorData, firstPagePostWorkerTasks);
+            var firstPagePaginatorData = new Paginator(itemsPerPage, 1, totalPages, totalItems);
+            _worker.AddPaginatorDataToWorkerTask(postListOpNode.Data.WorkerTask, firstPagePaginatorData, firstPagePostWorkerTasks);
 
             for(var pg = 2; pg <= totalPages; pg++)
             {
                 var pgPostWorkerTasks = postWorkerTasks.Skip((pg - 1) * itemsPerPage).Take(itemsPerPage).ToList();
-                var pgPaginatorData = new Paginator(paginatorId, itemsPerPage, pg, totalPages, totalItems);
-                var additionalWorkerTask = _worker.CreateWorkerTask(pageListTreeNode.Data.WorkerTask.FileSystemInfo, pgPaginatorData, pgPostWorkerTasks);
+                var pgPaginatorData = new Paginator(itemsPerPage, pg, totalPages, totalItems);
+                var additionalWorkerTask = _worker.CreateWorkerTask(postListOpNode.Data.WorkerTask.FileSystemInfo, pgPaginatorData, pgPostWorkerTasks);
                 var additonalOp = new FSOperation(additionalWorkerTask);
-                pageListTreeNode.AddChild(additonalOp);
+                postListOpNode.AddChild(additonalOp);
             }
         }
 
@@ -223,7 +223,6 @@ namespace Gaius.Core.Processing.FileSystem
                 return;
             }
 
-            //rs: this is a directory op, process it, then each of it's child file ops
             else if(opNode.Data.IsDirectoryOp)
             {
                 var newDir = Directory.CreateDirectory(opNode.Data.WorkerTask.TargetFullPath);
@@ -237,6 +236,8 @@ namespace Gaius.Core.Processing.FileSystem
 
         private void ProcessFileFSOpTreeNode(TreeNode<FSOperation> opNode)
         {
+            Directory.CreateDirectory(opNode.Data.WorkerTask.TargetParentDirectory);
+
             if(opNode.Data.WorkerTask.WorkType == WorkType.Copy)
             {
                 opNode.Data.WorkerTask.FileInfo.CopyTo(opNode.Data.WorkerTask.TargetFullPath, true);

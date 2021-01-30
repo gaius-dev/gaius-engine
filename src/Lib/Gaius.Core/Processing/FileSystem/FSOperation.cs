@@ -30,6 +30,5 @@ namespace Gaius.Core.Processing.FileSystem
                                     && FSOperationType != FSOperationType.Overwrite;
         public bool IsUnsafe => FSOperationType == FSOperationType.Delete;
         public bool IsDirectoryOp => WorkerTask.FileSystemInfo.IsDirectory();
-        public bool IsListingOp => WorkerTask.IsListing;
     }
 }

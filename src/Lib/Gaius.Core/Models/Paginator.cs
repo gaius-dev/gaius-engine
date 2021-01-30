@@ -2,15 +2,13 @@ namespace Gaius.Core.Models
 {
     public class Paginator
     {
-        public Paginator(string paginatorId, int itemsPerPage, int pageNumber, int totalPages, int totalItems)
+        public Paginator(int itemsPerPage, int pageNumber, int totalPages, int totalItems)
         {
-            PaginatorId = paginatorId;
             ItemsPerPage = itemsPerPage;
             PageNumber = pageNumber;
             TotalPages = totalPages;
             TotalItems = totalItems;
         }
-        public string PaginatorId { get; private set; }
         public int ItemsPerPage { get; private set; }
         public int PageNumber { get; private set; }
         public int TotalPages { get; private set; }
