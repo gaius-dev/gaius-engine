@@ -12,6 +12,7 @@
     "GenerationDirectoryName" : "_generated",
     "ThemesDirectoryName" : "_themes",
     "PostsDirectoryName" : "_posts",
+    "DraftsDirectoryName" : "_drafts",
     "ThemeName" : "default",
     "Pagination" : 5,
     "GenerationUrlRootPrefix" : "",
