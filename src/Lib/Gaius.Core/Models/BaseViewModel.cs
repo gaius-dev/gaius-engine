@@ -6,8 +6,8 @@ namespace Gaius.Core.Models
     {
         public BaseViewModel(WorkerTask workerTask, string content)
         {
-            Id = workerTask.TargetId;
-            Url = workerTask.TargetUrl;
+            Id = workerTask.GenerationId;
+            Url = workerTask.GenerationUrl;
             FrontMatter = workerTask.FrontMatter;
             Content = content;
         }

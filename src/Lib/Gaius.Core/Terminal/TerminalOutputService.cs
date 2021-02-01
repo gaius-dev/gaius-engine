@@ -12,6 +12,7 @@ using Gaius.Utilities.DataStructures;
 using Gaius.Utilities.Terminal;
 using Newtonsoft.Json;
 using Gaius.Core.Worker;
+using Gaius.Utilities.FileSystem;
 
 namespace Gaius.Core.Terminal
 {
@@ -52,7 +53,7 @@ namespace Gaius.Core.Terminal
                 if(opNode.Data.FSOperationType == FSOperationType.Delete)
                     continue;
 
-                var srcLength = (3 * opNode.Level) + opNode.Data.WorkerTask.SourceDisplayName.Length;
+                var srcLength = (3 * opNode.Level) + opNode.Data.SourceDisplay.Length;
                 
                 if(srcLength > maxSrcLength)
                     maxSrcLength = srcLength;
@@ -65,11 +66,21 @@ namespace Gaius.Core.Terminal
 
             if(rootNode.Data.Status == OperationStatus.Pending)
             {
-                if(rootNode.Any(node => node.Data.IsUnsafe))
-                    PrintUnsafeOperationsMessages(rootNode.Where(node => node.Data.IsUnsafe).ToList());
+                var areInvalidOps = rootNode.Any(node => node.Data.IsInvalid);
+                var areUnsafeOps = rootNode.Any(node => node.Data.IsUnsafe);
 
-                else
-                    PrintSafeOperationsMessage();
+                if(areInvalidOps || areUnsafeOps)
+                {
+                    Console.WriteLine();
+
+                    if(areInvalidOps)
+                        PrintInvalidOperationsMessages(rootNode.Where(node => node.Data.IsInvalid).ToList());
+
+                    if(areUnsafeOps)
+                        PrintUnsafeOperationsMessages(rootNode.Where(node => node.Data.IsUnsafe).ToList());
+                }
+
+                else PrintSafeOperationsMessage();
             }
 
             if(rootNode.Data.Status == OperationStatus.Complete)
@@ -100,21 +111,16 @@ namespace Gaius.Core.Terminal
         {
             PrintOperationStatus(opNode.Data);
 
-            if(opNode.Data.FSOperationType == FSOperationType.CreateOverwrite)
-                PrintCreateOverwriteOperationTreeNode(opNode, maxSrcLength);
-
-            else if(opNode.Data.FSOperationType == FSOperationType.Skip
-                    || opNode.Data.FSOperationType == FSOperationType.Root)
-                PrintSkipOrRootOperationTreeNode(opNode, maxSrcLength);
-
-            else if(opNode.Data.FSOperationType == FSOperationType.Delete
+            if(opNode.Data.FSOperationType == FSOperationType.Delete
                     || opNode.Data.FSOperationType == FSOperationType.Keep)
-                PrintKeepOrDeleteOperationTreeNode(opNode, maxSrcLength);
+                PrintOutputDisplayOnlyOperationTreeNode(opNode, maxSrcLength);
+
+            else PrintNormalOperationTreeNode(opNode, maxSrcLength);
         }
 
         private static (string indent, string outdent) GetIndentAndOutdent(TreeNode<FSOperation> treeNode, int maxSrcLength)
         {
-            var srcName = treeNode.Data.FSOperationType != FSOperationType.Delete ? treeNode.Data.WorkerTask.SourceDisplayName : string.Empty;
+            var srcName = treeNode.Data.FSOperationType != FSOperationType.Delete ? treeNode.Data.SourceDisplay : string.Empty;
 
             var paddingLeft = 3 * treeNode.Level;
             var indent = string.Empty;
@@ -128,20 +134,25 @@ namespace Gaius.Core.Terminal
             return (indent, outdent);
         }
 
-        private static void PrintCreateOverwriteOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        private static void PrintNormalOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
         {
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
             
             Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.WorkerTask.SourceDisplayName, GetColorForTreeNodeSource(treeNode));
+            Colorful.Console.Write(treeNode.Data.SourceDisplay, GetColorForTreeNode(treeNode, false));
             Console.Write(outdent);
             PrintOperation(treeNode.Data);
-            Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.WorkerTask.TargetDisplayName, GetColorForTreeNodeDestination(treeNode));
+
+            if(!string.IsNullOrWhiteSpace(treeNode.Data.OutputDisplay))
+            {
+                Console.Write(indent);
+                Colorful.Console.Write(treeNode.Data.OutputDisplay, GetColorForTreeNode(treeNode, true));
+            }
+
             Console.WriteLine();
         }
 
-        private static void PrintKeepOrDeleteOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        private static void PrintOutputDisplayOnlyOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
         {
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
             
@@ -151,25 +162,7 @@ namespace Gaius.Core.Terminal
 
             var targetColor = treeNode.Data.FSOperationType == FSOperationType.Delete ? RED_COLOR : CYAN_COLOR;
 
-            Colorful.Console.Write(treeNode.Data.WorkerTask.SourceDisplayName, targetColor);
-            Console.WriteLine();
-        }
-
-        private static void PrintSkipOrRootOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
-        {
-            (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
-
-            Console.Write(indent);
-            Colorful.Console.Write(treeNode.Data.WorkerTask.SourceDisplayName, GetColorForTreeNodeSource(treeNode));
-            Console.Write(outdent);
-            PrintOperation(treeNode.Data);
-            
-            if(!string.IsNullOrWhiteSpace(treeNode.Data.WorkerTask.TargetDisplayName))
-            {
-                Console.Write(indent);
-                Colorful.Console.Write(treeNode.Data.WorkerTask.TargetDisplayName, GetColorForTreeNodeDestination(treeNode));
-            }
-
+            Colorful.Console.Write(treeNode.Data.SourceDisplay, targetColor);
             Console.WriteLine();
         }
 
@@ -235,6 +228,14 @@ namespace Gaius.Core.Terminal
                 case FSOperationType.Delete:
                     Colorful.Console.Write(" x ", RED_COLOR);
                     break;
+
+                case FSOperationType.Invalid:
+                    Colorful.Console.Write(" I ", RED_COLOR);
+                    break;
+
+                case FSOperationType.Null:
+                    Colorful.Console.Write(" . ", GREY_COLOR);
+                    break;
             }
         }
 
@@ -267,6 +268,15 @@ namespace Gaius.Core.Terminal
                 case FSOperationType.Delete:
                     Console.Write("delete");
                     break;
+
+                case FSOperationType.Invalid:
+                    Console.Write("inval ");
+                    break;
+
+                case FSOperationType.Null:
+                default:
+                    Colorful.Console.Write("......", GREY_COLOR);
+                    break;
             }
         }
 
@@ -274,7 +284,7 @@ namespace Gaius.Core.Terminal
         {
             if(op.Status == OperationStatus.Error)
             {
-                Colorful.Console.Write(" ....  ", GREY_COLOR);
+                Colorful.Console.Write(" ..... ", GREY_COLOR);
                 return;
             }
 
@@ -295,14 +305,27 @@ namespace Gaius.Core.Terminal
                     break;
 
                 default:
-                    Colorful.Console.Write(" ....  ", GREY_COLOR);
+                    Colorful.Console.Write(" ..... ", GREY_COLOR);
                     break;
             }
         }
 
+        private static void PrintInvalidOperationsMessages(List<TreeNode<FSOperation>> invalidOps)
+        {
+            Colorful.Console.WriteLine("One or more of the proposed operations cannot be performed because of invalid data:", YELLOW_COLOR);
+            Console.WriteLine();
+            
+            for(var i=0; i < invalidOps.Count; i++)
+            {
+                Colorful.Console.Write($"{i+1}. ", YELLOW_COLOR);
+                Console.WriteLine(invalidOps[i].Data.WorkerTask.FileSystemInfo.FullName);
+            }
+
+            Console.WriteLine();
+        }
+
         private static void PrintUnsafeOperationsMessages(List<TreeNode<FSOperation>> unsafeOps)
         {
-            Console.WriteLine();
             Colorful.Console.WriteLine("One or more of the proposed operations is considered unsafe and could lead to data loss.", RED_COLOR);
             Colorful.Console.WriteLine("The following files/directories will be deleted because they do not have corresponding filesystem objects in the source directory:", RED_COLOR);
             Console.WriteLine();
@@ -340,6 +363,8 @@ namespace Gaius.Core.Terminal
             var dirsSkipped = treeNode.Count(node => node.Data.FSOperationType == FSOperationType.Skip && node.Data.IsDirectoryOp);
             var filesSkipped = treeNode.Count(node => node.Data.FSOperationType == FSOperationType.Skip && !node.Data.IsDirectoryOp);
 
+            var invalidFiles = treeNode.Count(node => node.Data.FSOperationType == FSOperationType.Invalid);
+
             var errorOps = treeNode.Where(node => node.Data.Status == OperationStatus.Error).ToList();
 
             Console.WriteLine();
@@ -362,6 +387,10 @@ namespace Gaius.Core.Terminal
                 Console.WriteLine("Skipped Operations:");
                 Console.WriteLine($"  {dirsSkipped} {(dirsSkipped == 1 ? DIRECTORY_WAS : DIRECTORIES_WERE)} skipped.");
                 Console.WriteLine($"  {filesSkipped} {(filesSkipped == 1 ? FILE_WAS : FILES_WERE)} skipped.");
+
+                Console.WriteLine();
+                Console.WriteLine("Invalid Operations:");
+                Console.WriteLine($"  {invalidFiles} {(invalidFiles == 1 ? FILE_WAS : FILES_WERE)} invalid.");
             }
 
             if(errorOps.Count > 0)
@@ -373,27 +402,20 @@ namespace Gaius.Core.Terminal
             Console.WriteLine();
         }
 
-        private static Color GetColorForTreeNodeSource(TreeNode<FSOperation> op)
+        private static Color GetColorForTreeNode(TreeNode<FSOperation> op, bool isOutputDisplay)
         {
-            var fileSystemInfo = op.Data.WorkerTask.FileSystemInfo;
+            var workerTask = op.Data?.WorkerTask;
 
-            if(fileSystemInfo is DirectoryInfo)
+            if(workerTask == null)
+                return GREY_COLOR;
+
+            if(workerTask.FileSystemInfo.IsDirectory())
                 return DIRECTORY_COLOR;
 
-            if(fileSystemInfo is FileInfo)
-                return GetColorFromFileName(fileSystemInfo.Name);
+            if(workerTask.FileSystemInfo.IsFile())
+                return GetColorFromFileName(isOutputDisplay ? workerTask.TaskFileOrDirectoryName : workerTask.FileSystemInfo.Name);
 
-            return FILE_COLOR;
-        }
-
-        private static Color GetColorForTreeNodeDestination(TreeNode<FSOperation> op)
-        {
-            var fileSystemInfo = op.Data.WorkerTask.FileSystemInfo;
-
-            if(fileSystemInfo is FileInfo)
-                return GetColorFromFileName(op.Data.WorkerTask.TargetFileOrDirectoryName);
-            
-            return GetColorForTreeNodeSource(op);
+            return GREY_COLOR;
         }
 
         private static Color GetColorFromFileName(string fileName)

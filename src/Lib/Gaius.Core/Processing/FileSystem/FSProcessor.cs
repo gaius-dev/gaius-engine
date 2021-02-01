@@ -59,6 +59,8 @@ namespace Gaius.Core.Processing.FileSystem
             var genDirectoryInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
             AddGenerationDirOperationsToTreeNode(rootNode, rootNode, genDirectoryInfo);
 
+            PruneNullGenDirOpNodes(rootNode);
+
             return rootNode;            
         }
 
@@ -75,21 +77,20 @@ namespace Gaius.Core.Processing.FileSystem
             // Directories ====================================================
             foreach(var sourceDir in sourceStartDir?.EnumerateDirectories().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
             {
-                TreeNode<FSOperation> newOpTreeNode = null;
-
                 var sourceDirTask = _worker.CreateWorkerTask(sourceDir);
                 var sourceDirOp = new FSOperation(sourceDirTask);
-                newOpTreeNode = startNode.AddChild(sourceDirOp);
-
-                if(newOpTreeNode != null)
-                    AddSourceOperationsToTreeNode(newOpTreeNode, sourceDir);
+                var newOpTreeNode = startNode.AddChild(sourceDirOp);
+                AddSourceOperationsToTreeNode(newOpTreeNode, sourceDir);
             }
         }
 
         private void AddAdditionalPostListingPaginatorOps(TreeNode<FSOperation> sourceTreeNode)
         {
             //rs: get all post ops worker tasks
-            var allPostWorkerTasks = sourceTreeNode.Where(tn => tn.Data.WorkerTask.IsPost).Select(tn => tn.Data.WorkerTask).ToList();
+            var allPostWorkerTasks = sourceTreeNode.Where(tn 
+                => !tn.Data.IsInvalid
+                    && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsPost))
+                        .Select(tn => tn.Data.WorkerTask).ToList();
 
             var allPostListOpNodes = sourceTreeNode.Where(tn => tn.Data.WorkerTask.IsPostListing).ToList();
 
@@ -131,10 +132,10 @@ namespace Gaius.Core.Processing.FileSystem
             // Files ==========================================================
             foreach(var genFile in generationStartDir?.EnumerateFiles().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<FileInfo>())
             {
-                if(!rootNode.Any(node => node.Data.WorkerTask.TargetFullPath == genFile.FullName))
+                if(!rootNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskFullPath == genFile.FullName))
                 {
                     var genFileTask = _worker.CreateWorkerTask(genFile);
-                    var genFileOp = new FSOperation(genFileTask, true);
+                    var genFileOp = new FSOperation(genFileTask);
                     startNode.AddChild(genFileOp);
                 }
             }
@@ -142,18 +143,51 @@ namespace Gaius.Core.Processing.FileSystem
             // Directories ====================================================
             foreach(var genDir in generationStartDir?.EnumerateDirectories().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
             {
-                if(!rootNode.Any(node => node.Data.WorkerTask.TargetFullPath == genDir.FullName)
-                    && !rootNode.Any(node => node.Data.WorkerTask.TargetParentDirectory.Contains(genDir.FullName)))
+                //rs: does the gen dir op have a matching source dir op?
+                var hasMatchingSourceDirOp = rootNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskFullPath == genDir.FullName);
+
+                //rs: check a special condition first
+                // 1. We don't have an explicit matching source dir op
+                // 2. AND we don't have a source file op which contains this gen directory (e.g. post and draft file ops)
+                // This means we'll need to either delet or keep this generation directory
+                if(!hasMatchingSourceDirOp && !rootNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskParentDirectory.Contains(genDir.FullName)))
                 {
-                    TreeNode<FSOperation> newOpTreeNode = null;
-
                     var genDirTask = _worker.CreateWorkerTask(genDir);
-                    var genDirOp = new FSOperation(genDirTask, true);
-                    newOpTreeNode = startNode.AddChild(genDirOp);
-
-                    if(newOpTreeNode != null)
-                        AddGenerationDirOperationsToTreeNode(rootNode, newOpTreeNode, genDir);
+                    var genDirOp = new FSOperation(genDirTask);
+                    var newGenDirOpNode = startNode.AddChild(genDirOp);
+                    AddGenerationDirOperationsToTreeNode(rootNode, newGenDirOpNode, genDir);
                 }
+
+                //rs: we do have a matching dir op, just skip this gen dir and add nothing to the op tree
+                else if(hasMatchingSourceDirOp)
+                    continue;
+
+                //rs: we don't really know if we'll need this gen dir op or not, add it as a null op
+                //NOTE: this could be pruned later if it doesn't contain any child op nodes that are deletes or keeps
+                else
+                {
+                    var nullGenDirOp = new FSOperation(genDir.Name, genDir.Name);
+                    var newNullGenDirOpNode = startNode.AddChild(nullGenDirOp);
+                    AddGenerationDirOperationsToTreeNode(rootNode, newNullGenDirOpNode, genDir);
+                }
+            }
+        }
+
+        private void PruneNullGenDirOpNodes(TreeNode<FSOperation> rootNode)
+        {
+            var level1NullGenDirOps = rootNode.Where(node => node.Data.IsNullOp).ToList();
+
+            foreach(var nullGenDirOp in level1NullGenDirOps)
+            {
+                //rs: this is an op that's already been pruned, just skip it
+                if(nullGenDirOp.Parent == null)
+                    continue;
+
+                //rs: the null op has no delete or keep children underneath it, no reason to keep it
+                if(!nullGenDirOp.Any(node 
+                    => node.Data.FSOperationType == FSOperationType.Delete
+                        || node.Data.FSOperationType == FSOperationType.Keep))
+                    nullGenDirOp.Parent.Children.Remove(nullGenDirOp);
             }
         }
 
@@ -172,7 +206,7 @@ namespace Gaius.Core.Processing.FileSystem
             foreach(var containedFsInfo in allContainedFsInfos)
             {
                 //rs: we have an explicit request to keep a specific file or directory
-                if(rootNode.Any(node => node.Data.WorkerTask.TargetFullPath == containedFsInfo.FullName
+                if(rootNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskFullPath == containedFsInfo.FullName
                     && node.Data.FSOperationType == FSOperationType.Keep))
                     continue;
 
@@ -192,9 +226,8 @@ namespace Gaius.Core.Processing.FileSystem
 
         private void ProcessFSOpTreeNode(TreeNode<FSOperation> opNode)
         {
-
             //rs: nothing to do for this particular op
-            if(opNode.Data.IsEmptyOp)
+            if(opNode.Data.NoFSActionRequired)
             {
                 opNode.Data.Status = OperationStatus.Complete;
                 return;
@@ -202,7 +235,7 @@ namespace Gaius.Core.Processing.FileSystem
 
             else if(opNode.Data.IsDirectoryOp)
             {
-                var newDir = Directory.CreateDirectory(opNode.Data.WorkerTask.TargetFullPath);
+                var newDir = Directory.CreateDirectory(opNode.Data.WorkerTask.TaskFullPath);
                 opNode.Data.Status = newDir != null ? OperationStatus.Complete : OperationStatus.Error;
                 return;
             }
@@ -213,18 +246,18 @@ namespace Gaius.Core.Processing.FileSystem
 
         private void ProcessFileFSOpTreeNode(TreeNode<FSOperation> opNode)
         {
-            Directory.CreateDirectory(opNode.Data.WorkerTask.TargetParentDirectory);
+            Directory.CreateDirectory(opNode.Data.WorkerTask.TaskParentDirectory);
 
-            if(opNode.Data.WorkerTask.WorkType == WorkType.Copy)
+            if(opNode.Data.WorkerTask.WorkType == WorkType.None)
             {
-                opNode.Data.WorkerTask.FileInfo.CopyTo(opNode.Data.WorkerTask.TargetFullPath, true);
+                opNode.Data.WorkerTask.FileInfo.CopyTo(opNode.Data.WorkerTask.TaskFullPath, true);
                 opNode.Data.Status = OperationStatus.Complete;
                 return;
             }
 
             var fileContent = _worker.PerformWork(opNode.Data.WorkerTask);
 
-            using (var streamWriter = new StreamWriter(opNode.Data.WorkerTask.TargetFullPath))
+            using (var streamWriter = new StreamWriter(opNode.Data.WorkerTask.TaskFullPath))
             {
                 streamWriter.Write(fileContent);
             }

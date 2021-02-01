@@ -13,18 +13,15 @@ namespace Gaius.Core.Worker
         public DirectoryInfo DirectoryInfo => FileSystemInfo as DirectoryInfo;
         public FileInfo FileInfo => FileSystemInfo as FileInfo;
         public WorkType WorkType { get; internal set; }
-        public bool IsPost { get; internal set; }
-        public bool IsDraft { get; internal set; }
-        public bool IsSkip { get; internal set; }
-        public bool IsKeep { get; internal set; }
-        public List<string> TargetPathSegments { get; internal set; }
-        public string TargetFullPath => string.Join(Path.DirectorySeparatorChar, TargetPathSegments);
-        public string TargetParentDirectory => string.Join(Path.DirectorySeparatorChar, TargetPathSegments.Take(TargetPathSegments.Count - 1));
-        public string TargetFileOrDirectoryName => TargetPathSegments.Last();
-        public string TargetUrl { get; internal set; }
-        public string TargetId { get; internal set; }
-        public string SourceDisplayName { get; internal set; }
-        public string TargetDisplayName { get; internal set; }
+        public WorkerTaskFlags TaskFlags { get; internal set; }
+        public List<string> TaskPathSegments { get; internal set; }
+        public string TaskFullPath => string.Join(Path.DirectorySeparatorChar, TaskPathSegments);
+        public string TaskParentDirectory => string.Join(Path.DirectorySeparatorChar, TaskPathSegments.Take(TaskPathSegments.Count - 1));
+        public string TaskFileOrDirectoryName => TaskPathSegments.Last();
+        public string GenerationUrl { get; internal set; }
+        public string GenerationId { get; internal set; }
+        public string SourceDisplay { get; internal set; }
+        public string OutputDisplay { get; internal set; }
 
         //comes from IWorkerLayoutData
         public string LayoutId => Layout?.Id ?? string.Empty;
