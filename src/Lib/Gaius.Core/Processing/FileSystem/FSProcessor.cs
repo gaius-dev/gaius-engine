@@ -129,6 +129,9 @@ namespace Gaius.Core.Processing.FileSystem
 
         private void AddGenerationDirOperationsToTreeNode(TreeNode<FSOperation> rootNode, TreeNode<FSOperation> startNode, DirectoryInfo generationStartDir)
         {
+            if(!generationStartDir.Exists)
+                return;
+                
             // Files ==========================================================
             foreach(var genFile in generationStartDir?.EnumerateFiles().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<FileInfo>())
             {
