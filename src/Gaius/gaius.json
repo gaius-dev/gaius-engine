@@ -11,6 +11,6 @@
         "AlwaysKeep" : [
             ".git"
         ],
-        "Worker" : "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker"
+        "Worker" : "Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"
     }
 }

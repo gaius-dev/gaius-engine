@@ -2,11 +2,11 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Configuration;
-using Gaius.Core.Processing.FileSystem;
+using Gaius.Processing.FileSystem;
 using Gaius.Core.Terminal;
-using Gaius.Utilities.Terminal;
-using Gaius.Core.Worker;
-using Gaius.Core.Worker.MarkdownLiquid;
+using Gaius.Processing.FileSystem.Display;
+using Gaius.Worker;
+using Gaius.Worker.MarkdownLiquid;
 
 namespace Gaius
 {
@@ -32,7 +32,7 @@ namespace Gaius
                     overrideConfig.IsTestMode = isTestCommand;
                 })
                 .Configure<GaiusConfiguration>(configRoot.GetSection("GaiusEngine"))
-                .AddSingleton<ITerminalOutputService, TerminalOutputService>()
+                .AddSingleton<IFSTerminalDisplayService, FSTerminalDisplayService>()
                 .AddSingleton<IFSProcessor, FSProcessor>();
 
             var gaiusConfiguration = new GaiusConfiguration();
@@ -41,7 +41,7 @@ namespace Gaius
             configRoot.GetSection("GaiusEngine").Bind(gaiusConfiguration);
 
             var workerConfigured = false;
-            if (gaiusConfiguration.Worker.Equals("Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
+            if (gaiusConfiguration.Worker.Equals("Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
             {
                 serviceCollection = MarkdownLiquidWorker.ConfigureServicesForWorker(serviceCollection);
                 workerConfigured = true;
@@ -72,7 +72,7 @@ namespace Gaius
             var serviceProvider = appConfiguration.Item2.BuildServiceProvider();
             var validConfiguration = appConfiguration.Item3;
             
-            var terminalOutputService = serviceProvider.GetService<ITerminalOutputService>();
+            var terminalOutputService = serviceProvider.GetService<IFSTerminalDisplayService>();
 
             // commands that don't require full initialization and validation
             if(gaiusArgs.IsNoCommand)

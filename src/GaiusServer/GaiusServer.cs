@@ -8,7 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Gaius.Core.Configuration;
-using Gaius.Utilities.Terminal;
+using Gaius.Core.Terminal;
 
 namespace GaiusServer
 {

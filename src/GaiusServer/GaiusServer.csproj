@@ -2,14 +2,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Lib\Gaius.Core\Gaius.Core.csproj" />
-    <ProjectReference Include="..\Lib\Gaius.Utilities\Gaius.Utilities.csproj" />
   </ItemGroup>
   
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>gaius-server</AssemblyName>
     <AssemblyTitle>Gaius Server</AssemblyTitle>
-    <Version>0.0.50</Version>
+    <Version>0.0.51</Version>
     <Authors>Robert Strube</Authors>
     <Description>A Kestrel based micro-server for testing Gaius sites locally</Description>
   </PropertyGroup>
