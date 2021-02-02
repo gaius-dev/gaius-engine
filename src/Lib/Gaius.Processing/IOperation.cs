@@ -6,8 +6,9 @@ namespace Gaius.Processing
     {
         WorkerTask WorkerTask { get; }
         OperationType OperationType { get; }
-        OperationStatus Status { get; }
+        OperationStatus Status { get; set; }
         bool IsNullOp { get; }
+        bool NoActionRequired { get; }
         bool IsInvalid { get; }
         bool IsUnsafe { get; }
         bool IsDirectoryOp { get; }

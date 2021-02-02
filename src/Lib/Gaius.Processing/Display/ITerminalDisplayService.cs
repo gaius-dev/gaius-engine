@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using Gaius.Core.DataStructures;
 
-namespace Gaius.Processing.FileSystem.Display
+namespace Gaius.Processing.Display
 {
-    public interface IFSTerminalDisplayService
+    public interface ITerminalDisplayService
     {
-        void PrintOperationTree(TreeNode<FSOperation> genOpTree);
+        void PrintOperationTree(TreeNode<IOperation> genOpTree);
         void PrintDefault();
         void PrintHelpCommand();
         void PrintVersionCommand();

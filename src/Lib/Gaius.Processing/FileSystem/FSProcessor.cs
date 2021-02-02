@@ -21,7 +21,7 @@ namespace Gaius.Processing.FileSystem
             _gaiusConfiguration = gaiusConfigurationOptions.Value;
         }
 
-        public TreeNode<FSOperation> CreateFSOperationTree()
+        public TreeNode<IOperation> CreateFSOperationTree()
         {
             var rootSiteDirTask = _worker.CreateWorkerTask(new DirectoryInfo(_gaiusConfiguration.SiteContainerFullPath));
             var sourceDirTask = _worker.CreateWorkerTask(new DirectoryInfo(_gaiusConfiguration.SourceDirectoryFullPath));
@@ -46,7 +46,7 @@ namespace Gaius.Processing.FileSystem
             ||  children              children         ||
             ||=========================================*/
 
-            var rootNode = new TreeNode<FSOperation>(rootOp);
+            var rootNode = new TreeNode<IOperation>(rootOp);
 
             var sourceDirTreeNode = rootNode.AddChild(sourceDirOp);
             AddSourceOperationsToTreeNode(sourceDirTreeNode, sourceDirTask.DirectoryInfo);
@@ -64,7 +64,7 @@ namespace Gaius.Processing.FileSystem
             return rootNode;            
         }
 
-        private void AddSourceOperationsToTreeNode(TreeNode<FSOperation> startNode, DirectoryInfo sourceStartDir)
+        private void AddSourceOperationsToTreeNode(TreeNode<IOperation> startNode, DirectoryInfo sourceStartDir)
         {
             // Files ==========================================================
             foreach(var sourceFile in sourceStartDir?.EnumerateFiles().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<FileInfo>())
@@ -84,7 +84,7 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        private void AddAdditionalPostListingPaginatorOps(TreeNode<FSOperation> sourceTreeNode)
+        private void AddAdditionalPostListingPaginatorOps(TreeNode<IOperation> sourceTreeNode)
         {
             //rs: get all post ops worker tasks
             var allPostWorkerTasks = sourceTreeNode.Where(tn 
@@ -101,7 +101,7 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        private void AddAdditionalPostListingPaginatorOpsForId(TreeNode<FSOperation> postListOpNode, List<WorkerTask> postWorkerTasks)
+        private void AddAdditionalPostListingPaginatorOpsForId(TreeNode<IOperation> postListOpNode, List<WorkerTask> postWorkerTasks)
         {
             if(postWorkerTasks.Count == 0)
                 return;
@@ -127,7 +127,7 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        private void AddGenerationDirOperationsToTreeNode(TreeNode<FSOperation> rootNode, TreeNode<FSOperation> startNode, DirectoryInfo generationStartDir)
+        private void AddGenerationDirOperationsToTreeNode(TreeNode<IOperation> rootNode, TreeNode<IOperation> startNode, DirectoryInfo generationStartDir)
         {
             if(!generationStartDir.Exists)
                 return;
@@ -176,7 +176,7 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        private void PruneNullGenDirOpNodes(TreeNode<FSOperation> rootNode)
+        private void PruneNullGenDirOpNodes(TreeNode<IOperation> rootNode)
         {
             var level1NullGenDirOps = rootNode.Where(node => node.Data.IsNullOp).ToList();
 
@@ -194,7 +194,7 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        public void ProcessFSOperationTree(TreeNode<FSOperation> rootNode)
+        public void ProcessFSOperationTree(TreeNode<IOperation> rootNode)
         {
             var siteDirFullPath = _gaiusConfiguration.SiteContainerFullPath;
             var genDirFullPath = _gaiusConfiguration.GenerationDirectoryFullPath;
@@ -227,10 +227,10 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        private void ProcessFSOpTreeNode(TreeNode<FSOperation> opNode)
+        private void ProcessFSOpTreeNode(TreeNode<IOperation> opNode)
         {
             //rs: nothing to do for this particular op
-            if(opNode.Data.NoFSActionRequired)
+            if(opNode.Data.NoActionRequired)
             {
                 opNode.Data.Status = OperationStatus.Complete;
                 return;
@@ -247,7 +247,7 @@ namespace Gaius.Processing.FileSystem
             ProcessFileFSOpTreeNode(opNode);
         }
 
-        private void ProcessFileFSOpTreeNode(TreeNode<FSOperation> opNode)
+        private void ProcessFileFSOpTreeNode(TreeNode<IOperation> opNode)
         {
             Directory.CreateDirectory(opNode.Data.WorkerTask.TaskParentDirectory);
 

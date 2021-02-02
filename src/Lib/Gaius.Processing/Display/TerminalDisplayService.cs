@@ -12,9 +12,9 @@ using Newtonsoft.Json;
 using Gaius.Worker;
 using Gaius.Core.FileSystem;
 
-namespace Gaius.Processing.FileSystem.Display
+namespace Gaius.Processing.Display
 {
-    public class FSTerminalDisplayService : IFSTerminalDisplayService
+    public class TerminalDisplayService : ITerminalDisplayService
     {
         private const string INDENT = "|_ ";
         private static readonly Color BLUE_COLOR = ConsoleColor.Blue.ToColor();
@@ -35,12 +35,12 @@ namespace Gaius.Processing.FileSystem.Display
         
         private GaiusConfiguration _gaiusConfiguration;
 
-        public FSTerminalDisplayService(IOptions<GaiusConfiguration> gaiusConfigurationOptions)
+        public TerminalDisplayService(IOptions<GaiusConfiguration> gaiusConfigurationOptions)
         {
             _gaiusConfiguration = gaiusConfigurationOptions.Value;
         }
 
-        public void PrintOperationTree(TreeNode<FSOperation> rootNode)
+        public void PrintOperationTree(TreeNode<IOperation> rootNode)
         {
             Console.WriteLine();
 
@@ -87,7 +87,7 @@ namespace Gaius.Processing.FileSystem.Display
             }
         }
 
-        private void PrintOperationTreeNode(TreeNode<FSOperation> opNode, int maxSrcLength)
+        private void PrintOperationTreeNode(TreeNode<IOperation> opNode, int maxSrcLength)
         {
             if(opNode.IsRoot && opNode.Data.Status == OperationStatus.Pending)
                 PrintRootOperationTreeNode(opNode);
@@ -95,7 +95,7 @@ namespace Gaius.Processing.FileSystem.Display
             PrintChildOperationTreeNode(opNode, maxSrcLength);
         }
 
-        private void PrintRootOperationTreeNode(TreeNode<FSOperation> opNode)
+        private void PrintRootOperationTreeNode(TreeNode<IOperation> opNode)
         {
             var siteDirectoryFullPath = opNode.Data.WorkerTask.FileSystemInfo.FullName;
             Console.WriteLine($"[ Site Directory] {siteDirectoryFullPath}");
@@ -105,7 +105,7 @@ namespace Gaius.Processing.FileSystem.Display
             Console.WriteLine();
         }
 
-        private static void PrintChildOperationTreeNode(TreeNode<FSOperation> opNode, int maxSrcLength)
+        private static void PrintChildOperationTreeNode(TreeNode<IOperation> opNode, int maxSrcLength)
         {
             PrintOperationStatus(opNode.Data);
 
@@ -116,7 +116,7 @@ namespace Gaius.Processing.FileSystem.Display
             else PrintNormalOperationTreeNode(opNode, maxSrcLength);
         }
 
-        private static (string indent, string outdent) GetIndentAndOutdent(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        private static (string indent, string outdent) GetIndentAndOutdent(TreeNode<IOperation> treeNode, int maxSrcLength)
         {
             var srcName = treeNode.Data.OperationType != OperationType.Delete ? treeNode.Data.SourceDisplay : string.Empty;
 
@@ -132,7 +132,7 @@ namespace Gaius.Processing.FileSystem.Display
             return (indent, outdent);
         }
 
-        private static void PrintNormalOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        private static void PrintNormalOperationTreeNode(TreeNode<IOperation> treeNode, int maxSrcLength)
         {
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
             
@@ -150,7 +150,7 @@ namespace Gaius.Processing.FileSystem.Display
             Console.WriteLine();
         }
 
-        private static void PrintOutputDisplayOnlyOperationTreeNode(TreeNode<FSOperation> treeNode, int maxSrcLength)
+        private static void PrintOutputDisplayOnlyOperationTreeNode(TreeNode<IOperation> treeNode, int maxSrcLength)
         {
             (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
             
@@ -164,7 +164,7 @@ namespace Gaius.Processing.FileSystem.Display
             Console.WriteLine();
         }
 
-        private static void PrintOperationStatus(FSOperation op)
+        private static void PrintOperationStatus(IOperation op)
         {
             switch(op.Status)
             {
@@ -188,7 +188,7 @@ namespace Gaius.Processing.FileSystem.Display
             }
         }
 
-        private static void PrintOperation(FSOperation op)
+        private static void PrintOperation(IOperation op)
         {
             Console.Write("[");
             PrintPipelineOperationType(op);
@@ -197,7 +197,7 @@ namespace Gaius.Processing.FileSystem.Display
             Console.Write("] ");
         }
 
-        private static void PrintOperationTypeIcon(FSOperation op)
+        private static void PrintOperationTypeIcon(IOperation op)
         {
             if(op.Status == OperationStatus.Error)
             {
@@ -237,7 +237,7 @@ namespace Gaius.Processing.FileSystem.Display
             }
         }
 
-        private static void PrintOperationTypeLabel(FSOperation op)
+        private static void PrintOperationTypeLabel(IOperation op)
         {
             if(op.Status == OperationStatus.Error)
             {
@@ -278,7 +278,7 @@ namespace Gaius.Processing.FileSystem.Display
             }
         }
 
-        private static void PrintPipelineOperationType(FSOperation op)
+        private static void PrintPipelineOperationType(IOperation op)
         {
             if(op.Status == OperationStatus.Error)
             {
@@ -308,7 +308,7 @@ namespace Gaius.Processing.FileSystem.Display
             }
         }
 
-        private static void PrintInvalidOperationsMessages(List<TreeNode<FSOperation>> invalidOps)
+        private static void PrintInvalidOperationsMessages(List<TreeNode<IOperation>> invalidOps)
         {
             Colorful.Console.WriteLine("One or more of the proposed operations cannot be performed because of invalid data:", YELLOW_COLOR);
             Console.WriteLine();
@@ -322,7 +322,7 @@ namespace Gaius.Processing.FileSystem.Display
             Console.WriteLine();
         }
 
-        private static void PrintUnsafeOperationsMessages(List<TreeNode<FSOperation>> unsafeOps)
+        private static void PrintUnsafeOperationsMessages(List<TreeNode<IOperation>> unsafeOps)
         {
             Colorful.Console.WriteLine("One or more of the proposed operations is considered unsafe and could lead to data loss.", RED_COLOR);
             Colorful.Console.WriteLine("The following files/directories will be deleted because they do not have corresponding filesystem objects in the source directory:", RED_COLOR);
@@ -348,7 +348,7 @@ namespace Gaius.Processing.FileSystem.Display
         private const string FILES_WERE = "files were";
         private const string FILE_WAS = "file was";
 
-        public static void PrintGenerationResultStatistics(TreeNode<FSOperation> treeNode)
+        public static void PrintGenerationResultStatistics(TreeNode<IOperation> treeNode)
         {
             var completedOps = treeNode.Where(node => node.Data.Status == OperationStatus.Complete).ToList();
 
@@ -400,7 +400,7 @@ namespace Gaius.Processing.FileSystem.Display
             Console.WriteLine();
         }
 
-        private static Color GetColorForTreeNode(TreeNode<FSOperation> op, bool isOutputDisplay)
+        private static Color GetColorForTreeNode(TreeNode<IOperation> op, bool isOutputDisplay)
         {
             var workerTask = op.Data?.WorkerTask;
 

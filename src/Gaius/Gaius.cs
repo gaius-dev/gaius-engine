@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Gaius.Core.Configuration;
 using Gaius.Processing.FileSystem;
 using Gaius.Core.Terminal;
-using Gaius.Processing.FileSystem.Display;
+using Gaius.Processing.Display;
 using Gaius.Worker;
 using Gaius.Worker.MarkdownLiquid;
 
@@ -32,7 +32,7 @@ namespace Gaius
                     overrideConfig.IsTestMode = isTestCommand;
                 })
                 .Configure<GaiusConfiguration>(configRoot.GetSection("GaiusEngine"))
-                .AddSingleton<IFSTerminalDisplayService, FSTerminalDisplayService>()
+                .AddSingleton<ITerminalDisplayService, TerminalDisplayService>()
                 .AddSingleton<IFSProcessor, FSProcessor>();
 
             var gaiusConfiguration = new GaiusConfiguration();
@@ -72,7 +72,7 @@ namespace Gaius
             var serviceProvider = appConfiguration.Item2.BuildServiceProvider();
             var validConfiguration = appConfiguration.Item3;
             
-            var terminalOutputService = serviceProvider.GetService<IFSTerminalDisplayService>();
+            var terminalOutputService = serviceProvider.GetService<ITerminalDisplayService>();
 
             // commands that don't require full initialization and validation
             if(gaiusArgs.IsNoCommand)

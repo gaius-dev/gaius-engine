@@ -28,9 +28,9 @@ namespace Gaius.Processing.FileSystem
 
         public WorkerTask WorkerTask { get; private set; }
         public OperationType OperationType { get; private set; }
-        public OperationStatus Status { get; internal set; }
+        public OperationStatus Status { get; set; }
         public bool IsNullOp => OperationType == OperationType.Null;
-        public bool NoFSActionRequired => OperationType != OperationType.CreateOverwrite;
+        public bool NoActionRequired => OperationType != OperationType.CreateOverwrite;
         public bool IsInvalid => OperationType == OperationType.Invalid;
         public bool IsUnsafe => OperationType == OperationType.Delete;
         public bool IsDirectoryOp => WorkerTask?.FileSystemInfo?.IsDirectory() ?? false;
