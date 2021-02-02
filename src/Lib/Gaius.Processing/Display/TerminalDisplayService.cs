@@ -5,10 +5,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Gaius.Core.Configuration;
-using Gaius.Core.Colors;
 using Gaius.Core.DataStructures;
 using Gaius.Core.Terminal;
-using Newtonsoft.Json;
 using Gaius.Worker;
 using Gaius.Core.FileSystem;
 
@@ -16,22 +14,7 @@ namespace Gaius.Processing.Display
 {
     public class TerminalDisplayService : ITerminalDisplayService
     {
-        private const string INDENT = "|_ ";
-        private static readonly Color BLUE_COLOR = ConsoleColor.Blue.ToColor();
-        private static readonly Color GREEN_COLOR = ConsoleColor.DarkGreen.ToColor();
-        private static readonly Color RED_COLOR = ConsoleColor.DarkRed.ToColor();
-        private static readonly Color YELLOW_COLOR = ConsoleColor.Yellow.ToColor();
-        private static readonly Color MAGENTA_COLOR = ConsoleColor.DarkMagenta.ToColor();
-        private static readonly Color CYAN_COLOR = ConsoleColor.DarkCyan.ToColor();
-        private static readonly Color WHITE_COLOR = ConsoleColor.White.ToColor();
-        private static readonly Color GREY_COLOR = ConsoleColor.Gray.ToColor();
-        private static readonly Color MARKDOWN_COLOR = YELLOW_COLOR;
-        private static readonly Color FILE_COLOR = WHITE_COLOR;
-        private static readonly Color DIRECTORY_COLOR = BLUE_COLOR;
-        private static readonly Color HTML_COLOR = GREEN_COLOR;
-        private static readonly Color LIQUID_COLOR = GREY_COLOR;
-        private static readonly Color JS_COLOR = CYAN_COLOR;
-        private static readonly Color CSS_LESS_SASS_COLOR = MAGENTA_COLOR;
+        private const string _indent = "|_ ";
         
         private GaiusConfiguration _gaiusConfiguration;
 
@@ -124,7 +107,7 @@ namespace Gaius.Processing.Display
             var indent = string.Empty;
 
             if(!treeNode.IsRoot)
-                indent = INDENT.PadLeft(paddingLeft, ' ');
+                indent = _indent.PadLeft(paddingLeft, ' ');
 
             var paddingRight = maxSrcLength - indent.Length - srcName.Length;
             var outdent = string.Empty.PadRight(paddingRight + 1, ' ');
@@ -158,7 +141,7 @@ namespace Gaius.Processing.Display
             PrintOperation(treeNode.Data);
             Console.Write(indent);
 
-            var targetColor = treeNode.Data.OperationType == OperationType.Delete ? RED_COLOR : CYAN_COLOR;
+            var targetColor = treeNode.Data.OperationType == OperationType.Delete ? TerminalUtilities._colorRed : TerminalUtilities._colorCyan;
 
             Colorful.Console.Write(treeNode.Data.SourceDisplay, targetColor);
             Console.WriteLine();
@@ -170,19 +153,19 @@ namespace Gaius.Processing.Display
             {
                 case OperationStatus.Complete:
                     Console.Write("[ ");
-                    Colorful.Console.Write("OK", GREEN_COLOR);
+                    Colorful.Console.Write("OK", TerminalUtilities._colorGreen);
                     Console.Write(" ] ");
                     break;
                 
                 case OperationStatus.Error:
                     Console.Write("[ ");
-                    Colorful.Console.Write("ER", RED_COLOR);
+                    Colorful.Console.Write("ER", TerminalUtilities._colorRed);
                     Console.Write(" ] ");
                     break;
 
                 default:
                     Console.Write("[ ");
-                    Colorful.Console.Write("..", GREY_COLOR);
+                    Colorful.Console.Write("..", TerminalUtilities._colorGrey);
                     Console.Write(" ] ");
                     break;              
             }
@@ -201,38 +184,38 @@ namespace Gaius.Processing.Display
         {
             if(op.Status == OperationStatus.Error)
             {
-                Colorful.Console.Write(" ! ", RED_COLOR);
+                Colorful.Console.Write(" ! ", TerminalUtilities._colorRed);
                 return;
             }
 
             switch (op.OperationType)
             {
                 case OperationType.CreateOverwrite:
-                    Colorful.Console.Write(" + ", GREEN_COLOR);
+                    Colorful.Console.Write(" + ", TerminalUtilities._colorGreen);
                     break;
 
                 case OperationType.Keep:
-                    Colorful.Console.Write(" ^ ", CYAN_COLOR);
+                    Colorful.Console.Write(" ^ ", TerminalUtilities._colorCyan);
                     break;
 
                 case OperationType.Skip:
-                    Colorful.Console.Write(" _ ", GREY_COLOR);
+                    Colorful.Console.Write(" _ ", TerminalUtilities._colorGrey);
                     break;
 
                 case OperationType.Root:
-                    Colorful.Console.Write(" R ", MAGENTA_COLOR);
+                    Colorful.Console.Write(" R ", TerminalUtilities._colorMagenta);
                     break;
 
                 case OperationType.Delete:
-                    Colorful.Console.Write(" x ", RED_COLOR);
+                    Colorful.Console.Write(" x ", TerminalUtilities._colorRed);
                     break;
 
                 case OperationType.Invalid:
-                    Colorful.Console.Write(" I ", RED_COLOR);
+                    Colorful.Console.Write(" I ", TerminalUtilities._colorRed);
                     break;
 
                 case OperationType.Null:
-                    Colorful.Console.Write(" . ", GREY_COLOR);
+                    Colorful.Console.Write(" . ", TerminalUtilities._colorGrey);
                     break;
             }
         }
@@ -241,7 +224,7 @@ namespace Gaius.Processing.Display
         {
             if(op.Status == OperationStatus.Error)
             {
-                Colorful.Console.Write("error ", RED_COLOR);
+                Colorful.Console.Write("error ", TerminalUtilities._colorRed);
                 return;
             }
 
@@ -273,7 +256,7 @@ namespace Gaius.Processing.Display
 
                 case OperationType.Null:
                 default:
-                    Colorful.Console.Write("......", GREY_COLOR);
+                    Colorful.Console.Write("......", TerminalUtilities._colorGrey);
                     break;
             }
         }
@@ -282,7 +265,7 @@ namespace Gaius.Processing.Display
         {
             if(op.Status == OperationStatus.Error)
             {
-                Colorful.Console.Write(" ..... ", GREY_COLOR);
+                Colorful.Console.Write(" ..... ", TerminalUtilities._colorGrey);
                 return;
             }
 
@@ -303,19 +286,19 @@ namespace Gaius.Processing.Display
                     break;
 
                 default:
-                    Colorful.Console.Write(" ..... ", GREY_COLOR);
+                    Colorful.Console.Write(" ..... ", TerminalUtilities._colorGrey);
                     break;
             }
         }
 
         private static void PrintInvalidOperationsMessages(List<TreeNode<IOperation>> invalidOps)
         {
-            Colorful.Console.WriteLine("One or more of the proposed operations cannot be performed because of invalid data:", YELLOW_COLOR);
+            Colorful.Console.WriteLine("One or more of the proposed operations cannot be performed because of invalid data:", TerminalUtilities._colorYellow);
             Console.WriteLine();
             
             for(var i=0; i < invalidOps.Count; i++)
             {
-                Colorful.Console.Write($"{i+1}. ", YELLOW_COLOR);
+                Colorful.Console.Write($"{i+1}. ", TerminalUtilities._colorYellow);
                 Console.WriteLine(invalidOps[i].Data.WorkerTask.FileSystemInfo.FullName);
             }
 
@@ -324,13 +307,13 @@ namespace Gaius.Processing.Display
 
         private static void PrintUnsafeOperationsMessages(List<TreeNode<IOperation>> unsafeOps)
         {
-            Colorful.Console.WriteLine("One or more of the proposed operations is considered unsafe and could lead to data loss.", RED_COLOR);
-            Colorful.Console.WriteLine("The following files/directories will be deleted because they do not have corresponding filesystem objects in the source directory:", RED_COLOR);
+            Colorful.Console.WriteLine("One or more of the proposed operations is considered unsafe and could lead to data loss.", TerminalUtilities._colorRed);
+            Colorful.Console.WriteLine("The following files/directories will be deleted because they do not have corresponding filesystem objects in the source directory:", TerminalUtilities._colorRed);
             Console.WriteLine();
             
             for(var i=0; i < unsafeOps.Count; i++)
             {
-                Colorful.Console.Write($"{i+1}. ", RED_COLOR);
+                Colorful.Console.Write($"{i+1}. ", TerminalUtilities._colorRed);
                 Console.WriteLine(unsafeOps[i].Data.WorkerTask.FileSystemInfo.FullName);
             }
 
@@ -340,7 +323,7 @@ namespace Gaius.Processing.Display
         private static void PrintSafeOperationsMessage()
         {
             Console.WriteLine();
-            Colorful.Console.WriteLine("All of the proposed operations are considered safe.", GREEN_COLOR);
+            Colorful.Console.WriteLine("All of the proposed operations are considered safe.", TerminalUtilities._colorGreen);
         }
 
         private const string DIRECTORIES_WERE = "directories were";
@@ -369,7 +352,7 @@ namespace Gaius.Processing.Display
 
             if(completedOps.Count > 0)
             {
-                Colorful.Console.WriteLine($"{completedOps.Count} operations were completed successfully.", GREEN_COLOR);
+                Colorful.Console.WriteLine($"{completedOps.Count} operations were completed successfully.", TerminalUtilities._colorGreen);
                 
                 Console.WriteLine();
                 Console.WriteLine("Create/Overwrite Operations:");
@@ -405,15 +388,15 @@ namespace Gaius.Processing.Display
             var workerTask = op.Data?.WorkerTask;
 
             if(workerTask == null)
-                return GREY_COLOR;
+                return TerminalUtilities._colorGrey;
 
             if(workerTask.FileSystemInfo.IsDirectory())
-                return DIRECTORY_COLOR;
+                return TerminalUtilities._colorDirectory;
 
             if(workerTask.FileSystemInfo.IsFile())
                 return GetColorFromFileName(isOutputDisplay ? workerTask.TaskFileOrDirectoryName : workerTask.FileSystemInfo.Name);
 
-            return GREY_COLOR;
+            return TerminalUtilities._colorGrey;
         }
 
         private static Color GetColorFromFileName(string fileName)
@@ -423,178 +406,25 @@ namespace Gaius.Processing.Display
             switch(extension)
             {
                 case ".md":
-                    return MARKDOWN_COLOR;
+                    return TerminalUtilities._colorFileMarkdown;
 
                 case ".html":
-                    return HTML_COLOR;
+                    return TerminalUtilities._colorFileHtml;
 
                 case ".liquid":
-                    return LIQUID_COLOR;
+                    return TerminalUtilities._colorFileLiquid;
 
                 case ".css":
                 case ".less":
                 case ".sass":
-                    return CSS_LESS_SASS_COLOR;
+                    return TerminalUtilities._colorFileCssLess;
 
                 case ".js":
-                    return JS_COLOR;
+                    return TerminalUtilities._colorFileJavascript;
 
                 default:
-                    return FILE_COLOR;
+                    return TerminalUtilities._colorFile;
             }
         }
-            
-        public void PrintDefault()
-        {
-            PrintStylizedApplicationName();
-            TerminalUtilities.PrintApplicationNameAndVersion();
-            PrintUsage();
-        }
-
-        public void PrintHelpCommand()
-        {
-            PrintUsage();
-        }
-
-        public void PrintVersionCommand()
-        {
-            PrintStylizedApplicationName();
-            TerminalUtilities.PrintApplicationNameAndVersion();
-        }
-
-        public void PrintShowConfigurationCommand(string path)
-        {
-            Console.WriteLine();
-            PrintConfiguration(path, WHITE_COLOR);
-        }
-
-        public void PrintUnknownCommand(string command)
-        {
-            System.Console.WriteLine();
-            Colorful.Console.WriteLine($"Unrecognized command or argument '{command}'.", RED_COLOR);
-            PrintUsage();
-        }
-
-        public void PrintMissingArgument(string argument, string command)
-        {
-            System.Console.WriteLine();
-            Colorful.Console.WriteLine($"Missing '{argument}' argument for the '{command}' command.", RED_COLOR);
-            PrintUsage();
-        }
-
-        private static void PrintStylizedApplicationName()
-        {
-            var stylizedApplicationName =
-@"
-              _           
-   __ _  __ _(_)_   _ ___ 
-  / _` |/ _` | | | | / __|
- | (_| | (_| | | |_| \__ \
-  \__, |\__,_|_|\__,_|___/
-  |___/                   
-";
-            Colorful.Console.WriteLine(stylizedApplicationName, Color.Gold);
-        }
-        
-        public void PrintSiteContainerDirectoryNotValid(List<string> validationErrors)
-        {
-            System.Console.WriteLine();
-            Colorful.Console.WriteLine($"The site container directory '{_gaiusConfiguration.SiteContainerFullPath}' is not valid.", RED_COLOR);
-            System.Console.WriteLine();
-            Colorful.Console.WriteLine("Validation errors:", RED_COLOR);
-
-            for(var i = 0; i < validationErrors.Count; i++)
-            {
-                Colorful.Console.WriteLine($"{i+1}. {validationErrors[i]}", RED_COLOR);
-            }
-
-            System.Console.WriteLine();
-        }
-
-        private void PrintConfiguration(string path, Color jsonColor)
-        {
-            Console.WriteLine($"Current configuration defined in {path}/gaius.json:");
-            Colorful.Console.WriteLine($"Note: if no gaius.json exists in {path}, default configuration values are used.", GREY_COLOR);
-            Console.WriteLine();
-            Colorful.Console.WriteLine(JsonConvert.SerializeObject(_gaiusConfiguration, Formatting.Indented), jsonColor);
-            System.Console.WriteLine();
-        }
-
-        private static void PrintUsage()
-        {
-            var usage = 
-@"
-Usage: gaius [command] [options]
-
-Commands (Gaius Engine):
-
-  version                Show version information.
-  help                   Show help information.
-  showconfig [path]      Show the configuration in [path].
-
-  process-test [path]    Process the source data in [path] using the config file [path]/gaius.json.
-                           This does *not* prepend the 'GenerationUrlRootPrefix' config param to URLs.
-                           This allows for the local testing of generated sites (e.g. http://localhost).
-
-  process [path]         Process the source data in [path] using the config file [path]/gaius.json.
-
-Commands (Gaius Server):
-
-  test                   Runs process-test command in current directory.
-                         Starts a local web server which serves up generated site content in [path/_generated].
-                            By default local web server is accessible on http://localhost:5000
-
-Note: if no [path] is provided, [path] defaults to current directory.
-
-Commands (CLI wrapper):
-
-  update-all             Update the Gaius engine binaries, Gaius server binaries,
-                           Github Actions workflow, and the CLI wrappers (recommended).
-
-  update-engine          Only update the Gaius engine binaries.
-  update-server          Only update the Gaius server binaries.
-  update-cli             Only update the Gaius CLI wrappers.
-  update-github-actions  Only update the Gaius Github Actions workflow.
-
-Options:
-  -y                     Automatically answer 'yes' for all questions.
-                           This allows for automatic processing of source data.
-";
-            System.Console.WriteLine(usage);
-        }
-
-        public void PrintInvalidConfiguration(string path)
-        {
-            System.Console.WriteLine();
-            Colorful.Console.WriteLine("Unsupported configuration detected.", RED_COLOR);
-            Console.WriteLine("Gaius currently supports the following configurations:");
-            System.Console.WriteLine();
-            Console.WriteLine($"Workers: {string.Join(",", _gaiusConfiguration.SupportedWorkers)}");
-
-            var checkMsg = 
-@"
-Please check your gaius.json file and make sure the following properties are set correctly:
-
-    * Processor
-    * Pipeline
-";
-            
-            Console.WriteLine(checkMsg);
-            PrintConfiguration(path, RED_COLOR);
-            Console.WriteLine();
-            Console.WriteLine("Example gaius.json file:");
-
-            var exampleJson =
-@"
-{
-  ""SourceDirectoryName"" : ""_source"",
-  ""LayoutDirectoryName"" : ""_layouts"",
-  ""GenerationDirectoryName"" : ""_generated"",
-  ""Processor"" : ""file"",
-  ""Pipeline"": ""markdown-liquid""
-}
-";
-            Colorful.Console.WriteLine(exampleJson, GREEN_COLOR);
-        }
-    }
+    }        
 }

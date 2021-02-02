@@ -7,6 +7,7 @@ using Gaius.Core.Terminal;
 using Gaius.Processing.Display;
 using Gaius.Worker;
 using Gaius.Worker.MarkdownLiquid;
+using Microsoft.Extensions.Options;
 
 namespace Gaius
 {
@@ -73,42 +74,43 @@ namespace Gaius
             var validConfiguration = appConfiguration.Item3;
             
             var terminalOutputService = serviceProvider.GetService<ITerminalDisplayService>();
+            var gaiusConfiguration = serviceProvider.GetService<IOptions<GaiusConfiguration>>().Value;
 
             // commands that don't require full initialization and validation
             if(gaiusArgs.IsNoCommand)
             {
-                terminalOutputService.PrintDefault();
+                TerminalUtilities.PrintDefault();
                 return;
             }
 
             if(gaiusArgs.IsUnknownCommand)
             {
-                terminalOutputService.PrintUnknownCommand(gaiusArgs.Command);
+                TerminalUtilities.PrintUnknownCommand(gaiusArgs.Command);
                 return;
             }
 
             if(gaiusArgs.IsVersionCommand)
             {
-                terminalOutputService.PrintVersionCommand();
+                TerminalUtilities.PrintVersionCommand();
                 return;
             }
 
             if(gaiusArgs.IsHelpCommand)
             {
-                terminalOutputService.PrintHelpCommand();
+                TerminalUtilities.PrintHelpCommand();
                 return;
             }
 
             // explicitly validate configuration for remaining commands
             if(!validConfiguration)
             {
-                terminalOutputService.PrintInvalidConfiguration(gaiusArgs.BasePath);
+                TerminalUtilities.PrintInvalidConfiguration();
                 return;
             }
 
             if(gaiusArgs.IsShowConfigCommand)
             {
-                terminalOutputService.PrintShowConfigurationCommand(gaiusArgs.BasePath);
+                TerminalUtilities.PrintShowConfigurationCommand(gaiusArgs.BasePath, gaiusConfiguration);
                 return;
             }
 
@@ -122,7 +124,7 @@ namespace Gaius
 
                 if(!validationResults.Item1)
                 {
-                    terminalOutputService.PrintSiteContainerDirectoryNotValid(validationResults.Item2);
+                    TerminalUtilities.PrintSiteContainerDirectoryNotValid(validationResults.Item2, gaiusConfiguration);
                     return;
                 }
 
