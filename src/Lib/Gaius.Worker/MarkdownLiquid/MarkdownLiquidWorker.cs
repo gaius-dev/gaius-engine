@@ -373,8 +373,8 @@ namespace Gaius.Worker.MarkdownLiquid
             if(taskFlags.HasFlag(WorkerTaskFlags.IsPost))
                 return $"{_dateTimePrefixRegEx.Replace(Path.GetFileNameWithoutExtension(fileSystemInfo.Name), string.Empty)}.html";
 
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
-                return $"draft-{_dateTimePrefixRegEx.Replace(Path.GetFileNameWithoutExtension(fileSystemInfo.Name), string.Empty)}.html";
+            else if(taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+                return $"{_dateTimePrefixRegEx.Replace(Path.GetFileNameWithoutExtension(fileSystemInfo.Name), string.Empty)}-draft.html";
 
             if(!fileSystemInfo.IsMarkdownFile())
                 return fileSystemInfo.Name;
@@ -400,7 +400,13 @@ namespace Gaius.Worker.MarkdownLiquid
         {
             var dateTimePrefix = _dateTimePrefixRegEx.Match(fileSystemInfo.Name).Value;
             var dateTimePathSegments = dateTimePrefix.Split('-', StringSplitOptions.RemoveEmptyEntries).ToList();
-            relativeTaskPathSegments.Remove(GaiusConfiguration.PostsDirectoryName);
+
+            if(relativeTaskPathSegments.Contains(GaiusConfiguration.PostsDirectoryName))
+                relativeTaskPathSegments.Remove(GaiusConfiguration.PostsDirectoryName);
+
+            else if(relativeTaskPathSegments.Contains(GaiusConfiguration.DraftsDirectoryName))
+                relativeTaskPathSegments.Remove(GaiusConfiguration.DraftsDirectoryName);
+
             relativeTaskPathSegments = dateTimePathSegments.Concat(relativeTaskPathSegments).ToList();
             outputDisplay = string.Join('/', dateTimePathSegments.Concat(new string[] {outputDisplay}));
             return (relativeTaskPathSegments, outputDisplay);

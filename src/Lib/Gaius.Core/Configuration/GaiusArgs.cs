@@ -7,22 +7,22 @@ namespace Gaius.Core.Configuration
 {
     public class GaiusArgs {
         
-        private const string AUTOMATIC_YES_PARAM = "-y";
+        private const string _automaticYes = "-y";
 
         public GaiusArgs(string [] args)
         {
             var listArgs = new List<string>(args);
 
-            if (args.Contains(AUTOMATIC_YES_PARAM))
+            if (args.Contains(_automaticYes))
             {
                 IsAutomaticYesEnabled = true;
-                listArgs.Remove(AUTOMATIC_YES_PARAM);
+                listArgs.Remove(_automaticYes);
             }
 
             var pathArg = ".";
 
             if (listArgs.Count == 0)
-                IsNoCommand = true;
+                IsEmptyCommand = true;
 
             if (listArgs.Count >= 1)
                 Command = args[0];
@@ -36,8 +36,8 @@ namespace Gaius.Core.Configuration
         public string Command { get; private set; }
         public string BasePath { get; private set; }
         public bool IsAutomaticYesEnabled { get; private set; }
-        public bool IsNoCommand { get; private set; }
-        public bool IsUnknownCommand => !IsNoCommand && !IsVersionCommand && !IsHelpCommand && !IsShowConfigCommand && !IsTestCommand && !IsProcessCommand;
+        public bool IsEmptyCommand { get; private set; }
+        public bool IsUnknownCommand => !IsEmptyCommand && !IsVersionCommand && !IsHelpCommand && !IsShowConfigCommand && !IsTestCommand && !IsProcessCommand;
         public bool IsVersionCommand => Command == "version";
         public bool IsHelpCommand => Command == "help";
         public bool IsShowConfigCommand => Command == "showconfig";

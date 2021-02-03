@@ -77,7 +77,7 @@ namespace Gaius
             var gaiusConfiguration = serviceProvider.GetService<IOptions<GaiusConfiguration>>().Value;
 
             // commands that don't require full initialization and validation
-            if(gaiusArgs.IsNoCommand)
+            if(gaiusArgs.IsEmptyCommand)
             {
                 TerminalUtilities.PrintDefault();
                 return;

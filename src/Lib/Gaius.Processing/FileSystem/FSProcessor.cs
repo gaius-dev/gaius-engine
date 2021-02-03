@@ -75,8 +75,12 @@ namespace Gaius.Processing.FileSystem
             }
 
             // Directories ====================================================
-            foreach(var sourceDir in sourceStartDir?.EnumerateDirectories().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
+            foreach(var sourceDir in sourceStartDir?.EnumerateDirectories().OrderBy(directoryInfo => directoryInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
             {
+                //rs: skip over the _drafts source folder if we're not in test mode
+                if(sourceDir.FullName.Equals(_gaiusConfiguration.DraftsDirectoryFullPath) && !_gaiusConfiguration.IsTestMode)
+                    continue;
+
                 var sourceDirTask = _worker.CreateWorkerTask(sourceDir);
                 var sourceDirOp = new FSOperation(sourceDirTask);
                 var newOpTreeNode = startNode.AddChild(sourceDirOp);
@@ -91,9 +95,21 @@ namespace Gaius.Processing.FileSystem
                 => !tn.Data.IsInvalid
                     && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsPost))
                         .Select(tn => tn.Data.WorkerTask).ToList();
+            
+            if(_gaiusConfiguration.IsTestMode)
+            {
+                var allDraftWorkerTasks = sourceTreeNode.Where(tn 
+                    => !tn.Data.IsInvalid
+                        && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+                            .Select(tn => tn.Data.WorkerTask).ToList();
 
+                allPostWorkerTasks.AddRange(allDraftWorkerTasks);
+            }
+
+            allPostWorkerTasks = allPostWorkerTasks.OrderBy(wt => wt.FileSystemInfo.Name).ToList();
+            
             var allPostListOpNodes = sourceTreeNode.Where(tn => tn.Data.WorkerTask.IsPostListing).ToList();
-
+            
             //rs: add additional paginator ops for any default post listing pages
             foreach(var postListOpNode in allPostListOpNodes)
             {
@@ -144,7 +160,7 @@ namespace Gaius.Processing.FileSystem
             }
 
             // Directories ====================================================
-            foreach(var genDir in generationStartDir?.EnumerateDirectories().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
+            foreach(var genDir in generationStartDir?.EnumerateDirectories().OrderBy(directoryInfo => directoryInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
             {
                 //rs: does the gen dir op have a matching source dir op?
                 var hasMatchingSourceDirOp = rootNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskFullPath == genDir.FullName);
