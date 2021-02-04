@@ -2,13 +2,13 @@ using Gaius.Core.Reflection;
 
 namespace Gaius.Worker.Models
 {
-    public class GaiusInformation
+    internal class GaiusInformation
     {
         public GaiusInformation()
         {
             Version = AssemblyUtilities.GetAssemblyVersion(AssemblyUtilities.EntryAssembly);
         }
 
-        public string Version { get; internal set; }
+        internal string Version { get; private set; }
     }
 }

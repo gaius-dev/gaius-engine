@@ -1,8 +1,10 @@
+using Gaius.Worker.FrontMatter;
+
 namespace Gaius.Worker.Models
 {
-    public class BaseViewModel
+    internal class BaseViewModel
     {
-        public BaseViewModel(WorkerTask workerTask, string content)
+        internal BaseViewModel(WorkerTask workerTask, string content)
         {
             Id = workerTask.GenerationId;
             Url = workerTask.GenerationUrl;
@@ -10,9 +12,9 @@ namespace Gaius.Worker.Models
             Content = content;
         }
 
-        public string Id { get; private set; }
-        public string Url { get; private set; }
-        public IFrontMatter FrontMatter { get; private set; }
-        public string Content { get; private set; }
+        internal string Id { get; private set; }
+        internal string Url { get; private set; }
+        internal IFrontMatter FrontMatter { get; private set; }
+        internal string Content { get; private set; }
     }
 }

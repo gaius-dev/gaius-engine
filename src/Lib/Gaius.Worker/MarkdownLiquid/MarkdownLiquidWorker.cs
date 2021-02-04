@@ -7,12 +7,12 @@ using Gaius.Core.Configuration;
 using Markdig;
 using Gaius.Core.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
-using Gaius.Worker.Parsing.Yaml;
+using Gaius.Worker.FrontMatter.Yaml;
 using System.Collections.Generic;
 using Gaius.Worker.Models;
 using System.Text.RegularExpressions;
 using System.Linq;
-using Gaius.Worker.Parsing;
+using Gaius.Worker.FrontMatter;
 
 namespace Gaius.Worker.MarkdownLiquid
 {
@@ -84,6 +84,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Page>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Paginator>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Site>();
+                context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Tag>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_GaiusInfo>();
                 context.Model = markdownLiquidViewModel;
                 return liquidTemplate.Render(context);
@@ -103,6 +104,10 @@ namespace Gaius.Worker.MarkdownLiquid
             AddPrevAndNextUrlsToPaginator(paginator, workerTask);
             workerTask.Paginator = paginator;
             workerTask.PaginatorWorkerTasks = paginatorWorkerTasks;
+        }
+        public override void AddTagDataToWorker(List<TagData> tagData)
+        {
+            SiteData.SetTagData(tagData);
         }
         public override WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks)
         {
@@ -418,24 +423,35 @@ namespace Gaius.Worker.MarkdownLiquid
             => Path.GetFileNameWithoutExtension(string.Join(".", relativeTaskPathSegments));
         private void AddPrevAndNextUrlsToPaginator(Paginator paginator, WorkerTask workerTask)
         {
+            if(!workerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir))
+                throw new Exception($"Unable to calculate prev and next URLs {workerTask.FileSystemInfo.FullName}. It is not child of the {GaiusConfiguration.SourceDirectoryName} directory.");
+
             string prevUrl = null;
             string nextUrl = null;
 
             if(!paginator.HasPrev && !paginator.HasNext)
                 return;
 
-            var pathToModify = new List<string>(workerTask.TaskPathSegments);
+            var rawPathSegmentsToModify = workerTask.FileSystemInfo.GetPathSegments();
+
+            var skipAmt = GetSkipAmtForChildOfSourceDirectory(rawPathSegmentsToModify);
+            skipAmt++;
+            
+            if(skipAmt > rawPathSegmentsToModify.Count)
+                throw new Exception($"Unable to calculate prev and next URLs for {workerTask.FileSystemInfo.FullName}.");
+
+            var relativeTaskPathSegments = rawPathSegmentsToModify.Skip(skipAmt).ToList();
 
             if (paginator.HasPrev)
             {
-                pathToModify[pathToModify.Count - 1] = GetTaskFileOrDirectoryName(workerTask.FileSystemInfo, workerTask.TaskFlags, paginator.PageNumber - 1);
-                prevUrl = GetGenerationUrlFromPath(pathToModify);
+                relativeTaskPathSegments[relativeTaskPathSegments.Count - 1] = GetTaskFileOrDirectoryName(workerTask.FileSystemInfo, workerTask.TaskFlags, paginator.PageNumber - 1);
+                prevUrl = GetGenerationUrlFromPath(relativeTaskPathSegments);
             }
 
             if (paginator.HasNext)
             {
-                pathToModify[pathToModify.Count - 1] = GetTaskFileOrDirectoryName(workerTask.FileSystemInfo, workerTask.TaskFlags, paginator.PageNumber + 1);
-                nextUrl = GetGenerationUrlFromPath(pathToModify);
+                relativeTaskPathSegments[relativeTaskPathSegments.Count - 1] = GetTaskFileOrDirectoryName(workerTask.FileSystemInfo, workerTask.TaskFlags, paginator.PageNumber + 1);
+                nextUrl = GetGenerationUrlFromPath(relativeTaskPathSegments);
             }
 
             paginator.AddPrevAndNextUrls(prevUrl, nextUrl);

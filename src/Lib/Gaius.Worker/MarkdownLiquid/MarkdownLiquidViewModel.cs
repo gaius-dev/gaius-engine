@@ -7,18 +7,14 @@ namespace Gaius.Worker.MarkdownLiquid
 {
     public class MarkdownLiquidViewModel
     {
-        public MarkdownLiquidViewModel(ViewModel viewModelData, SiteData siteData, GaiusInformation gaiusInformation)
+        internal MarkdownLiquidViewModel(ViewModel viewModelData, SiteData siteData, GaiusInformation gaiusInformation)
         {
             page = new MarkdownLiquidViewModel_Page(viewModelData);
 
             if(viewModelData.Paginator != null && viewModelData.PaginatorViewModels?.Count > 0)
                 paginator = new MarkdownLiquidViewModel_Paginator(viewModelData);
             
-            site = new MarkdownLiquidViewModel_Site() 
-            {
-                url = siteData.Url,
-                time = siteData.Time
-            };
+            site = new MarkdownLiquidViewModel_Site(siteData);
 
             gaius = new MarkdownLiquidViewModel_GaiusInfo()
             {
@@ -34,7 +30,7 @@ namespace Gaius.Worker.MarkdownLiquid
 
     public class MarkdownLiquidViewModel_Page
     {
-        public MarkdownLiquidViewModel_Page(BaseViewModel baseViewModel, bool generateTeaser = false)
+        internal MarkdownLiquidViewModel_Page(BaseViewModel baseViewModel, bool generateTeaser = false)
         {
             id = baseViewModel.Id;
             url = baseViewModel.Url;
@@ -42,12 +38,13 @@ namespace Gaius.Worker.MarkdownLiquid
             author = baseViewModel.FrontMatter.Author;
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
-            tag = baseViewModel.FrontMatter.Tag;
-            tags = baseViewModel.FrontMatter.Tags;
+            tags = baseViewModel.FrontMatter.GetTagData()
+                                                .Select(td => new MarkdownLiquidViewModel_Tag(td))
+                                                .ToList();
             content = baseViewModel.Content;
 
             if(generateTeaser)
-                teaser = GenerateTeaser(content);
+                excerpt = GetExcerpt(content);
         }
 
         public string id { get; private set; }
@@ -57,11 +54,10 @@ namespace Gaius.Worker.MarkdownLiquid
         public string keywords { get; private set; }
         public string description { get; private set; }
         public string content { get; private set; }
-        public string teaser { get; private set; }
-        public string tag { get; private set; }
-        public List<string> tags { get; private set; }
+        public string excerpt { get; private set; }
+        public List<MarkdownLiquidViewModel_Tag> tags { get; private set; }
 
-        private static string GenerateTeaser(string content)
+        private static string GetExcerpt(string content)
         {
             var numberOfParagraphsToExtract = 2;
 
@@ -79,7 +75,7 @@ namespace Gaius.Worker.MarkdownLiquid
 
     public class MarkdownLiquidViewModel_Paginator
     {
-        public MarkdownLiquidViewModel_Paginator (ViewModel viewModelData)
+        internal MarkdownLiquidViewModel_Paginator (ViewModel viewModelData)
         {
             page = viewModelData.Paginator.PageNumber;
             per_page = viewModelData.Paginator.ItemsPerPage;
@@ -102,10 +98,26 @@ namespace Gaius.Worker.MarkdownLiquid
         public string next_page_path { get; set; }
     }
 
+    public class MarkdownLiquidViewModel_Tag
+    {
+        internal MarkdownLiquidViewModel_Tag(TagData tagData)
+        {
+            name = tagData.Name;
+        }
+        public string name { get; set; }
+    }
+
     public class MarkdownLiquidViewModel_Site
     {
+        internal MarkdownLiquidViewModel_Site(SiteData siteData)
+        {
+            url = siteData.Url;
+            time = siteData.Time;
+            tags = siteData.Tags?.Select(tag => new MarkdownLiquidViewModel_Tag(tag)).ToList();
+        }
         public string url { get; set; }
         public string time { get; set; }
+        public List<MarkdownLiquidViewModel_Tag> tags { get; set;}
     }
 
     public class MarkdownLiquidViewModel_GaiusInfo 

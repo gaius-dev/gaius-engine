@@ -50,11 +50,11 @@ namespace Gaius.Processing.FileSystem
 
             var sourceDirTreeNode = rootNode.AddChild(sourceDirOp);
             AddSourceOperationsToTreeNode(sourceDirTreeNode, sourceDirTask.DirectoryInfo);
+            AddTagDataToWorker(sourceDirTreeNode);
+            AddAdditionalPostListingPaginatorOps(sourceDirTreeNode);
 
             var namedThemeDirTreeNode = rootNode.AddChild(namedThemeDirOp);
             AddSourceOperationsToTreeNode(namedThemeDirTreeNode, namedThemeDirTask.DirectoryInfo);
-
-            AddAdditionalPostListingPaginatorOps(sourceDirTreeNode);
 
             var genDirectoryInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
             AddGenerationDirOperationsToTreeNode(rootNode, rootNode, genDirectoryInfo);
@@ -88,17 +88,28 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        private void AddAdditionalPostListingPaginatorOps(TreeNode<IOperation> sourceTreeNode)
+        private void AddTagDataToWorker(TreeNode<IOperation> sourceDirNode)
+        {
+            var tagData = sourceDirNode.Where(tn => !tn.Data.IsInvalid && tn.Data.WorkerTask.HasFrontMatter)
+                                    .SelectMany(tn => tn.Data.WorkerTask.FrontMatter.GetTagData())
+                                    .GroupBy(td => td.Name)
+                                    .Select(group => group.First())
+                                    .OrderBy(td => td.Name).ToList();
+
+            _worker.AddTagDataToWorker(tagData);
+        }
+
+        private void AddAdditionalPostListingPaginatorOps(TreeNode<IOperation> sourceDirNode)
         {
             //rs: get all post ops worker tasks
-            var allPostWorkerTasks = sourceTreeNode.Where(tn 
+            var allPostWorkerTasks = sourceDirNode.Where(tn 
                 => !tn.Data.IsInvalid
                     && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsPost))
                         .Select(tn => tn.Data.WorkerTask).ToList();
             
             if(_gaiusConfiguration.IsTestMode)
             {
-                var allDraftWorkerTasks = sourceTreeNode.Where(tn 
+                var allDraftWorkerTasks = sourceDirNode.Where(tn 
                     => !tn.Data.IsInvalid
                         && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsDraft))
                             .Select(tn => tn.Data.WorkerTask).ToList();
@@ -108,16 +119,16 @@ namespace Gaius.Processing.FileSystem
 
             allPostWorkerTasks = allPostWorkerTasks.OrderBy(wt => wt.FileSystemInfo.Name).ToList();
             
-            var allPostListOpNodes = sourceTreeNode.Where(tn => tn.Data.WorkerTask.IsPostListing).ToList();
+            var allPostListOpNodes = sourceDirNode.Where(tn => tn.Data.WorkerTask.IsPostListing).ToList();
             
             //rs: add additional paginator ops for any default post listing pages
             foreach(var postListOpNode in allPostListOpNodes)
             {
-                AddAdditionalPostListingPaginatorOpsForId(postListOpNode, allPostWorkerTasks);
+                AddAdditionalChildPaginatorOps(postListOpNode, allPostWorkerTasks);
             }
         }
 
-        private void AddAdditionalPostListingPaginatorOpsForId(TreeNode<IOperation> postListOpNode, List<WorkerTask> postWorkerTasks)
+        private void AddAdditionalChildPaginatorOps(TreeNode<IOperation> postListOpNode, List<WorkerTask> postWorkerTasks)
         {
             if(postWorkerTasks.Count == 0)
                 return;

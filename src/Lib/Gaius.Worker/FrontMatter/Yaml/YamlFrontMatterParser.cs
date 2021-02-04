@@ -1,8 +1,7 @@
-using Gaius.Worker.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Gaius.Worker.Parsing.Yaml
+namespace Gaius.Worker.FrontMatter.Yaml
 {
     public class YamlFrontMatterParser : IFrontMatterParser
     {

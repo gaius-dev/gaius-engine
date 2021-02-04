@@ -9,10 +9,11 @@ namespace Gaius.Worker
     {
         protected List<string> RequiredDirectories;
         protected GaiusConfiguration GaiusConfiguration;
-        protected SiteData SiteData;
-        protected static readonly GaiusInformation GaiusInformation = new GaiusInformation();
+        internal SiteData SiteData;
+        internal static readonly GaiusInformation GaiusInformation = new GaiusInformation();
 
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
+        public abstract void AddTagDataToWorker(List<TagData> tagData);
         public abstract void AddPaginatorDataToWorkerTask(WorkerTask workerTask, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         public abstract string PerformWork(WorkerTask workerTask);

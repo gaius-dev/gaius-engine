@@ -1,6 +1,4 @@
-using Gaius.Worker.Models;
-
-namespace Gaius.Worker.Parsing
+namespace Gaius.Worker.FrontMatter
 {
     public interface IFrontMatterParser
     {

@@ -1,18 +1,25 @@
 
 using System;
+using System.Collections.Generic;
 using Gaius.Core.Configuration;
 
 namespace Gaius.Worker.Models
 {
-    public class SiteData
+    internal class SiteData
     {
-        public SiteData(GaiusConfiguration gaiusConfiguration)
+        internal SiteData(GaiusConfiguration gaiusConfiguration)
         {
             Url = gaiusConfiguration.GetGenerationUrlRootPrefix();
             Time = DateTime.UtcNow.ToString("u");
         }
 
-        public string Url { get; private set; }
-        public string Time { get; private set; }
+        internal void SetTagData(List<TagData> tags)
+        {
+            Tags = tags;
+        }
+        
+        internal string Url { get; private set; }
+        internal string Time { get; private set; }
+        internal List<TagData> Tags { get; private set; }
     }
 }

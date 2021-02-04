@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using Gaius.Worker.Models;
 using System.Linq;
+using Gaius.Worker.FrontMatter;
 
 namespace Gaius.Worker
 {
@@ -10,6 +11,7 @@ namespace Gaius.Worker
         public FileSystemInfo FileSystemInfo { get; internal set; }
         public IWorkerLayout Layout { get; internal set; }
         public IFrontMatter FrontMatter { get; internal set; }
+        public bool HasFrontMatter => FrontMatter != null;
         public DirectoryInfo DirectoryInfo => FileSystemInfo as DirectoryInfo;
         public FileInfo FileInfo => FileSystemInfo as FileInfo;
         public WorkType WorkType { get; internal set; }
@@ -23,9 +25,8 @@ namespace Gaius.Worker
         public string SourceDisplay { get; internal set; }
         public string OutputDisplay { get; internal set; }
 
-        //comes from IWorkerLayoutData
+        //layout data
         public string LayoutId => Layout?.Id ?? string.Empty;
-        public string PaginatorId => Layout?.PaginatorId ?? string.Empty;
         public bool IsPostListing => Layout?.IsPostListing ?? false;
 
         //paginator data
