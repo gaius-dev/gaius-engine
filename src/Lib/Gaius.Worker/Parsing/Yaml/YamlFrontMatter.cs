@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Gaius.Worker.Models;
 
 namespace Gaius.Worker.Parsing.Yaml
@@ -10,5 +11,7 @@ namespace Gaius.Worker.Parsing.Yaml
         public string Keywords { get; internal set; }
         public string Description { get; internal set; }
         public bool IsDraft { get; internal set; }
+        public string Tag { get; internal set; }
+        public List<string> Tags { get; internal set; }
     }
 }

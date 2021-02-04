@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Gaius.Core.Configuration;
 using Gaius.Worker.Models;
 
 namespace Gaius.Worker.MarkdownLiquid
 {
     public class MarkdownLiquidViewModel
     {
-        public MarkdownLiquidViewModel(ViewModel viewModelData, GenerationInfo generationData, GaiusConfiguration gaiusConfiguration)
+        public MarkdownLiquidViewModel(ViewModel viewModelData, SiteData siteData, GaiusInformation gaiusInformation)
         {
             page = new MarkdownLiquidViewModel_Page(viewModelData);
 
@@ -17,13 +16,13 @@ namespace Gaius.Worker.MarkdownLiquid
             
             site = new MarkdownLiquidViewModel_Site() 
             {
-                url = gaiusConfiguration.GetGenerationUrlRootPrefix(),
-                time = generationData.GenerationDateTime.ToString("u")
+                url = siteData.Url,
+                time = siteData.Time
             };
 
             gaius = new MarkdownLiquidViewModel_GaiusInfo()
             {
-                version = generationData.GaiusVersion
+                version = gaiusInformation.Version
             };
         }
 
@@ -43,6 +42,8 @@ namespace Gaius.Worker.MarkdownLiquid
             author = baseViewModel.FrontMatter.Author;
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
+            tag = baseViewModel.FrontMatter.Tag;
+            tags = baseViewModel.FrontMatter.Tags;
             content = baseViewModel.Content;
 
             if(generateTeaser)
@@ -57,6 +58,8 @@ namespace Gaius.Worker.MarkdownLiquid
         public string description { get; private set; }
         public string content { get; private set; }
         public string teaser { get; private set; }
+        public string tag { get; private set; }
+        public List<string> tags { get; private set; }
 
         private static string GenerateTeaser(string content)
         {

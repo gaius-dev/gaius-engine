@@ -46,6 +46,7 @@ namespace Gaius.Worker.MarkdownLiquid
         {
             _frontMatterParser = frontMatterParser;
             GaiusConfiguration = gaiusConfigurationOptions.Value;
+            SiteData = new SiteData(GaiusConfiguration);
             RequiredDirectories = new List<string> { GetLayoutsDirFullPath(GaiusConfiguration) };
             BuildLayoutInfoDictionary();
         }
@@ -66,7 +67,7 @@ namespace Gaius.Worker.MarkdownLiquid
             
             var viewModelData = CreateViewModel(workerTask);
 
-            var markdownLiquidViewModel = new MarkdownLiquidViewModel(viewModelData, GenerationInfo, GaiusConfiguration);
+            var markdownLiquidViewModel = new MarkdownLiquidViewModel(viewModelData, SiteData, GaiusInformation);
 
             var layoutId = !string.IsNullOrEmpty(workerTask.LayoutId) ? workerTask.LayoutId : _defaultLayoutId;
             if (!LayoutDataDictionary.TryGetValue(layoutId, out var layoutData))

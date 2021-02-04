@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using Gaius.Core.Configuration;
 using Gaius.Worker.Models;
-using Gaius.Core.Reflection;
 
 namespace Gaius.Worker
 {
@@ -11,11 +9,8 @@ namespace Gaius.Worker
     {
         protected List<string> RequiredDirectories;
         protected GaiusConfiguration GaiusConfiguration;
-        protected static readonly GenerationInfo GenerationInfo = new GenerationInfo()
-        {
-            GenerationDateTime = DateTime.UtcNow,
-            GaiusVersion = AssemblyUtilities.GetAssemblyVersion(AssemblyUtilities.EntryAssembly)
-        };
+        protected SiteData SiteData;
+        protected static readonly GaiusInformation GaiusInformation = new GaiusInformation();
 
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
         public abstract void AddPaginatorDataToWorkerTask(WorkerTask workerTask, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);

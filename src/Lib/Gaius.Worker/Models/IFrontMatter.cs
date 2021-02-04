@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Gaius.Worker.Models
 {
     public interface IFrontMatter
@@ -7,5 +9,7 @@ namespace Gaius.Worker.Models
         string Author { get; }
         string Keywords { get; }
         string Description { get; }
+        string Tag { get; }
+        List<string> Tags { get; }
     }
 }

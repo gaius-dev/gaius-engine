@@ -20,7 +20,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>gaius</AssemblyName>
     <AssemblyTitle>Gaius Engine</AssemblyTitle>
-    <Version>0.0.54</Version>
+    <Version>0.0.55</Version>
     <Authors>Robert Strube</Authors>
     <Description>A markup generation engine that combines liquid templating with markdown.</Description>
   </PropertyGroup>
