@@ -20,10 +20,12 @@ namespace Gaius.Worker.MarkdownLiquid
     {
         private const string _layoutsDirectory = "_layouts";
         private const string _defaultLayoutId = "default";
-        private const string _dateTimePrefixRegExStr = @"\d{4}-\d{2}-\d{2}-";
+        private const string _dateTimePrefixRegExStr = @"\d{4}-\d{2}-\d{2}";
         private static Regex _dateTimePrefixRegEx = new Regex(_dateTimePrefixRegExStr, RegexOptions.Compiled);
         private const string _siteUrlRegExStr = @"{{ *site.url *}}";
         private static Regex _siteUrlRegEx = new Regex(_siteUrlRegExStr, RegexOptions.Compiled);
+        private static string _fileDirNameSanitizeRegExStr = @"[^A-Za-z0-9-]";
+        private static Regex _fileDirNameSanitizeRegEx = new Regex(_fileDirNameSanitizeRegExStr, RegexOptions.Compiled);
         private readonly IFrontMatterParser _frontMatterParser;
         private readonly Dictionary<string, IWorkerLayout> LayoutDataDictionary = new Dictionary<string, IWorkerLayout>();
         private readonly Dictionary<string, BaseViewModel> ViewModelDictionary = new Dictionary<string, BaseViewModel>();
@@ -127,7 +129,7 @@ namespace Gaius.Worker.MarkdownLiquid
             var taskFlags = GetTaskFlags(fileSystemInfo);
             var workType = GetWorkType(fileSystemInfo, taskFlags);
             var sourceDisplay = GetSourceDisplay(fileSystemInfo, taskFlags);
-            (frontMatter, layout) = GetFrontMatterAndLayout(fileSystemInfo, taskFlags);
+            (frontMatter, layout, taskFlags) = GetFrontMatterAndLayout(fileSystemInfo, taskFlags);
             (var taskPathSegments, var outputDisplay, var generationUrl, var generationId) = GetAdditionalTaskParameters(fileSystemInfo, taskFlags, pageNumber);
 
             return new WorkerTask()
@@ -292,29 +294,41 @@ namespace Gaius.Worker.MarkdownLiquid
 
             return fileSystemInfo.Name;
         }
-        private (IFrontMatter, IWorkerLayout) GetFrontMatterAndLayout(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
+        private (IFrontMatter, IWorkerLayout, WorkerTaskFlags) GetFrontMatterAndLayout(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
         {
             if(taskFlags.HasFlag(WorkerTaskFlags.IsInvalid))
-                return (null, null);
+                return (null, null, taskFlags);
 
             if(!taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir))
-                return (null, null);
+                return (null, null, taskFlags);
+
+            if(!fileSystemInfo.IsMarkdownFile())
+                return (null, null, taskFlags);
 
             IFrontMatter frontMatter;
             IWorkerLayout layout;
 
-            if (fileSystemInfo.IsMarkdownFile())
-            {
-                frontMatter = _frontMatterParser.DeserializeFromContent(File.ReadAllText(fileSystemInfo.FullName));
+            frontMatter = _frontMatterParser.DeserializeFromContent(File.ReadAllText(fileSystemInfo.FullName));
 
-                if (!LayoutDataDictionary.TryGetValue(frontMatter.Layout, out layout)
-                    && !LayoutDataDictionary.TryGetValue(_defaultLayoutId, out layout))
-                    throw new Exception($"Unable to find layout information for: {frontMatter.Layout} or {_defaultLayoutId}");
-                
-                return (frontMatter, layout);
+            if(frontMatter == null)
+            {
+                taskFlags = taskFlags | WorkerTaskFlags.IsInvalid;
+                return (null, null, taskFlags);
             }
 
-            return (null, null);
+            if(string.IsNullOrEmpty(frontMatter.Layout) && !LayoutDataDictionary.TryGetValue(_defaultLayoutId, out layout))
+            {
+                taskFlags = taskFlags | WorkerTaskFlags.IsInvalid;
+                return (null, null, taskFlags);
+            }
+
+            if (!LayoutDataDictionary.TryGetValue(frontMatter.Layout, out layout))
+            {
+                taskFlags = taskFlags | WorkerTaskFlags.IsInvalid;
+                return (null, null, taskFlags);
+            }
+            
+            return (frontMatter, layout, taskFlags);
         }
         private (List<string>, string, string, string) GetAdditionalTaskParameters(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, int pageNumber = 1)
         {
@@ -355,9 +369,8 @@ namespace Gaius.Worker.MarkdownLiquid
             var taskFileOrDirectoryName = GetTaskFileOrDirectoryName(fileSystemInfo, taskFlags, pageNumber);
             var outputDisplay = taskFileOrDirectoryName;
 
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
-                (relativeTaskPathSegments, outputDisplay)
-                    = UpdateRelativePathAndOutputDisplayForPostOrDraft(fileSystemInfo, relativeTaskPathSegments, outputDisplay);
+            (relativeTaskPathSegments, outputDisplay)
+                = GetRelativePathSegmentsAndOuputDisplay(fileSystemInfo, taskFlags, relativeTaskPathSegments, outputDisplay);
 
             relativeTaskPathSegments[relativeTaskPathSegments.Count - 1] = taskFileOrDirectoryName;
 
@@ -376,18 +389,38 @@ namespace Gaius.Worker.MarkdownLiquid
         }
         private string GetTaskFileOrDirectoryName(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, int pageNumber)
         {
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsPost))
-                return $"{_dateTimePrefixRegEx.Replace(Path.GetFileNameWithoutExtension(fileSystemInfo.Name), string.Empty)}.html";
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfGenDir))
+                throw new ArgumentException($"{nameof(taskFlags)} must contain {nameof(WorkerTaskFlags.IsChildOfSourceDir)} || {nameof(WorkerTaskFlags.IsChildOfNamedThemeDir)}");
 
-            else if(taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
-                return $"{_dateTimePrefixRegEx.Replace(Path.GetFileNameWithoutExtension(fileSystemInfo.Name), string.Empty)}-draft.html";
-
-            if(!fileSystemInfo.IsMarkdownFile())
+            //rs: anything in the named theme directory should not have it's name altered in any way
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfNamedThemeDir))
                 return fileSystemInfo.Name;
 
-            return pageNumber > 1 
-                ? $"{Path.GetFileNameWithoutExtension(fileSystemInfo.Name)}{pageNumber}.html"
-                : $"{Path.GetFileNameWithoutExtension(fileSystemInfo.Name)}.html";
+            //rs: anything below this point would be in the source directory and should therefore have it's name sanitized
+            var sanitizedNameWithoutExt
+                    = GetSanitizedFileOrDirectoryNameWithoutExt(Path.GetFileNameWithoutExtension(fileSystemInfo.Name));
+
+            if(fileSystemInfo.IsMarkdownFile())
+            {
+                if(taskFlags.HasFlag(WorkerTaskFlags.IsPost))
+                    return $"{_dateTimePrefixRegEx.Replace(sanitizedNameWithoutExt, string.Empty).TrimStart('-')}.html";
+
+                if(taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+                    return $"{_dateTimePrefixRegEx.Replace(sanitizedNameWithoutExt, string.Empty).TrimStart('-')}-draft.html";
+
+                return pageNumber > 1 
+                    ? $"{sanitizedNameWithoutExt}{pageNumber}.html"
+                    : $"{sanitizedNameWithoutExt}.html";
+            }
+            
+            if(fileSystemInfo.IsFile())
+                return $"{sanitizedNameWithoutExt}{Path.GetExtension(fileSystemInfo.Name)}";
+
+            return sanitizedNameWithoutExt;
+        }
+        private string GetSanitizedFileOrDirectoryNameWithoutExt(string nameWithoutExtension)
+        {
+            return _fileDirNameSanitizeRegEx.Replace(nameWithoutExtension, "-").TrimStart('-');
         }
         private int GetSkipAmtForChildOfSourceDirectory(List<string> pathSegments)
             => pathSegments.IndexOf(GaiusConfiguration.SourceDirectoryName);
@@ -402,20 +435,48 @@ namespace Gaius.Worker.MarkdownLiquid
 
             return -1;
         }
-        private (List<string>, string) UpdateRelativePathAndOutputDisplayForPostOrDraft(FileSystemInfo fileSystemInfo, List<string> relativeTaskPathSegments, string outputDisplay)
+        private (List<string>, string) GetRelativePathSegmentsAndOuputDisplay(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, List<string> relativePathSegments, string outputDisplay)
+        {
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfGenDir))
+                throw new ArgumentException($"{nameof(taskFlags)} must contain {nameof(WorkerTaskFlags.IsChildOfSourceDir)} || {nameof(WorkerTaskFlags.IsChildOfNamedThemeDir)}");
+
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfNamedThemeDir))
+                return (relativePathSegments, outputDisplay);
+
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+                return GetRelPathSegsAndOutputDisplayForPostOrDraft(fileSystemInfo, relativePathSegments, outputDisplay);
+
+            return (SanitizeRelativeTaskPathSegments(relativePathSegments), outputDisplay);
+        }
+        private (List<string>, string) GetRelPathSegsAndOutputDisplayForPostOrDraft(FileSystemInfo fileSystemInfo, List<string> relativePathSegments, string outputDisplay)
         {
             var dateTimePrefix = _dateTimePrefixRegEx.Match(fileSystemInfo.Name).Value;
             var dateTimePathSegments = dateTimePrefix.Split('-', StringSplitOptions.RemoveEmptyEntries).ToList();
 
-            if(relativeTaskPathSegments.Contains(GaiusConfiguration.PostsDirectoryName))
-                relativeTaskPathSegments.Remove(GaiusConfiguration.PostsDirectoryName);
+            if(relativePathSegments.Contains(GaiusConfiguration.PostsDirectoryName))
+                relativePathSegments.Remove(GaiusConfiguration.PostsDirectoryName);
 
-            else if(relativeTaskPathSegments.Contains(GaiusConfiguration.DraftsDirectoryName))
-                relativeTaskPathSegments.Remove(GaiusConfiguration.DraftsDirectoryName);
+            else if(relativePathSegments.Contains(GaiusConfiguration.DraftsDirectoryName))
+                relativePathSegments.Remove(GaiusConfiguration.DraftsDirectoryName);
 
-            relativeTaskPathSegments = dateTimePathSegments.Concat(relativeTaskPathSegments).ToList();
+            relativePathSegments = dateTimePathSegments.Concat(relativePathSegments).ToList();
+
+            relativePathSegments = SanitizeRelativeTaskPathSegments(relativePathSegments);
+
             outputDisplay = string.Join('/', dateTimePathSegments.Concat(new string[] {outputDisplay}));
-            return (relativeTaskPathSegments, outputDisplay);
+
+            return (relativePathSegments, outputDisplay);
+        }
+        private List<string> SanitizeRelativeTaskPathSegments(List<string> relativePathSegments)
+        {
+            var sanitizedPathSegments = new List<string>();
+
+            foreach(var segment in relativePathSegments)
+            {
+                sanitizedPathSegments.Add(GetSanitizedFileOrDirectoryNameWithoutExt(segment));
+            }
+
+            return sanitizedPathSegments;
         }
         private string GetGenerationUrlFromPath(List<string> relativeTaskPathSegments)
             => $"{GaiusConfiguration.GetGenerationUrlRootPrefix()}/{string.Join("/", relativeTaskPathSegments)}";
@@ -512,7 +573,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 if(!file.IsLiquidFile())
                     continue;
 
-                var layoutInfo = new MarkdownLiquidLayout(file);
+                var layoutInfo = new MarkdownLiquidLayout(file, GaiusConfiguration);
                 LayoutDataDictionary.Add(layoutInfo.Id, layoutInfo);
             }
         }

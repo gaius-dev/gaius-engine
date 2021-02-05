@@ -14,6 +14,7 @@ namespace Gaius.Core.Configuration
         public string DraftsDirectoryName { get; set; } = "_drafts";
         public string ThemeName { get; set; } = "default";
         public int Pagination { get; set; } = 5;
+        public string TagListingLayout = "tag";
         public string GenerationUrlRootPrefix { get; set; } = string.Empty;
         public List<string> AlwaysKeep { get; set; } = new List<string>{ ".git" };
         public string Worker { get; set; } = _markdownLiquidWorker;
