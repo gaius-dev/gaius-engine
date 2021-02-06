@@ -38,7 +38,7 @@ namespace Gaius.Worker.MarkdownLiquid
             author = baseViewModel.FrontMatter.Author;
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
-            tags = baseViewModel.FrontMatter.GetTagData()
+            tags = baseViewModel.FrontMatter?.GetTagData()
                                                 .Select(td => new MarkdownLiquidViewModel_Tag(td))
                                                 .ToList();
             content = baseViewModel.Content;
@@ -86,6 +86,9 @@ namespace Gaius.Worker.MarkdownLiquid
             previous_page_path = viewModelData.Paginator.PrevPageUrl;
             next_page = viewModelData.Paginator.NextPageNumber;
             next_page_path = viewModelData.Paginator.NextPageUrl;
+            associated_tag = viewModelData.Paginator.AssociatedTag != null
+                                ? new MarkdownLiquidViewModel_Tag(viewModelData.Paginator.AssociatedTag)
+                                : null;
         }
         public int page { get; set; }
         public int per_page { get; set; }
@@ -96,6 +99,7 @@ namespace Gaius.Worker.MarkdownLiquid
         public string previous_page_path { get; set; }
         public int? next_page { get; set; }
         public string next_page_path { get; set; }
+        public MarkdownLiquidViewModel_Tag associated_tag { get; set; }
     }
 
     public class MarkdownLiquidViewModel_Tag

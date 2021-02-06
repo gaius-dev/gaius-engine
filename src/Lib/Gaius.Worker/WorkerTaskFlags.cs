@@ -6,18 +6,20 @@ namespace Gaius.Worker
     public enum WorkerTaskFlags
     {
         None = 0,
-        IsChildOfSourceDir = 1,
-        IsPost = 2,
-        IsDraft = 4,
-        IsSkip = 8,
-        IsChildOfGenDir = 16,
-        IsChildOfNamedThemeDir = 32,
-        IsKeep = 64,
-        IsSiteContainerDir = 128,
-        IsSourceDir = 256,
-        IsNamedThemeDir = 512,
-        IsPostsDir = 1024,
-        IsDraftsDir = 2048,
-        IsInvalid = 4096,
+        IsSiteContainerDir = 1,
+        IsSourceDir = 2,
+        IsChildOfSourceDir = 4,
+        IsPostsDir = 8,
+        IsPost = 16,
+        IsDraftsDir = 32,
+        IsDraft = 64,
+        IsTagListDir = 128,
+        IsTagList = 256,
+        IsSkip = 512,
+        IsNamedThemeDir = 1024,
+        IsChildOfNamedThemeDir = 2048,
+        IsChildOfGenDir = 4096,
+        IsKeep = 8192,
+        IsInvalid = 16384
     }
 }

@@ -11,19 +11,11 @@ namespace Gaius.Worker.MarkdownLiquid
         {
             Id = fileInfo.GetNameWithoutExtension();
             LayoutContent = File.ReadAllText(fileInfo.FullName);
-
-            var containsPaginator = LayoutContentContainsPaginator(LayoutContent);
-
-            if(containsPaginator && Id.Equals(gaiusConfiguration.TagListingLayout))
-                IsTagListing = true;
-
-            else if(containsPaginator)
-                IsPostListing = true;
+            IsPostListing = LayoutContentContainsPaginator(LayoutContent);
         }
 
         public string Id { get; private set; }
         public bool IsPostListing { get; private set; }
-        public bool IsTagListing { get; private set; }
         public string LayoutContent { get; private set; }
 
         private const string _paginatorRegExStr = @"{.*paginator\..*}";
