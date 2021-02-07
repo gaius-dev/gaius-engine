@@ -102,20 +102,13 @@ namespace Gaius.Worker.MarkdownLiquid
             return CreateWorkerTaskInternal(fileSystemInfo, null);
         }
 
-        /*public override void AddPaginatorDataToWorkerTask(WorkerTask workerTask, Paginator paginator, List<WorkerTask> paginatorWorkerTasks)
-        {
-            AddPrevAndNextUrlsToPaginator(paginator, workerTask);
-            workerTask.Paginator = paginator;
-            workerTask.PaginatorWorkerTasks = paginatorWorkerTasks;
-            workerTask.OutputDisplay = GetOutputDisplay(workerTask.TaskPathSegments, workerTask.TaskFlags, paginator);
-        }*/
         public override void AddTagDataToWorker(List<TagData> tagData, string tagListPageFileName = null)
         {
             if(!string.IsNullOrEmpty(tagListPageFileName))
             {
                 foreach(var td in tagData)
                 {
-                    var tagUrl = $"/{GaiusConfiguration.TagUrlPrefix}/{GetSanitizedName(td.Name)}/{tagListPageFileName}";
+                    var tagUrl = $"{GaiusConfiguration.GenerationUrlRootPrefix}/{GaiusConfiguration.TagUrlPrefix}/{GetSanitizedName(td.Name)}/{tagListPageFileName}";
                     td.SetTagUrl(tagUrl);
                 }
             }

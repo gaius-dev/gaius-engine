@@ -14,7 +14,6 @@ namespace Gaius.Worker
 
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
         public abstract void AddTagDataToWorker(List<TagData> tagData, string tagListPageFileName = null);
-        //public abstract void AddPaginatorDataToWorkerTask(WorkerTask workerTask, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         public abstract string PerformWork(WorkerTask workerTask);
         public (bool, List<string>) ValidateSiteContainerDirectory()
