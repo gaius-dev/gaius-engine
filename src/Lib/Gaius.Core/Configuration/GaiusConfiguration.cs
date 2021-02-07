@@ -12,7 +12,8 @@ namespace Gaius.Core.Configuration
         public string ThemesDirectoryName { get; set; } = "_themes";
         public string PostsDirectoryName { get; set; } = "_posts";
         public string DraftsDirectoryName { get; set; } = "_drafts";
-        public string TagListDirectoryName { get; set; }= "_taglist";
+        public string TagListDirectoryName { get; set; } = "_taglist";
+        public string TagUrlPrefix { get; set; } = "tag";
         public string ThemeName { get; set; } = "default";
         public int Pagination { get; set; } = 5;
         public string GenerationUrlRootPrefix { get; set; } = string.Empty;

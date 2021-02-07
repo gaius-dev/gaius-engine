@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Gaius.Worker.Models;
 
 namespace Gaius.Worker.FrontMatter
 {
@@ -12,6 +11,6 @@ namespace Gaius.Worker.FrontMatter
         string Description { get; }
         string Tag { get; }
         List<string> Tags { get; }
-        List<TagData> GetTagData();
+        List<string> GetTags();
     }
 }

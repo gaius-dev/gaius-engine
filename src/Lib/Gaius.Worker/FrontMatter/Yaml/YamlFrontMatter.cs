@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Gaius.Worker.Models;
 
 namespace Gaius.Worker.FrontMatter.Yaml
 {
@@ -14,10 +13,10 @@ namespace Gaius.Worker.FrontMatter.Yaml
         public bool IsDraft { get; internal set; }
         public string Tag { get; internal set; }
         public List<string> Tags { get; internal set; }
-        public List<TagData> GetTagData()
+        public List<string> GetTags()
         {
             if(Tags == null && !string.IsNullOrWhiteSpace(Tag))
-                return new List<TagData>();
+                return new List<string>();
 
             var tags = new List<string>();
 
@@ -27,7 +26,7 @@ namespace Gaius.Worker.FrontMatter.Yaml
             if(!string.IsNullOrWhiteSpace(Tag))
                 tags.Add(Tag);
 
-            return tags.Select(tag => new TagData(tag)).ToList();
+            return tags;
         }
     }
 }

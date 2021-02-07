@@ -8,5 +8,11 @@ namespace Gaius.Worker.Models
         }
 
         public string Name { get; private set; }
+        public string Url { get; private set; }
+
+        internal void SetTagUrl(string tagUrl)
+        {
+            Url = tagUrl;
+        }
     }
 }

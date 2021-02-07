@@ -13,13 +13,13 @@ namespace Gaius.Worker.Models
             Time = DateTime.UtcNow.ToString("u");
         }
 
-        internal void SetTagData(List<TagData> tags)
+        internal void SetTagData(List<TagData> tagData)
         {
-            Tags = tags;
+            TagData = tagData;
         }
         
         internal string Url { get; private set; }
         internal string Time { get; private set; }
-        internal List<TagData> Tags { get; private set; }
+        internal List<TagData> TagData { get; private set; }
     }
 }

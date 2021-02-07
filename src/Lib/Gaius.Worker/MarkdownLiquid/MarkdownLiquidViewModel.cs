@@ -9,10 +9,10 @@ namespace Gaius.Worker.MarkdownLiquid
     {
         internal MarkdownLiquidViewModel(ViewModel viewModelData, SiteData siteData, GaiusInformation gaiusInformation)
         {
-            page = new MarkdownLiquidViewModel_Page(viewModelData);
+            page = new MarkdownLiquidViewModel_Page(viewModelData, siteData);
 
             if(viewModelData.Paginator != null && viewModelData.PaginatorViewModels?.Count > 0)
-                paginator = new MarkdownLiquidViewModel_Paginator(viewModelData);
+                paginator = new MarkdownLiquidViewModel_Paginator(viewModelData, siteData);
             
             site = new MarkdownLiquidViewModel_Site(siteData);
 
@@ -30,7 +30,7 @@ namespace Gaius.Worker.MarkdownLiquid
 
     public class MarkdownLiquidViewModel_Page
     {
-        internal MarkdownLiquidViewModel_Page(BaseViewModel baseViewModel, bool generateTeaser = false)
+        internal MarkdownLiquidViewModel_Page(BaseViewModel baseViewModel, SiteData siteData, bool generateTeaser = false)
         {
             id = baseViewModel.Id;
             url = baseViewModel.Url;
@@ -38,9 +38,14 @@ namespace Gaius.Worker.MarkdownLiquid
             author = baseViewModel.FrontMatter.Author;
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
-            tags = baseViewModel.FrontMatter?.GetTagData()
-                                                .Select(td => new MarkdownLiquidViewModel_Tag(td))
-                                                .ToList();
+
+            var tagsFrontMatter = baseViewModel.FrontMatter?.GetTags();
+            if(tagsFrontMatter != null)
+            {
+                var tagData = siteData.TagData.Where(td => tagsFrontMatter.Contains(td.Name));
+                tags = tagData.Select(td => new MarkdownLiquidViewModel_Tag(td)).ToList();
+            }
+
             content = baseViewModel.Content;
 
             if(generateTeaser)
@@ -75,19 +80,22 @@ namespace Gaius.Worker.MarkdownLiquid
 
     public class MarkdownLiquidViewModel_Paginator
     {
-        internal MarkdownLiquidViewModel_Paginator (ViewModel viewModelData)
+        internal MarkdownLiquidViewModel_Paginator (ViewModel viewModelData, SiteData siteData)
         {
             page = viewModelData.Paginator.PageNumber;
             per_page = viewModelData.Paginator.ItemsPerPage;
-            posts = viewModelData.PaginatorViewModels.Select(pgViewModel => new MarkdownLiquidViewModel_Page(pgViewModel, true)).ToList();
+            posts = viewModelData.PaginatorViewModels.Select(pgViewModel => new MarkdownLiquidViewModel_Page(pgViewModel, siteData, true)).ToList();
             total_posts = viewModelData.Paginator.TotalItems;
             total_pages = viewModelData.Paginator.TotalPages;
             previous_page = viewModelData.Paginator.PrevPageNumber;
             previous_page_path = viewModelData.Paginator.PrevPageUrl;
             next_page = viewModelData.Paginator.NextPageNumber;
             next_page_path = viewModelData.Paginator.NextPageUrl;
-            associated_tag = viewModelData.Paginator.AssociatedTag != null
-                                ? new MarkdownLiquidViewModel_Tag(viewModelData.Paginator.AssociatedTag)
+
+            var matchingSiteTagData = siteData.TagData.FirstOrDefault(td => td.Name.Equals(viewModelData.Paginator.AssociatedTagName));
+
+            associated_tag = matchingSiteTagData != null
+                                ? new MarkdownLiquidViewModel_Tag(matchingSiteTagData)
                                 : null;
         }
         public int page { get; set; }
@@ -107,8 +115,10 @@ namespace Gaius.Worker.MarkdownLiquid
         internal MarkdownLiquidViewModel_Tag(TagData tagData)
         {
             name = tagData.Name;
+            url = tagData.Url ?? "#";
         }
         public string name { get; set; }
+        public string url { get; set; }
     }
 
     public class MarkdownLiquidViewModel_Site
@@ -117,7 +127,7 @@ namespace Gaius.Worker.MarkdownLiquid
         {
             url = siteData.Url;
             time = siteData.Time;
-            tags = siteData.Tags?.Select(tag => new MarkdownLiquidViewModel_Tag(tag)).ToList();
+            tags = siteData.TagData?.Select(tag => new MarkdownLiquidViewModel_Tag(tag)).ToList();
         }
         public string url { get; set; }
         public string time { get; set; }

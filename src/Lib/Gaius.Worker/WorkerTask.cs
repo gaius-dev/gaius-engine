@@ -27,7 +27,7 @@ namespace Gaius.Worker
 
         //layout data
         public string LayoutId => Layout?.Id ?? string.Empty;
-        public bool IsPostListing => Layout?.IsPostListing ?? false;
+        public bool IsPostListing => !TaskFlags.HasFlag(WorkerTaskFlags.IsTagList) && (Layout?.IsPostListing ?? false);
 
         //paginator data
         internal Paginator Paginator { get; set; }

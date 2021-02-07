@@ -13,8 +13,8 @@ namespace Gaius.Worker
         internal static readonly GaiusInformation GaiusInformation = new GaiusInformation();
 
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
-        public abstract void AddTagDataToWorker(List<TagData> tagData);
-        public abstract void AddPaginatorDataToWorkerTask(WorkerTask workerTask, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
+        public abstract void AddTagDataToWorker(List<TagData> tagData, string tagListPageFileName = null);
+        //public abstract void AddPaginatorDataToWorkerTask(WorkerTask workerTask, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         public abstract string PerformWork(WorkerTask workerTask);
         public (bool, List<string>) ValidateSiteContainerDirectory()

@@ -1,16 +1,18 @@
 {
-    "GaiusEngine" : {
-        "SourceDirectoryName" : "_source",
-        "GenerationDirectoryName" : "_generated",
-        "ThemesDirectoryName" : "_themes",
-        "PostsDirectoryName" : "_posts",
-        "DraftsDirectoryName" : "_drafts",
-        "ThemeName" : "default",
-        "Pagination" : 5,
-        "GenerationUrlRootPrefix" : "",
-        "AlwaysKeep" : [
+    "GaiusEngine": {
+        "SourceDirectoryName": "_source",
+        "GenerationDirectoryName": "_generated",
+        "ThemesDirectoryName": "_themes",
+        "PostsDirectoryName": "_posts",
+        "DraftsDirectoryName": "_drafts",
+        "TagListDirectoryName": "_taglist",
+        "TagUrlPrefix": "tag",
+        "ThemeName": "default",
+        "Pagination": 5,
+        "GenerationUrlRootPrefix": "",
+        "AlwaysKeep": [
             ".git"
         ],
-        "Worker" : "Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"
+        "Worker": "Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"
     }
 }

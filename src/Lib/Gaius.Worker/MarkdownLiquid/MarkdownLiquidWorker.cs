@@ -101,14 +101,25 @@ namespace Gaius.Worker.MarkdownLiquid
         {
             return CreateWorkerTaskInternal(fileSystemInfo, null);
         }
-        public override void AddPaginatorDataToWorkerTask(WorkerTask workerTask, Paginator paginator, List<WorkerTask> paginatorWorkerTasks)
+
+        /*public override void AddPaginatorDataToWorkerTask(WorkerTask workerTask, Paginator paginator, List<WorkerTask> paginatorWorkerTasks)
         {
             AddPrevAndNextUrlsToPaginator(paginator, workerTask);
             workerTask.Paginator = paginator;
             workerTask.PaginatorWorkerTasks = paginatorWorkerTasks;
-        }
-        public override void AddTagDataToWorker(List<TagData> tagData)
+            workerTask.OutputDisplay = GetOutputDisplay(workerTask.TaskPathSegments, workerTask.TaskFlags, paginator);
+        }*/
+        public override void AddTagDataToWorker(List<TagData> tagData, string tagListPageFileName = null)
         {
+            if(!string.IsNullOrEmpty(tagListPageFileName))
+            {
+                foreach(var td in tagData)
+                {
+                    var tagUrl = $"/{GaiusConfiguration.TagUrlPrefix}/{GetSanitizedName(td.Name)}/{tagListPageFileName}";
+                    td.SetTagUrl(tagUrl);
+                }
+            }
+            
             SiteData.SetTagData(tagData);
         }
         public override WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks)
@@ -150,7 +161,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 taskPathSegments = genDirectoryInfo.GetPathSegments().Concat(relativePathSegments).ToList();
             }
 
-            var outputDisplay = GetOutputDisplay(taskPathSegments, taskFlags);
+            var outputDisplay = GetOutputDisplay(taskPathSegments, taskFlags, paginator);
             var generationUrl = GetGenerationUrl(fileSystemInfo, relativePathSegments, taskFlags);
             var generationId = GetGenerationId(fileSystemInfo, relativePathSegments, taskFlags);
 
@@ -439,10 +450,11 @@ namespace Gaius.Worker.MarkdownLiquid
             //taglists
             if(taskFlags.HasFlag(WorkerTaskFlags.IsTagList))
             {
-                var tagPrefix = GetSanitizedName(paginator.AssociatedTag.Name);
+                var tagName = GetSanitizedName(paginator?.AssociatedTagName ?? "temp-tag");
                 
                 relativePathSegments.Remove(GaiusConfiguration.TagListDirectoryName);
-                relativePathSegments.Insert(0, tagPrefix);
+                relativePathSegments.Insert(0, tagName);
+                relativePathSegments.Insert(0, GaiusConfiguration.TagUrlPrefix);
                 relativePathSegments = SanitizeRelativeTaskPathSegments(fileSystemInfo, relativePathSegments);
                 relativePathSegments[relativePathSegments.Count - 1] 
                     = GetTaskFileOrDirectoryName(fileSystemInfo, taskFlags, pageNumber);
@@ -458,7 +470,7 @@ namespace Gaius.Worker.MarkdownLiquid
             return relativePathSegments;
         }
 
-        private string GetOutputDisplay(List<string> taskPathSegments, WorkerTaskFlags taskFlags)
+        private string GetOutputDisplay(List<string> taskPathSegments, WorkerTaskFlags taskFlags, Paginator paginator)
         {
             if(taskFlags.HasFlag(WorkerTaskFlags.IsSiteContainerDir))
                 return null;
@@ -471,20 +483,23 @@ namespace Gaius.Worker.MarkdownLiquid
                 return "/yyyy/MM/dd";
 
             if(taskFlags.HasFlag(WorkerTaskFlags.IsDraftsDir))
-                return "/yyyy/MM/dd (drafts)";
+                return "/yyyy/MM/dd [drafts]";
 
             if(taskFlags.HasFlag(WorkerTaskFlags.IsTagListDir))
-                return "/{tag name}";
+                return $"/{GaiusConfiguration.TagUrlPrefix}/[tag name]";
 
             if(taskFlags.HasFlag(WorkerTaskFlags.IsInvalid))
                 return null;
 
             if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
-                return string.Join('/', taskPathSegments.TakeLast(4));
+                return $"/{string.Join('/', taskPathSegments.TakeLast(4))}";
 
             if(taskFlags.HasFlag(WorkerTaskFlags.IsTagList))
-                return string.Join('/', taskPathSegments.TakeLast(2));
+                return $"/{string.Join('/', taskPathSegments.TakeLast(3))} {paginator?.OutputDisplayLabel}";
             
+            if(paginator != null)
+                return $"{taskPathSegments.Last()} {paginator.OutputDisplayLabel}";
+
             return taskPathSegments.Last();
         }
 
@@ -542,7 +557,7 @@ namespace Gaius.Worker.MarkdownLiquid
         }
         private string GetSanitizedName(string nameWithoutExtension)
         {
-            return _fileDirNameSanitizeRegEx.Replace(nameWithoutExtension, "-").TrimStart('-');
+            return _fileDirNameSanitizeRegEx.Replace(nameWithoutExtension, "-").ToLowerInvariant().TrimStart('-');
         }
         private int GetSkipAmtForChildOfSourceDirectory(List<string> pathSegments)
             => pathSegments.IndexOf(GaiusConfiguration.SourceDirectoryName);
