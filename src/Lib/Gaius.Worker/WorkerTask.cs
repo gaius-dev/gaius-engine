@@ -3,6 +3,7 @@ using System.IO;
 using Gaius.Worker.Models;
 using System.Linq;
 using Gaius.Worker.FrontMatter;
+using System;
 
 namespace Gaius.Worker
 {
@@ -24,10 +25,11 @@ namespace Gaius.Worker
         public string GenerationId { get; internal set; }
         public string SourceDisplay { get; internal set; }
         public string OutputDisplay { get; internal set; }
+        public DateTime Date { get; internal set; }
+        public string DateStr => Date.ToString("yyyy-MM-dd");
 
         //layout data
         public string LayoutId => Layout?.Id ?? string.Empty;
-        public bool IsPostListing => !TaskFlags.HasFlag(WorkerTaskFlags.IsTagList) && (Layout?.IsPostListing ?? false);
 
         //paginator data
         internal Paginator Paginator { get; set; }

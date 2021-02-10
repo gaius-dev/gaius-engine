@@ -20,8 +20,9 @@ namespace Gaius.Worker.MarkdownLiquid
     {
         private const string _layoutsDirectory = "_layouts";
         private const string _defaultLayoutId = "default";
-        private const string _dateTimePrefixRegExStr = @"\d{4}-\d{2}-\d{2}";
-        private static Regex _dateTimePrefixRegEx = new Regex(_dateTimePrefixRegExStr, RegexOptions.Compiled);
+        private const string _datePrefixRegExStr = @"\d{4}-\d{2}-\d{2}";
+        private static Regex _datePrefixRegEx = new Regex(_datePrefixRegExStr, RegexOptions.Compiled);
+        private static DateTime _now = DateTime.UtcNow;
         private const string _siteUrlRegExStr = @"{{ *site.url *}}";
         private static Regex _siteUrlRegEx = new Regex(_siteUrlRegExStr, RegexOptions.Compiled);
         private static string _fileDirNameSanitizeRegExStr = @"[^A-Za-z0-9-]";
@@ -71,8 +72,8 @@ namespace Gaius.Worker.MarkdownLiquid
 
             var markdownLiquidViewModel = new MarkdownLiquidViewModel(viewModelData, SiteData, GaiusInformation);
 
-            var layoutId = !string.IsNullOrEmpty(workerTask.LayoutId) ? workerTask.LayoutId : _defaultLayoutId;
-            if (!LayoutDataDictionary.TryGetValue(layoutId, out var layoutData))
+            var layoutId = workerTask.LayoutId;
+            if (string.IsNullOrEmpty(layoutId) || !LayoutDataDictionary.TryGetValue(layoutId, out var layoutData))
                 throw new Exception($"Unable to find layout: {layoutId}");
 
             if(_liquidTemplatePhysicalFileProvider == null)
@@ -108,7 +109,7 @@ namespace Gaius.Worker.MarkdownLiquid
             {
                 foreach(var td in tagData)
                 {
-                    var tagUrl = $"{GaiusConfiguration.GenerationUrlRootPrefix}/{GaiusConfiguration.TagUrlPrefix}/{GetSanitizedName(td.Name)}/{tagListPageFileName}";
+                    var tagUrl = $"{GaiusConfiguration.GetGenerationUrlRootPrefix()}/{GaiusConfiguration.TagUrlPrefix}/{GetSanitizedName(td.Name)}/{tagListPageFileName}";
                     td.SetTagUrl(tagUrl);
                 }
             }
@@ -157,6 +158,7 @@ namespace Gaius.Worker.MarkdownLiquid
             var outputDisplay = GetOutputDisplay(taskPathSegments, taskFlags, paginator);
             var generationUrl = GetGenerationUrl(fileSystemInfo, relativePathSegments, taskFlags);
             var generationId = GetGenerationId(fileSystemInfo, relativePathSegments, taskFlags);
+            var date = GetDate(fileSystemInfo, taskFlags);
 
             return new WorkerTask()
             {
@@ -168,6 +170,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 TaskPathSegments = taskPathSegments,
                 GenerationUrl = generationUrl,
                 GenerationId = generationId,
+                Date = date,
                 SourceDisplay = sourceDisplay,
                 OutputDisplay = outputDisplay,
             };
@@ -241,7 +244,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 taskFlags = taskFlags | WorkerTaskFlags.IsDraft;
 
             else if(GetIsTagList(fileSystemInfo, taskFlags))
-                taskFlags = taskFlags | WorkerTaskFlags.IsTagList;
+                taskFlags = taskFlags | WorkerTaskFlags.IsTagListing;
 
             if(GetIsSkip(fileSystemInfo, taskFlags))
                 taskFlags = taskFlags | WorkerTaskFlags.IsSkip;
@@ -314,7 +317,7 @@ namespace Gaius.Worker.MarkdownLiquid
         private bool GetIsInvalid(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
         {
             if((taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
-                && !_dateTimePrefixRegEx.IsMatch(fileSystemInfo.Name))
+                && !_datePrefixRegEx.IsMatch(fileSystemInfo.Name))
                     return true;
 
             return false;
@@ -359,21 +362,45 @@ namespace Gaius.Worker.MarkdownLiquid
                 return (null, null, taskFlags);
             }
 
-            if(string.IsNullOrEmpty(frontMatter.Layout) && !LayoutDataDictionary.TryGetValue(_defaultLayoutId, out layout))
+            var layoutIdToLookup = string.IsNullOrEmpty(frontMatter.Layout)
+                                    ? _defaultLayoutId 
+                                    : frontMatter.Layout;
+
+            if(!LayoutDataDictionary.TryGetValue(layoutIdToLookup, out layout))
             {
                 taskFlags = taskFlags | WorkerTaskFlags.IsInvalid;
                 return (null, null, taskFlags);
             }
 
-            if (!LayoutDataDictionary.TryGetValue(frontMatter.Layout, out layout))
-            {
-                taskFlags = taskFlags | WorkerTaskFlags.IsInvalid;
-                return (null, null, taskFlags);
-            }
+            if(layout.IsPostListing)
+                taskFlags = taskFlags | WorkerTaskFlags.IsPostListing;
             
             return (frontMatter, layout, taskFlags);
         }
 
+        private DateTime GetDate(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
+        {
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+            {
+                var dateMatch = _datePrefixRegEx.Match(fileSystemInfo.Name);
+
+                if(!dateMatch.Success)
+                    throw new Exception($"Unable to extract date string from {fileSystemInfo.FullName}");
+
+                if(!DateTime.TryParse(dateMatch.Value, out var date))
+                    return _now;
+
+                return date;
+            }
+
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsPostListing) || taskFlags.HasFlag(WorkerTaskFlags.IsTagListDir))
+                return _now;
+
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir) && fileSystemInfo.IsMarkdownFile())
+                return fileSystemInfo.LastWriteTimeUtc;
+
+            return _now;
+        }
         private List<string> GetRelativeTaskPathSegments(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, Paginator paginator, int pageAdjustment = 0)
         {
             if(taskFlags.HasFlag(WorkerTaskFlags.IsSourceDir) 
@@ -418,7 +445,7 @@ namespace Gaius.Worker.MarkdownLiquid
             //posts and drafts
             if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
             {
-                var dateTimeMatch = _dateTimePrefixRegEx.Match(fileSystemInfo.Name);
+                var dateTimeMatch = _datePrefixRegEx.Match(fileSystemInfo.Name);
 
                 if(!dateTimeMatch.Success)
                     throw new Exception($"Unable to calculate task path segments for {fileSystemInfo.FullName}.");
@@ -441,7 +468,7 @@ namespace Gaius.Worker.MarkdownLiquid
             }
             
             //taglists
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsTagList))
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsTagListing))
             {
                 var tagName = GetSanitizedName(paginator?.AssociatedTagName ?? "temp-tag");
                 
@@ -487,7 +514,7 @@ namespace Gaius.Worker.MarkdownLiquid
             if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
                 return $"/{string.Join('/', taskPathSegments.TakeLast(4))}";
 
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsTagList))
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsTagListing))
                 return $"/{string.Join('/', taskPathSegments.TakeLast(3))} {paginator?.OutputDisplayLabel}";
             
             if(paginator != null)
@@ -533,10 +560,10 @@ namespace Gaius.Worker.MarkdownLiquid
             if(fileSystemInfo.IsMarkdownFile())
             {
                 if(taskFlags.HasFlag(WorkerTaskFlags.IsPost))
-                    return $"{_dateTimePrefixRegEx.Replace(sanitizedNameWithoutExt, string.Empty).TrimStart('-')}.html";
+                    return $"{_datePrefixRegEx.Replace(sanitizedNameWithoutExt, string.Empty).TrimStart('-')}.html";
 
                 if(taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
-                    return $"{_dateTimePrefixRegEx.Replace(sanitizedNameWithoutExt, string.Empty).TrimStart('-')}-draft.html";
+                    return $"{_datePrefixRegEx.Replace(sanitizedNameWithoutExt, string.Empty).TrimStart('-')}-draft.html";
 
                 return pageNumber > 1 
                     ? $"{sanitizedNameWithoutExt}{pageNumber}.html"

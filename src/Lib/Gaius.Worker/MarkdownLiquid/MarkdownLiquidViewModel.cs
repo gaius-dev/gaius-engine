@@ -34,6 +34,7 @@ namespace Gaius.Worker.MarkdownLiquid
         {
             id = baseViewModel.Id;
             url = baseViewModel.Url;
+            date = baseViewModel.Date;
             title = baseViewModel.FrontMatter.Title;
             author = baseViewModel.FrontMatter.Author;
             keywords = baseViewModel.FrontMatter.Keywords;
@@ -54,6 +55,7 @@ namespace Gaius.Worker.MarkdownLiquid
 
         public string id { get; private set; }
         public string url { get; private set; }
+        public string date { get; private set; }
         public string title { get; private set; }
         public string author { get; private set; }
         public string keywords { get; private set; }

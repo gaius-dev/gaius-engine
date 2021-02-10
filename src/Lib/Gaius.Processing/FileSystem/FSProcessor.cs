@@ -91,29 +91,32 @@ namespace Gaius.Processing.FileSystem
         private void AddAdditionalPostListingPaginatorOps(TreeNode<IOperation> sourceDirTreeNode)
         {
             //rs: get all post ops worker tasks
-            var allPostWorkerTasks = sourceDirTreeNode
+            var postWorkerTasks = sourceDirTreeNode
                 .Where(tn => !tn.Data.IsInvalid
                              && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsPost))
                 .Select(tn => tn.Data.WorkerTask).ToList();
             
             if(_gaiusConfiguration.IsTestMode)
             {
-                var allDraftWorkerTasks = sourceDirTreeNode
+                var draftWorkerTasks = sourceDirTreeNode
                     .Where(tn => !tn.Data.IsInvalid
                                  && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsDraft))
                     .Select(tn => tn.Data.WorkerTask).ToList();
 
-                allPostWorkerTasks.AddRange(allDraftWorkerTasks);
+                postWorkerTasks.AddRange(draftWorkerTasks);
             }
 
-            allPostWorkerTasks = allPostWorkerTasks.OrderBy(wt => wt.FileSystemInfo.Name).ToList();
+            postWorkerTasks = postWorkerTasks.OrderByDescending(wt => wt.Date).ToList();
             
-            var allPostListOpNodes = sourceDirTreeNode.Where(tn => tn.Data.WorkerTask.IsPostListing).ToList();
+            var postListingOpNodes = sourceDirTreeNode
+                .Where(tn => tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsPostListing)
+                        && !tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsTagListing))
+                .ToList();
             
             //rs: add additional paginator ops for any default post listing pages
-            foreach(var postListOpNode in allPostListOpNodes)
+            foreach(var postListingOpNode in postListingOpNodes)
             {
-                AddAdditionalChildPaginatorOps(postListOpNode, allPostWorkerTasks);
+                AddAdditionalChildPaginatorOps(postListingOpNode, postWorkerTasks);
             }
         }
 
@@ -128,15 +131,15 @@ namespace Gaius.Processing.FileSystem
             var tagData = tags.Select(t => new TagData(t)).ToList();
 
             //rs: get first tag list op node
-            var tagListOpNode = sourceDirTreeNode.FirstOrDefault(tn => tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsTagList));
+            var tagListOpTreeNode = sourceDirTreeNode.FirstOrDefault(tn => tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsTagListing));
 
-            if(tagListOpNode == null)
+            if(tagListOpTreeNode == null)
             {
                 _worker.AddTagDataToWorker(tagData);
                 return;
             }
 
-            _worker.AddTagDataToWorker(tagData, tagListOpNode.Data.WorkerTask.TaskFileOrDirectoryName);
+            _worker.AddTagDataToWorker(tagData, tagListOpTreeNode.Data.WorkerTask.TaskFileOrDirectoryName);
 
             foreach(var tag in tags)
             {
@@ -145,9 +148,11 @@ namespace Gaius.Processing.FileSystem
                     .Where(tn => !tn.Data.IsInvalid
                                  && tn.Data.WorkerTask.HasFrontMatter
                                  && tn.Data.WorkerTask.FrontMatter.GetTags().Contains(tag))
-                    .Select(tn => tn.Data.WorkerTask).ToList();
+                    .OrderByDescending(tn => tn.Data.WorkerTask.Date)
+                    .Select(tn => tn.Data.WorkerTask)
+                    .ToList();
 
-                AddAdditionalChildPaginatorOps(tagListOpNode, tagWorkerTasks, tag);
+                AddAdditionalChildPaginatorOps(tagListOpTreeNode, tagWorkerTasks, tag);
             }
         }
 
@@ -168,13 +173,13 @@ namespace Gaius.Processing.FileSystem
 
             //rs: remove the originally created tree node because the operation was created with a paginator
             var originalFileSystemInfo = sourceOpTreeNode.Data.WorkerTask.FileSystemInfo;
-            var parentOpNode = sourceOpTreeNode.Parent;
-            parentOpNode.Children.Remove(sourceOpTreeNode);
+            var parentOpTreeNode = sourceOpTreeNode.Parent;
+            parentOpTreeNode.Children.Remove(sourceOpTreeNode);
 
             //rs: create a new worker task and FSOperation, this time with the paginator data
             var replacementWorkerTask = _worker.CreateWorkerTask(originalFileSystemInfo, firstPagePaginatorData, firstPagePostWorkerTasks);
             var replacementFSOperation = new FSOperation(replacementWorkerTask);
-            sourceOpTreeNode = parentOpNode.AddChild(replacementFSOperation);
+            sourceOpTreeNode = parentOpTreeNode.AddChild(replacementFSOperation);
 
             for(var pg = 2; pg <= totalPages; pg++)
             {

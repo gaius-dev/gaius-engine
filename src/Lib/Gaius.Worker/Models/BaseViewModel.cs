@@ -8,12 +8,14 @@ namespace Gaius.Worker.Models
         {
             Id = workerTask.GenerationId;
             Url = workerTask.GenerationUrl;
+            Date = workerTask.DateStr;
             FrontMatter = workerTask.FrontMatter;
             Content = content;
         }
 
         internal string Id { get; private set; }
         internal string Url { get; private set; }
+        internal string Date { get; private set; }
         internal IFrontMatter FrontMatter { get; private set; }
         internal string Content { get; private set; }
     }
