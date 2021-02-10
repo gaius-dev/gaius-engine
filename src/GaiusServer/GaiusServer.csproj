@@ -8,7 +8,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>gaius-server</AssemblyName>
     <AssemblyTitle>Gaius Server</AssemblyTitle>
-    <Version>0.0.70</Version>
+    <Version>0.0.75</Version>
     <Authors>Robert Strube</Authors>
     <Description>A Kestrel based micro-server for testing Gaius sites locally</Description>
   </PropertyGroup>
