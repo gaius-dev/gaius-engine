@@ -12,6 +12,7 @@ namespace Gaius.Core.Configuration
         public string ThemesDirectoryName { get; set; } = "_themes";
         public string PostsDirectoryName { get; set; } = "_posts";
         public string DraftsDirectoryName { get; set; } = "_drafts";
+        public string PostUrlPrefix { get; set; } = "";
         public string TagListDirectoryName { get; set; } = "_taglist";
         public string TagUrlPrefix { get; set; } = "tag";
         public string ThemeName { get; set; } = "default";

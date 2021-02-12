@@ -21,11 +21,8 @@ namespace Gaius.Worker.Models
         public int? NextPageNumber => HasNext ? PageNumber + 1 : (int?)null;
         public string PrevPageUrl { get; private set; }
         public string NextPageUrl { get; private set; }
-        public string OutputDisplayLabel 
-            => string.IsNullOrEmpty(AssociatedTagName) 
-                ? "[post list]"
-                : $"[\"{AssociatedTagName}\" list]";
-
+        public string OutputDisplayLabel
+            => PageNumber > 1 ? $"[pg.{PageNumber}]" : string.Empty;
         public void AddPrevAndNextUrls(string prevUrl, string nextUrl)
         {
             PrevPageUrl = prevUrl;

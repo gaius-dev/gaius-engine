@@ -7,7 +7,7 @@ namespace Gaius.Worker
     public interface IWorker
     {
         WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
-        void AddTagDataToWorker(List<TagData> tagData, string tagListPageFileName = null);
+        void AddTagDataToWorker(List<TagData> tagData, bool tagListPageExists);
         WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         string PerformWork(WorkerTask task);
         (bool, List<string>) ValidateSiteContainerDirectory();

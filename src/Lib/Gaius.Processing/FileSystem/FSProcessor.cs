@@ -133,13 +133,10 @@ namespace Gaius.Processing.FileSystem
             //rs: get first tag list op node
             var tagListOpTreeNode = sourceDirTreeNode.FirstOrDefault(tn => tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsTagListing));
 
-            if(tagListOpTreeNode == null)
-            {
-                _worker.AddTagDataToWorker(tagData);
-                return;
-            }
+            _worker.AddTagDataToWorker(tagData, tagListOpTreeNode != null);
 
-            _worker.AddTagDataToWorker(tagData, tagListOpTreeNode.Data.WorkerTask.TaskFileOrDirectoryName);
+            if(tagListOpTreeNode == null)
+                return;
 
             foreach(var tag in tags)
             {
