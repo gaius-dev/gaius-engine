@@ -21,7 +21,7 @@ for i in "${ADDL_ARTIFACTS_TARGETS[@]}"
 do
 	./deploy_artifacts.sh $i
     cd $i
-    ./gaius.sh process-test -y
+    dotnet ./bin/gaius/gaius.dll process-test -y
     cd $DIR
 done
 

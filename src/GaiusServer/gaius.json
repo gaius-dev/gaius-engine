@@ -13,6 +13,7 @@
     "ThemesDirectoryName": "_themes",
     "PostsDirectoryName": "_posts",
     "DraftsDirectoryName": "_drafts",
+    "PostUrlPrefix": "",
     "TagListDirectoryName": "_taglist",
     "TagUrlPrefix": "tag",
     "ThemeName": "default",

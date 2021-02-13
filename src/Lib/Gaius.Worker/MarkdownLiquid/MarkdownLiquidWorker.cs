@@ -158,9 +158,9 @@ namespace Gaius.Worker.MarkdownLiquid
                 taskPathSegments = genDirectoryInfo.GetPathSegments().Concat(relativePathSegments).ToList();
             }
 
-            var outputDisplay = GetOutputDisplay(fileSystemInfo, taskPathSegments, taskFlags, paginator);
-            var generationUrl = GetGenerationUrl(fileSystemInfo, relativePathSegments, taskFlags);
-            var generationId = GetGenerationId(fileSystemInfo, relativePathSegments, taskFlags);
+            var outputDisplay = GetOutputDisplay(fileSystemInfo, taskFlags, taskPathSegments, paginator);
+            var generationUrl = GetGenerationUrl(fileSystemInfo, taskFlags, relativePathSegments);
+            var generationId = GetGenerationId(fileSystemInfo, taskFlags, relativePathSegments);
             var date = GetDate(fileSystemInfo, taskFlags);
 
             return new WorkerTask()
@@ -532,7 +532,7 @@ namespace Gaius.Worker.MarkdownLiquid
             return relativePathSegments;
         }
 
-        private string GetOutputDisplay(FileSystemInfo fileSystemInfo, List<string> taskPathSegments, WorkerTaskFlags taskFlags, Paginator paginator)
+        private string GetOutputDisplay(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, List<string> taskPathSegments, Paginator paginator)
         {
             if(taskFlags.HasFlag(WorkerTaskFlags.IsSiteContainerDir))
                 return null;
@@ -557,7 +557,7 @@ namespace Gaius.Worker.MarkdownLiquid
             if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir) && fileSystemInfo.IsMarkdownFile())
             {
                 var segmentCount = taskPathSegments.Count;
-                var startIndex = GetOutputDisplayStartIndexForMarkdownFile(fileSystemInfo, taskPathSegments, taskFlags, paginator);
+                var startIndex = GetOutputDisplayStartIndexForMarkdownFile(fileSystemInfo, taskFlags, taskPathSegments, paginator);
                 var takeCount = segmentCount - startIndex - 1;
 
                 if(takeCount == 0)
@@ -569,7 +569,7 @@ namespace Gaius.Worker.MarkdownLiquid
             return taskPathSegments.Last();
         }
 
-        private int GetOutputDisplayStartIndexForMarkdownFile(FileSystemInfo fileSystemInfo, List<string> taskPathSegments, WorkerTaskFlags taskFlags, Paginator paginator)
+        private int GetOutputDisplayStartIndexForMarkdownFile(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, List<string> taskPathSegments, Paginator paginator)
         {
             if(!fileSystemInfo.IsMarkdownFile())
                 throw new ArgumentException($"{fileSystemInfo.FullName} is not a markdown file.");
@@ -612,26 +612,30 @@ namespace Gaius.Worker.MarkdownLiquid
             return startIndex;
         }
 
-        private string GetGenerationUrl(FileSystemInfo fileSystemInfo, List<string> relativePathSegments, WorkerTaskFlags taskFlags)
+        private string GetGenerationUrl(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, List<string> relativePathSegments)
         {
             if(relativePathSegments == null)
                 return null;
 
-            if(!fileSystemInfo.IsFile() || !taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir))
+            if(!fileSystemInfo.IsFile()
+                || !taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir)
+                || taskFlags.HasFlag(WorkerTaskFlags.IsInvalid))
                 return null;
 
-            return GetGenerationUrlFromPath(relativePathSegments);
+            return GetGenerationUrlFromPath(fileSystemInfo, taskFlags, relativePathSegments);
         }
 
-        private string GetGenerationId(FileSystemInfo fileSystemInfo, List<string> relativePathSegments, WorkerTaskFlags taskFlags)
+        private string GetGenerationId(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, List<string> relativePathSegments)
         {
             if(relativePathSegments == null)
                 return null;
 
-            if(!fileSystemInfo.IsFile() || !taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir))
+            if(!fileSystemInfo.IsFile()
+                || !taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir)
+                || taskFlags.HasFlag(WorkerTaskFlags.IsInvalid))
                 return null;
 
-            return GetGenerationIdFromPath(fileSystemInfo, relativePathSegments);
+            return GetGenerationIdFromPath(fileSystemInfo, taskFlags, relativePathSegments);
         }
 
         private string GetAutoInsertedFolderName(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
@@ -719,8 +723,14 @@ namespace Gaius.Worker.MarkdownLiquid
             return sanitizedPathSegments;
         }
 
-        private string GetGenerationUrlFromPath(List<string> relativeTaskPathSegments)
+        private string GetGenerationUrlFromPath(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, List<string> relativeTaskPathSegments)
         {
+            if(!taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir))
+                throw new ArgumentException($"{fileSystemInfo.FullName} is not a child of the source directory.");
+
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsInvalid))
+                throw new ArgumentException($"{fileSystemInfo.FullName} is invalid.");
+
             if(relativeTaskPathSegments.Last().Equals(_indexHtml))
             {
                 return relativeTaskPathSegments.Count == 1
@@ -731,14 +741,19 @@ namespace Gaius.Worker.MarkdownLiquid
             return $"{GaiusConfiguration.GetGenerationUrlRootPrefix()}/{string.Join("/", relativeTaskPathSegments)}";
         }
 
-        private static string GetGenerationIdFromPath(FileSystemInfo fileSystemInfo, List<string> relativeTaskPathSegments)
+        private static string GetGenerationIdFromPath(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags, List<string> relativeTaskPathSegments)
         {
+            if(!taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir))
+                throw new ArgumentException($"{fileSystemInfo.FullName} is not a child of the source directory.");
+
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsInvalid))
+                throw new ArgumentException($"{fileSystemInfo.FullName} is invalid.");
+
             if(relativeTaskPathSegments.Last().Equals(_indexHtml))
             {
                 return relativeTaskPathSegments.Count == 1
                     ? "."
                     : string.Join(".", relativeTaskPathSegments.Take(relativeTaskPathSegments.Count - 1));
-
             }
 
             return Path.GetFileNameWithoutExtension(string.Join(".", relativeTaskPathSegments));
@@ -758,13 +773,13 @@ namespace Gaius.Worker.MarkdownLiquid
             if (paginator.HasPrev)
             {
                 var relativePathSegments = GetRelativeTaskPathSegments(workerTask.FileSystemInfo, workerTask.TaskFlags, paginator, -1);
-                prevUrl = GetGenerationUrlFromPath(relativePathSegments);
+                prevUrl = GetGenerationUrlFromPath(workerTask.FileSystemInfo, workerTask.TaskFlags, relativePathSegments);
             }
 
             if (paginator.HasNext)
             {
                 var relativePathSegments = GetRelativeTaskPathSegments(workerTask.FileSystemInfo, workerTask.TaskFlags, paginator, 1);
-                nextUrl = GetGenerationUrlFromPath(relativePathSegments);
+                nextUrl = GetGenerationUrlFromPath(workerTask.FileSystemInfo, workerTask.TaskFlags, relativePathSegments);
             }
 
             paginator.AddPrevAndNextUrls(prevUrl, nextUrl);
