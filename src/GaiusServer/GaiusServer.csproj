@@ -5,10 +5,10 @@
   </ItemGroup>
   
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>gaius-server</AssemblyName>
     <AssemblyTitle>Gaius Server</AssemblyTitle>
-    <Version>0.0.80</Version>
+    <Version>0.0.85</Version>
     <Authors>Robert Strube</Authors>
     <Description>A Kestrel based micro-server for testing Gaius sites locally</Description>
   </PropertyGroup>
