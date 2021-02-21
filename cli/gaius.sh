@@ -1,7 +1,7 @@
 #!/bin/bash
 # Gaius CLI wrapper
 
-VERSION="0.0.95"
+VERSION="0.0.96"
 
 function main() {
 
@@ -51,10 +51,10 @@ function update-engine() {
     mkdir -p ./bin/gaius
 
     echo "Downloading latest release of Gaius engine binaries..."
-    curl -O -L https://github.com/gaius-dev/gaius-engine/releases/latest/download/gaius-engine-bin.zip
+    curl -O -L https://github.com/gaius-dev/gaius-engine/releases/latest/download/gaius-bin.zip
 
     echo "Extracting latest release of Gaius engine binaries to ./bin/gaius ..."
-    unzip gaius-engine-bin.zip -d ./bin/gaius
+    unzip gaius-bin.zip -d ./bin/gaius
     rm gaius-engine-bin.zip
 }
 

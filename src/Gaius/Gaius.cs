@@ -100,7 +100,7 @@ namespace Gaius
             var consoleHostBuilder = CreateBaseHostBuilderForConsoleApp(gaiusArgs);
             await consoleHostBuilder.RunConsoleAsync();
 
-            if(gaiusArgs.IsServeCommand)
+            if(Environment.ExitCode == 0 && gaiusArgs.IsServeCommand)
             {
                 var webHostBuilder = CreateBaseHostBuilderForWebApp(gaiusArgs);
                 await webHostBuilder.Build().RunAsync();
@@ -205,6 +205,7 @@ namespace Gaius
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Unhandled exception!");
+                        _exitCode = 1;
                     }
 
                     finally
