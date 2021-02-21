@@ -3,16 +3,16 @@ using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 
-namespace Gaius.Core.Configuration
+namespace Gaius.Core.Arguments
 {
-    public class GaiusArgs {
+    public class GaiusArguments {
         
         private const string _automaticYesSwitch = "--yes";
         private const string _testModeSwitch = "--testmode";
         private bool _noCommand;
         private bool _testMode;
 
-        public GaiusArgs(string [] args)
+        public GaiusArguments(string [] args)
         {
             var listArgs = new List<string>(args);
 

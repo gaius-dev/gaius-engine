@@ -10,160 +10,220 @@ using Gaius.Worker.MarkdownLiquid;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+using System;
+using System.Threading;
+using Gaius.Core.Arguments;
 
 namespace Gaius
 {
-    public class Gaius
+    internal sealed class Gaius
     {
-        private static IConfigurationRoot BuildConfiguration(string basePath)
+        private static IConfigurationRoot BuildRootConfiguration(string basePath)
         {
             basePath = !string.IsNullOrEmpty(basePath) ? basePath : Directory.GetCurrentDirectory();
 
             return new ConfigurationBuilder()
                 .SetBasePath(basePath)
-                .AddJsonFile("gaius.json", optional : true, reloadOnChange : true)
+                .AddJsonFile("gaius.json", optional: true, reloadOnChange: false)
                 .Build();
         }
 
-        private static (IServiceCollection, bool) ConfigureServices(IConfigurationRoot configRoot, string basePath, bool isTestCommand)
+        private static IHostBuilder CreateBaseHostBuilderForWebApp(GaiusArguments gaiusArgs)
         {
-            var serviceCollection = new ServiceCollection()
-                .AddOptions()
-                .Configure<GaiusConfiguration>(overrideConfig => 
-                {
-                    overrideConfig.SiteContainerFullPath = basePath;
-                    overrideConfig.IsTestMode = isTestCommand;
-                })
-                .Configure<GaiusConfiguration>(configRoot.GetSection("GaiusEngine"))
-                .AddSingleton<ITerminalDisplayService, TerminalDisplayService>()
-                .AddSingleton<IFSProcessor, FSProcessor>();
+            var configurationRoot = BuildRootConfiguration(gaiusArgs.BasePath);
 
             var gaiusConfiguration = new GaiusConfiguration();
-            gaiusConfiguration.SiteContainerFullPath = basePath;
-            gaiusConfiguration.IsTestMode = isTestCommand;
-            configRoot.GetSection("GaiusEngine").Bind(gaiusConfiguration);
+            gaiusConfiguration.SiteContainerFullPath = gaiusArgs.BasePath;
+            gaiusConfiguration.IsTestMode = gaiusArgs.IsTestModeEnabled;
+            configurationRoot.GetSection("GaiusEngine").Bind(gaiusConfiguration);
 
-            var workerConfigured = false;
-            if (gaiusConfiguration.Worker.Equals("Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
+            return Host.CreateDefaultBuilder()
+                    .UseContentRoot(gaiusArgs.BasePath)
+                    .ConfigureAppConfiguration((hostBuilderContext, configBuilder) => {
+                        configBuilder.AddJsonFile("gaius.json", optional : true, reloadOnChange : false);
+                    })
+                    .ConfigureWebHostDefaults((webBuilder) =>
+                    {
+                        webBuilder.UseWebRoot(gaiusConfiguration.GenerationDirectoryName);
+                        webBuilder.UseStartup<Startup>();
+                    })
+                    .ConfigureLogging((hostBuilderContext, loggingBuilder) => {
+                        loggingBuilder.ClearProviders();
+                        loggingBuilder.AddConsole();
+                    });
+        }
+
+        private static IHostBuilder CreateBaseHostBuilderForConsoleApp(GaiusArguments gaiusArgs)
+        {
+            return Host.CreateDefaultBuilder()
+                    .UseContentRoot(gaiusArgs.BasePath)
+                    .ConfigureAppConfiguration((hostBuilderContext, configBuilder) => {
+                        configBuilder.AddJsonFile("gaius.json", optional : true, reloadOnChange : false);
+                    })
+                    .ConfigureServices((hostBuilderContext, serviceCollection) =>
+                    {
+                        serviceCollection
+                        .Configure<GaiusConfiguration>(overrideConfig =>
+                        {
+                            overrideConfig.SiteContainerFullPath = gaiusArgs.BasePath;
+                            overrideConfig.IsTestMode = gaiusArgs.IsTestModeEnabled;
+                        })
+                        .Configure<GaiusConfiguration>(hostBuilderContext.Configuration.GetSection("GaiusEngine"))
+                        .AddHostedService<GaiusConsoleHostedService>()
+                        .AddSingleton<ITerminalDisplayService, TerminalDisplayService>()
+                        .AddSingleton<IFSProcessor, FSProcessor>()
+                        .AddTransient<GaiusArguments>(serviceProvider => gaiusArgs)
+                        .AddOptions<GaiusConfiguration>()
+                            .Bind(hostBuilderContext.Configuration.GetSection("GaiusEngine"));
+
+                        var gaiusConfiguration = new GaiusConfiguration();
+                        gaiusConfiguration.SiteContainerFullPath = gaiusArgs.BasePath;
+                        gaiusConfiguration.IsTestMode = gaiusArgs.IsTestModeEnabled;
+                        hostBuilderContext.Configuration.GetSection("GaiusEngine").Bind(gaiusConfiguration);
+
+                        if (gaiusConfiguration.Worker.Equals("Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
+                            serviceCollection = MarkdownLiquidWorker.ConfigureServicesForWorker(serviceCollection);
+                    })
+                    .ConfigureLogging((hostBuilderContext, loggingBuilder) =>
+                    {
+                        loggingBuilder.ClearProviders();
+                        loggingBuilder.AddConsole();
+                    });
+        }
+
+        private static async Task Main(string[] args)
+        {
+            var gaiusArgs = new GaiusArguments(args);
+
+            var consoleHostBuilder = CreateBaseHostBuilderForConsoleApp(gaiusArgs);
+            await consoleHostBuilder.RunConsoleAsync();
+
+            if(gaiusArgs.IsServeCommand)
             {
-                serviceCollection = MarkdownLiquidWorker.ConfigureServicesForWorker(serviceCollection);
-                workerConfigured = true;
+                var webHostBuilder = CreateBaseHostBuilderForWebApp(gaiusArgs);
+                await webHostBuilder.Build().RunAsync();
             }
+        }
+    }
 
-            return (serviceCollection, workerConfigured);
+    internal sealed class GaiusConsoleHostedService : IHostedService
+    {
+        private int? _exitCode;
+        private readonly ILogger _logger;
+        private readonly IHostApplicationLifetime _appLifetime;
+        private readonly GaiusArguments _gaiusArgs;
+        private readonly GaiusConfiguration _gaiusConfigruation;
+        private readonly ITerminalDisplayService _terminalDisplayService;
+        private readonly IFSProcessor _fsProcessor;
+        private readonly IWorker _worker;
+
+        public GaiusConsoleHostedService(
+            ILogger<GaiusConsoleHostedService> logger,
+            IHostApplicationLifetime appLifetime,
+            GaiusArguments gaiusArgs,
+            IOptions<GaiusConfiguration> gaiusConfigurationOptions,
+            ITerminalDisplayService terminalDisplayService,
+            IFSProcessor fSProcessor,
+            IWorker worker)
+        {
+            _logger = logger;
+            _appLifetime = appLifetime;
+            _gaiusArgs = gaiusArgs;
+            _gaiusConfigruation = gaiusConfigurationOptions.Value;
+            _terminalDisplayService = terminalDisplayService;
+            _fsProcessor = fSProcessor;
+            _worker = worker;
         }
 
-        private static (IConfigurationRoot, IServiceCollection, bool) ConfigureConsoleApplication(string basePath, bool isTestCommand)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            var config = BuildConfiguration(basePath);
-            (var serviceCollection, var workerConfigured) = ConfigureServices(config, basePath, isTestCommand);
-            return (config, serviceCollection, workerConfigured);
-        }
-
-        private static IHostBuilder CreateHostBuilder(string basePath, GaiusConfiguration gaiusConfiguration)
-        {
-            var hostBuilder = Host.CreateDefaultBuilder()
-                .UseContentRoot(basePath)
-                .ConfigureAppConfiguration((hostBuilderContext, configBuilder) => {
-                    configBuilder.AddJsonFile("gaius.json", optional : true, reloadOnChange : true);
-                })
-                .ConfigureWebHostDefaults(webBuilder =>
+            _appLifetime.ApplicationStarted.Register(() =>
+            {
+                Task.Run(() =>
                 {
-                    webBuilder.UseWebRoot(gaiusConfiguration.GenerationDirectoryName);
-                    webBuilder.UseStartup<Startup>();
+                    try
+                    {
+                        _exitCode = 0;
+
+                        if (!Directory.Exists(_gaiusConfigruation.SiteContainerFullPath))
+                        {
+                            TerminalUtilities.PrintBasePathDoesNotExist(_gaiusConfigruation.SiteContainerFullPath);
+                            _exitCode = 1;
+                            _appLifetime.StopApplication();
+                        }
+
+                        if (_worker == null || _fsProcessor == null)
+                        {
+                            TerminalUtilities.PrintInvalidConfiguration();
+                            _exitCode = 1;
+                            _appLifetime.StopApplication();
+                        }
+
+                        if (_gaiusArgs.IsUnknownCommand)
+                        {
+                            TerminalUtilities.PrintUnknownCommand(_gaiusArgs.Command);
+                            _exitCode = 1;
+                            _appLifetime.StopApplication();
+                        }
+
+                        if (_gaiusArgs.NoCommand)
+                            TerminalUtilities.PrintDefault();
+
+                        else if (_gaiusArgs.IsHelpCommand)
+                            TerminalUtilities.PrintHelpCommand();
+
+                        else if (_gaiusArgs.IsVersionCommand)
+                            TerminalUtilities.PrintVersionCommand();
+                        
+                        else if (_gaiusArgs.IsShowConfigCommand)
+                            TerminalUtilities.PrintShowConfigurationCommand(_gaiusConfigruation);
+
+                        else if (_gaiusArgs.IsBuildCommand || _gaiusArgs.IsServeCommand)
+                        {
+                            (var isContainerDirectoryValid, var validationErrors) = _worker.ValidateSiteContainerDirectory();
+
+                            if (!isContainerDirectoryValid)
+                            {
+                                TerminalUtilities.PrintSiteContainerDirectoryNotValid(validationErrors, _gaiusConfigruation);
+                                _exitCode = 1;
+                                _appLifetime.StopApplication();
+                            }
+
+                            var opTree = _fsProcessor.CreateFSOperationTree();
+                            _terminalDisplayService.PrintOperationTree(opTree);
+
+                            if (!_gaiusArgs.IsAutomaticYesEnabled && !TerminalUtilities.YesToContinue())
+                                _appLifetime.StopApplication();
+
+                            _fsProcessor.ProcessFSOperationTree(opTree);
+                            _terminalDisplayService.PrintOperationTree(opTree);
+                        }
+                    }
+
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Unhandled exception!");
+                    }
+
+                    finally
+                    {
+                        _appLifetime.StopApplication();
+                    }
                 });
+            });
 
-            return hostBuilder;
+            return Task.CompletedTask;
         }
 
-        public static void Main(string[] args)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            var gaiusArgs = new GaiusArgs(args);
+            _logger.LogDebug($"Exiting with exit code: {_exitCode}");
 
-            if(!Directory.Exists(gaiusArgs.BasePath))
-            {
-                TerminalUtilities.PrintBasePathDoesNotExist(gaiusArgs.BasePath);
-                return;
-            }
-
-            (var configRoot, var serviceCollection, var validConfiguration) 
-                = ConfigureConsoleApplication(gaiusArgs.BasePath, gaiusArgs.IsTestModeEnabled);
-
-            var serviceProvider = serviceCollection.BuildServiceProvider();
-            var terminalOutputService = serviceProvider.GetService<ITerminalDisplayService>();
-            var gaiusConfiguration = serviceProvider.GetService<IOptions<GaiusConfiguration>>().Value;
-
-            // commands that don't require full initialization and validation
-            if(gaiusArgs.NoCommand)
-            {
-                TerminalUtilities.PrintDefault();
-                return;
-            }
-
-            if(gaiusArgs.IsUnknownCommand)
-            {
-                TerminalUtilities.PrintUnknownCommand(gaiusArgs.Command);
-                return;
-            }
-
-            if(gaiusArgs.IsVersionCommand)
-            {
-                TerminalUtilities.PrintVersionCommand();
-                return;
-            }
-
-            if(gaiusArgs.IsHelpCommand)
-            {
-                TerminalUtilities.PrintHelpCommand();
-                return;
-            }
-
-            // explicitly validate configuration for remaining commands
-            if(!validConfiguration)
-            {
-                TerminalUtilities.PrintInvalidConfiguration();
-                return;
-            }
-
-            if(gaiusArgs.IsShowConfigCommand)
-            {
-                TerminalUtilities.PrintShowConfigurationCommand(gaiusArgs.BasePath, gaiusConfiguration);
-                return;
-            }
-
-            // additional initialization required for remaining commands
-            var fileSystemProcessor = serviceProvider.GetService<IFSProcessor>();
-            var worker = serviceProvider.GetService<IWorker>();
-
-            if(gaiusArgs.IsBuildCommand || gaiusArgs.IsServeCommand)
-            {
-                (var isContainerDirValid, var validationErrors) = worker.ValidateSiteContainerDirectory();
-
-                if(!isContainerDirValid)
-                {
-                    TerminalUtilities.PrintSiteContainerDirectoryNotValid(validationErrors, gaiusConfiguration);
-                    return;
-                }
-
-                var opTree = fileSystemProcessor.CreateFSOperationTree();
-                terminalOutputService.PrintOperationTree(opTree);
-
-                if(!gaiusArgs.IsAutomaticYesEnabled && !TerminalUtilities.YesToContinue())
-                    return;
-
-                fileSystemProcessor.ProcessFSOperationTree(opTree);
-                terminalOutputService.PrintOperationTree(opTree);
-
-                if(!gaiusArgs.IsServeCommand)
-                    return;
-
-                var hostBuilder = CreateHostBuilder(gaiusArgs.BasePath, gaiusConfiguration);
-
-                if(hostBuilder == null)
-                    return;
-
-                hostBuilder.Build().Run();
-            }
+            // Exit code may be null if the user cancelled via Ctrl+C/SIGTERM
+            Environment.ExitCode = _exitCode.GetValueOrDefault(-1);
+            return Task.CompletedTask;
         }
     }
 }

@@ -12,7 +12,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '5.0.x'
-    - name: Run gaius process
+    - name: Run gaius build
       run: |
         dotnet ./bin/gaius/gaius.dll build --yes
     - name: Push generated files to gh-pages branch
