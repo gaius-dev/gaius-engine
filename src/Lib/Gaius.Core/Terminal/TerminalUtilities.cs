@@ -56,7 +56,7 @@ namespace Gaius.Core.Terminal
         public static void PrintDefault()
         {
             PrintStylizedApplicationName();
-            TerminalUtilities.PrintApplicationNameAndVersion();
+            PrintApplicationNameAndVersion();
             PrintUsage();
         }
 
@@ -68,7 +68,7 @@ namespace Gaius.Core.Terminal
         public static void PrintVersionCommand()
         {
             PrintStylizedApplicationName();
-            TerminalUtilities.PrintApplicationNameAndVersion();
+            PrintApplicationNameAndVersion();
         }
 
         public static void PrintShowConfigurationCommand(string path, GaiusConfiguration gaiusConfiguration)
@@ -137,20 +137,21 @@ Usage: gaius [command] [options]
 
 Commands (Gaius Engine):
 
-  version                Show version information.
-  help                   Show help information.
-  showconfig [path]      Show the configuration in [path].
-
-  process-test [path]    Process the source data in [path] using the config file [path]/gaius.json.
-                           This does *not* prepend the 'GenerationUrlRootPrefix' config param to URLs.
-                           This allows for the local testing of generated sites (e.g. http://localhost).
-
-  process [path]         Process the source data in [path] using the config file [path]/gaius.json.
-
+  version               Show version information.
+  help                  Show help information.
+  showconfig [path]     Show the configuration in [path].
+  build [path]          Build site based the source data in [path] using the config file [path]/gaius.json.
+  serve [path]          Build and serve site based the source data in [path] using the config file [path]/gaius.json.
+                            Note: testmode is enabled automatically.
 Options:
 
-  -y                     Automatically answer 'yes' for all questions.
-                           This allows for automatic processing of source data.
+  --yes                 Automatically answer 'yes' for all questions.
+                            This allows for automatic processing of source data.
+
+  --testmode            When building site, Gaius will *not* prepend the 'GenerationUrlRootPrefix' config param to URLs.
+                            Note: testmode is enabled automatically when serving your site.
+                            This allows for local testing of generated sites (e.g. http://localhost).
+
 ";
             System.Console.WriteLine(usage);
         }

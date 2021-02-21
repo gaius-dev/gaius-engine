@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch and debug Gaius server (serving gaius-docs)",
+            "name": "Build and Serve gaius-docs",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GaiusServer/bin/Debug/netcoreapp3.1/gaius-server.dll",
-            "args": [ "../../../gaius-docs"],
-            "cwd": "${workspaceFolder}/src/GaiusServer",
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "serve", "../../../gaius-docs", "--yes"],
+            "cwd": "${workspaceFolder}/src/Gaius",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
@@ -25,13 +25,13 @@
             }
         },
         {
-            "name": "Launch and debug Gaius server (serving gaius-starter)",
+            "name": "Build and Serve gaius-starter",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GaiusServer/bin/Debug/netcoreapp3.1/gaius-server.dll",
-            "args": [ "../../../gaius-starter"],
-            "cwd": "${workspaceFolder}/src/GaiusServer",
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "serve", "../../../gaius-starter", "--yes"],
+            "cwd": "${workspaceFolder}/src/Gaius",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
@@ -45,13 +45,13 @@
             }
         },
         {
-            "name": "Launch and debug Gaius server (serving rstrube.github.io)",
+            "name": "Build and Serve rstrube.github.io",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/GaiusServer/bin/Debug/netcoreapp3.1/gaius-server.dll",
-            "args": [ "../../../rstrube.github.io"],
-            "cwd": "${workspaceFolder}/src/GaiusServer",
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "serve", "../../../rstrube.github.io", "--yes"],
+            "cwd": "${workspaceFolder}/src/Gaius",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
@@ -65,39 +65,39 @@
             }
         },
         {
-            "name": "Launch and debug Gaius engine (processing gaius-docs)",
+            "name": "Build gaius-docs",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/Gaius/bin/Debug/netcoreapp3.1/gaius.dll",
-            "args": [ "process-test", "../../../gaius-docs", "-y" ],
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "build", "../../../gaius-docs", "--yes", "--testmode" ],
             "cwd": "${workspaceFolder}/src/Gaius",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
         },
         {
-            "name": "Launch and debug Gaius engine (processing gaius-starter)",
+            "name": "Build gaius-starter",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/Gaius/bin/Debug/netcoreapp3.1/gaius.dll",
-            "args": [ "process-test", "../../../gaius-starter", "-y" ],
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "build", "../../../gaius-starter", "--yes", "--testmode" ],
             "cwd": "${workspaceFolder}/src/Gaius",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
         },
         {
-            "name": "Launch and debug Gaius engine (processing rstrube.github.io)",
+            "name": "Build rstrube.github.io",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/Gaius/bin/Debug/netcoreapp3.1/gaius.dll",
-            "args": [ "process-test", "../../../rstrube.github.io", "-y" ],
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "build", "../../../rstrube.github.io", "--yes", "--testmode" ],
             "cwd": "${workspaceFolder}/src/Gaius",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",

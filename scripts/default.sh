@@ -21,14 +21,6 @@ for i in "${ADDL_ARTIFACTS_TARGETS[@]}"
 do
 	./deploy_artifacts.sh $i
     cd $i
-    dotnet ./bin/gaius/gaius.dll process-test -y
+    dotnet ./bin/gaius/gaius.dll build --yes --testmode
     cd $DIR
 done
-
-
-
-# Deploy Gaius artifacts to the Gaius Documentation Site
-#./deploy_artifacts.sh $GAIUS_ENGINE_TOPLVL_DIR/../gaius-docs
-
-# Deploy Gaius artifacts to the Gaius Starter Site
-#./deploy_artifacts.sh $GAIUS_ENGINE_TOPLVL_DIR/../gaius-starter

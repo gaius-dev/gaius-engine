@@ -7,22 +7,31 @@ namespace Gaius.Core.Configuration
 {
     public class GaiusArgs {
         
-        private const string _automaticYes = "-y";
+        private const string _automaticYesSwitch = "--yes";
+        private const string _testModeSwitch = "--testmode";
+        private bool _noCommand;
+        private bool _testMode;
 
         public GaiusArgs(string [] args)
         {
             var listArgs = new List<string>(args);
 
-            if (args.Contains(_automaticYes))
+            if (args.Contains(_automaticYesSwitch))
             {
                 IsAutomaticYesEnabled = true;
-                listArgs.Remove(_automaticYes);
+                listArgs.Remove(_automaticYesSwitch);
+            }
+
+            if (args.Contains(_testModeSwitch))
+            {
+                _testMode = true;
+                listArgs.Remove(_testModeSwitch);
             }
 
             var pathArg = ".";
 
             if (listArgs.Count == 0)
-                IsEmptyCommand = true;
+                _noCommand = true;
 
             if (listArgs.Count >= 1)
                 Command = args[0];
@@ -36,12 +45,13 @@ namespace Gaius.Core.Configuration
         public string Command { get; private set; }
         public string BasePath { get; private set; }
         public bool IsAutomaticYesEnabled { get; private set; }
-        public bool IsEmptyCommand { get; private set; }
-        public bool IsUnknownCommand => !IsEmptyCommand && !IsVersionCommand && !IsHelpCommand && !IsShowConfigCommand && !IsTestCommand && !IsProcessCommand;
+        public bool IsTestModeEnabled => IsServeCommand || _testMode;
+        public bool IsUnknownCommand => !IsVersionCommand && !IsHelpCommand && !IsShowConfigCommand && !IsBuildCommand && !IsServeCommand;
         public bool IsVersionCommand => Command == "version";
         public bool IsHelpCommand => Command == "help";
         public bool IsShowConfigCommand => Command == "showconfig";
-        public bool IsTestCommand => Command == "process-test";
-        public bool IsProcessCommand => Command == "process";
+        public bool IsBuildCommand => Command == "build";
+        public bool IsServeCommand => Command == "serve";
+        public bool NoCommand => _noCommand;
     }
 }

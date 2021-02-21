@@ -12,20 +12,16 @@ fi
 
 mkdir -p $BUILD_ZIP_DIR
 
-echo "Gaius Engine Dir: $GAIUS_TOPLVL_DIR"
+echo "Gaius Solution Dir: $GAIUS_TOPLVL_DIR"
 echo "Build Artifacts Dir: $BUILD_ARTIFACTS_DIR"
 echo "Build Zip Dir: $BUILD_ZIP_DIR"
 
 cd $BUILD_ARTIFACTS_DIR/bin/gaius
-zip $BUILD_ZIP_DIR/gaius-engine-bin.zip ./*
-cd $DIR
-
-cd $BUILD_ARTIFACTS_DIR/bin/gaius-server
-zip $BUILD_ZIP_DIR/gaius-server-bin.zip ./*
+zip $BUILD_ZIP_DIR/gaius-bin.zip ./*
 cd $DIR
 
 cd $BUILD_ARTIFACTS_DIR
-zip $BUILD_ZIP_DIR/gaius-cli.zip ./gaius.sh ./gaius.ps1
+zip $BUILD_ZIP_DIR/gaius-cli.zip ./gaius.sh
 cd $DIR
 
 cd $BUILD_ARTIFACTS_DIR/.github/workflows

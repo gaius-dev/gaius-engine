@@ -14,7 +14,7 @@ jobs:
         dotnet-version: '5.0.x'
     - name: Run gaius process
       run: |
-        dotnet ./bin/gaius/gaius.dll process -y
+        dotnet ./bin/gaius/gaius.dll build --yes
     - name: Push generated files to gh-pages branch
       uses: s0/git-publish-subdir-action@develop
       env:

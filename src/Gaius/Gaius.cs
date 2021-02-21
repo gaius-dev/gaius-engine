@@ -8,6 +8,8 @@ using Gaius.Processing.Display;
 using Gaius.Worker;
 using Gaius.Worker.MarkdownLiquid;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Gaius
 {
@@ -54,8 +56,24 @@ namespace Gaius
         private static (IConfigurationRoot, IServiceCollection, bool) ConfigureConsoleApplication(string basePath, bool isTestCommand)
         {
             var config = BuildConfiguration(basePath);
-            var serviceCollection = ConfigureServices(config, basePath, isTestCommand);
-            return (config, serviceCollection.Item1, serviceCollection.Item2);
+            (var serviceCollection, var workerConfigured) = ConfigureServices(config, basePath, isTestCommand);
+            return (config, serviceCollection, workerConfigured);
+        }
+
+        private static IHostBuilder CreateHostBuilder(string basePath, GaiusConfiguration gaiusConfiguration)
+        {
+            var hostBuilder = Host.CreateDefaultBuilder()
+                .UseContentRoot(basePath)
+                .ConfigureAppConfiguration((hostBuilderContext, configBuilder) => {
+                    configBuilder.AddJsonFile("gaius.json", optional : true, reloadOnChange : true);
+                })
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseWebRoot(gaiusConfiguration.GenerationDirectoryName);
+                    webBuilder.UseStartup<Startup>();
+                });
+
+            return hostBuilder;
         }
 
         public static void Main(string[] args)
@@ -68,16 +86,15 @@ namespace Gaius
                 return;
             }
 
-            var appConfiguration = ConfigureConsoleApplication(gaiusArgs.BasePath, gaiusArgs.IsTestCommand);
-            var config = appConfiguration.Item1;
-            var serviceProvider = appConfiguration.Item2.BuildServiceProvider();
-            var validConfiguration = appConfiguration.Item3;
-            
+            (var configRoot, var serviceCollection, var validConfiguration) 
+                = ConfigureConsoleApplication(gaiusArgs.BasePath, gaiusArgs.IsTestModeEnabled);
+
+            var serviceProvider = serviceCollection.BuildServiceProvider();
             var terminalOutputService = serviceProvider.GetService<ITerminalDisplayService>();
             var gaiusConfiguration = serviceProvider.GetService<IOptions<GaiusConfiguration>>().Value;
 
             // commands that don't require full initialization and validation
-            if(gaiusArgs.IsEmptyCommand)
+            if(gaiusArgs.NoCommand)
             {
                 TerminalUtilities.PrintDefault();
                 return;
@@ -118,13 +135,13 @@ namespace Gaius
             var fileSystemProcessor = serviceProvider.GetService<IFSProcessor>();
             var worker = serviceProvider.GetService<IWorker>();
 
-            if(gaiusArgs.IsTestCommand || gaiusArgs.IsProcessCommand)
+            if(gaiusArgs.IsBuildCommand || gaiusArgs.IsServeCommand)
             {
-                var validationResults = worker.ValidateSiteContainerDirectory();
+                (var isContainerDirValid, var validationErrors) = worker.ValidateSiteContainerDirectory();
 
-                if(!validationResults.Item1)
+                if(!isContainerDirValid)
                 {
-                    TerminalUtilities.PrintSiteContainerDirectoryNotValid(validationResults.Item2, gaiusConfiguration);
+                    TerminalUtilities.PrintSiteContainerDirectoryNotValid(validationErrors, gaiusConfiguration);
                     return;
                 }
 
@@ -136,7 +153,16 @@ namespace Gaius
 
                 fileSystemProcessor.ProcessFSOperationTree(opTree);
                 terminalOutputService.PrintOperationTree(opTree);
-                return;
+
+                if(!gaiusArgs.IsServeCommand)
+                    return;
+
+                var hostBuilder = CreateHostBuilder(gaiusArgs.BasePath, gaiusConfiguration);
+
+                if(hostBuilder == null)
+                    return;
+
+                hostBuilder.Build().Run();
             }
         }
     }
