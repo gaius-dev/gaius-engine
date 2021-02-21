@@ -78,7 +78,7 @@ namespace Gaius.Processing.FileSystem
             foreach(var sourceDir in sourceStartDir?.EnumerateDirectories().OrderBy(directoryInfo => directoryInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
             {
                 //rs: skip over the _drafts source folder if we're not in test mode
-                if(sourceDir.FullName.Equals(_gaiusConfiguration.DraftsDirectoryFullPath) && !_gaiusConfiguration.IsTestMode)
+                if(sourceDir.FullName.Equals(_gaiusConfiguration.DraftsDirectoryFullPath) && !_gaiusConfiguration.IsTestModeEnabled)
                     continue;
 
                 var sourceDirTask = _worker.CreateWorkerTask(sourceDir);
@@ -96,7 +96,7 @@ namespace Gaius.Processing.FileSystem
                              && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsPost))
                 .Select(tn => tn.Data.WorkerTask).ToList();
             
-            if(_gaiusConfiguration.IsTestMode)
+            if(_gaiusConfiguration.IsTestModeEnabled)
             {
                 var draftWorkerTasks = sourceDirTreeNode
                     .Where(tn => !tn.Data.IsInvalid

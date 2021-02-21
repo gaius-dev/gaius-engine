@@ -85,6 +85,7 @@ namespace Gaius.Processing.Display
             Console.WriteLine($"[ Src. Directory] {_gaiusConfiguration.SourceDirectoryFullPath}");
             Console.WriteLine($"[Theme Directory] {_gaiusConfiguration.NamedThemeDirectoryFullPath}");
             Console.WriteLine($"[ Gen. Directory] {_gaiusConfiguration.GenerationDirectoryFullPath}");
+            Console.WriteLine($"[  Testmode On  ] {_gaiusConfiguration.IsTestModeEnabled}");
             Console.WriteLine();
         }
 

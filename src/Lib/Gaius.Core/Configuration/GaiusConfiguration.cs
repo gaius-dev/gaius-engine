@@ -1,11 +1,19 @@
 using System.IO;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Gaius.Core.Arguments;
 
 namespace Gaius.Core.Configuration
 {
     public class GaiusConfiguration
     {
+        public GaiusConfiguration(){ }
+        public GaiusConfiguration(GaiusArguments gaiusArgs)
+        {
+            SiteContainerFullPath = gaiusArgs.BasePath;
+            IsTestModeEnabled = gaiusArgs.IsTestModeEnabled;
+        }
+        
         public const string _markdownLiquidWorker = "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker";
         public string SourceDirectoryName { get; set; } = "_source";
         public string GenerationDirectoryName { get; set; } = "_generated";
@@ -21,7 +29,7 @@ namespace Gaius.Core.Configuration
         public List<string> AlwaysKeep { get; set; } = new List<string>{ ".git" };
         public string Worker { get; set; } = _markdownLiquidWorker;
         public string SiteContainerFullPath { get; set; }
-        public bool IsTestMode { get; set; } = false;
+        public bool IsTestModeEnabled { get; set; } = false;
 
         [JsonIgnore]
         public string GenerationDirectoryFullPath => Path.Combine(SiteContainerFullPath, GenerationDirectoryName);
@@ -44,6 +52,6 @@ namespace Gaius.Core.Configuration
         [JsonIgnore]
         public List<string> SupportedWorkers => new List<string>() { _markdownLiquidWorker };
 
-        public string GetGenerationUrlRootPrefix() => IsTestMode ? string.Empty : GenerationUrlRootPrefix;
+        public string GetGenerationUrlRootPrefix() => IsTestModeEnabled ? string.Empty : GenerationUrlRootPrefix;
     }
 }
