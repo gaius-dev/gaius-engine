@@ -14,7 +14,6 @@ namespace Gaius.Core.Configuration
             IsTestModeEnabled = gaiusArgs.IsTestModeEnabled;
         }
         
-        public const string _markdownLiquidWorker = "Gaius.Core.Worker.MarkdownLiquid.MarkdownLiquidWorker";
         public string SourceDirectoryName { get; set; } = "_source";
         public string GenerationDirectoryName { get; set; } = "_generated";
         public string ThemesDirectoryName { get; set; } = "_themes";
@@ -27,7 +26,6 @@ namespace Gaius.Core.Configuration
         public int Pagination { get; set; } = 5;
         public string GenerationUrlRootPrefix { get; set; } = string.Empty;
         public List<string> AlwaysKeep { get; set; } = new List<string>{ ".git" };
-        public string Worker { get; set; } = _markdownLiquidWorker;
         public string SiteContainerFullPath { get; set; }
         public bool IsTestModeEnabled { get; set; } = false;
 
@@ -48,9 +46,6 @@ namespace Gaius.Core.Configuration
 
         [JsonIgnore]
         public string TagListDirectoryFullPath => Path.Combine(SiteContainerFullPath, SourceDirectoryName, TagListDirectoryName);
-
-        [JsonIgnore]
-        public List<string> SupportedWorkers => new List<string>() { _markdownLiquidWorker };
 
         public string GetGenerationUrlRootPrefix() => IsTestModeEnabled ? string.Empty : GenerationUrlRootPrefix;
     }

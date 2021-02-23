@@ -65,14 +65,6 @@ namespace Gaius.Worker.MarkdownLiquid
             BuildLayoutDictionary();
         }
 
-        public static IServiceCollection ConfigureServicesForWorker(IServiceCollection serviceCollection)
-        {
-            serviceCollection
-                .AddSingleton<IFrontMatterParser, YamlFrontMatterParser>()
-                .AddSingleton<IWorker, MarkdownLiquidWorker>();
-            return serviceCollection;
-        }
-
         public override string PerformWork(WorkerTask workerTask)
         {
             if(workerTask.WorkType != WorkType.Transform)

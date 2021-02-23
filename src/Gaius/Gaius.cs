@@ -14,6 +14,9 @@ using Gaius.Core.Arguments;
 using Gaius.ConsoleHostedService;
 using Gaius.Server;
 using Gaius.Server.BackgroundHostedService;
+using Gaius.Worker.FrontMatter;
+using Gaius.Worker.FrontMatter.Yaml;
+using Gaius.Worker;
 
 namespace Gaius
 {
@@ -48,15 +51,11 @@ namespace Gaius
                         .AddHostedService<GaiusConsoleHostedService>()
                         .AddSingleton<ITerminalDisplayService, TerminalDisplayService>()
                         .AddSingleton<IFSProcessor, FSProcessor>()
+                        .AddSingleton<IFrontMatterParser, YamlFrontMatterParser>()
+                        .AddSingleton<IWorker, MarkdownLiquidWorker>()
                         .AddSingleton<GaiusArguments>(serviceProvider => gaiusArgs)
                         .AddOptions<GaiusConfiguration>()
                             .Bind(hostBuilderContext.Configuration.GetSection("GaiusEngine"));
-
-                        var gaiusConfiguration = new GaiusConfiguration(gaiusArgs);
-                        hostBuilderContext.Configuration.GetSection("GaiusEngine").Bind(gaiusConfiguration);
-
-                        if (gaiusConfiguration.Worker.Equals("Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
-                            serviceCollection = MarkdownLiquidWorker.ConfigureServicesForWorker(serviceCollection);
                     })
                     .ConfigureLogging((hostBuilderContext, loggingBuilder) =>
                     {
@@ -90,17 +89,12 @@ namespace Gaius
                         .AddHostedService<BuildRequestQueueProcessorHostedService>()
                         .AddSingleton<SourceDataFileSystemWatcher>()
                         .AddSingleton<IBuildRequestQueue, BuildRequestQueue>()
-                        .AddSingleton<ITerminalDisplayService, TerminalDisplayService>()
                         .AddSingleton<IFSProcessor, FSProcessor>()
+                        .AddSingleton<IFrontMatterParser, YamlFrontMatterParser>()
+                        .AddSingleton<IWorker, MarkdownLiquidWorker>()
                         .AddSingleton<GaiusArguments>(serviceProvider => gaiusArgs)
                         .AddOptions<GaiusConfiguration>()
                             .Bind(hostBuilderContext.Configuration.GetSection("GaiusEngine"));
-
-                        var gaiusConfiguration = new GaiusConfiguration(gaiusArgs);
-                        hostBuilderContext.Configuration.GetSection("GaiusEngine").Bind(gaiusConfiguration);
-
-                        if (gaiusConfiguration.Worker.Equals("Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
-                            serviceCollection = MarkdownLiquidWorker.ConfigureServicesForWorker(serviceCollection);
                     })
                     .ConfigureWebHostDefaults((webBuilder) =>
                     {
