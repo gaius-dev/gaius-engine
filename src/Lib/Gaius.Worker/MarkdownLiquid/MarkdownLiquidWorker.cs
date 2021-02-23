@@ -6,8 +6,6 @@ using Fluid;
 using Gaius.Core.Configuration;
 using Markdig;
 using Gaius.Core.FileSystem;
-using Microsoft.Extensions.DependencyInjection;
-using Gaius.Worker.FrontMatter.Yaml;
 using System.Collections.Generic;
 using Gaius.Worker.Models;
 using System.Text.RegularExpressions;
