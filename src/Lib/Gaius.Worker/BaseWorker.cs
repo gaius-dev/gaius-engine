@@ -12,6 +12,7 @@ namespace Gaius.Worker
         internal SiteData SiteData;
         internal static readonly GaiusInformation GaiusInformation = new GaiusInformation();
 
+        public abstract void InitWorker();
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
         public abstract void AddTagDataToWorker(List<TagData> tagData, bool tagListPageExists);
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);

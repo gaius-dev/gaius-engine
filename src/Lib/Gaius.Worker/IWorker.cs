@@ -6,6 +6,7 @@ namespace Gaius.Worker
 {
     public interface IWorker
     {
+        void InitWorker();
         WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
         void AddTagDataToWorker(List<TagData> tagData, bool tagListPageExists);
         WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);

@@ -11,6 +11,9 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using System;
 using Gaius.Core.Arguments;
+using Gaius.ConsoleHostedService;
+using Gaius.Server;
+using Gaius.Server.BackgroundHostedService;
 
 namespace Gaius
 {
@@ -24,51 +27,6 @@ namespace Gaius
                 .SetBasePath(basePath)
                 .AddJsonFile("gaius.json", optional: true, reloadOnChange: false)
                 .Build();
-        }
-
-        private static IHostBuilder CreateHostBuilderForWebApp(GaiusArguments gaiusArgs)
-        {
-            var configurationRoot = BuildRootConfiguration(gaiusArgs.BasePath);
-
-            var manualGaiusConfig = new GaiusConfiguration(gaiusArgs);
-            configurationRoot.GetSection("GaiusEngine").Bind(manualGaiusConfig);
-            var generationDirName = manualGaiusConfig.GenerationDirectoryName;
-
-            return Host.CreateDefaultBuilder()
-                    .UseContentRoot(gaiusArgs.BasePath)
-                    .ConfigureAppConfiguration((hostBuilderContext, configBuilder) => {
-                        configBuilder.AddJsonFile("gaius.json", optional : true, reloadOnChange : false);
-                    })
-                    .ConfigureServices((hostBuilderContext, serviceCollection) =>
-                    {
-                        serviceCollection
-                        .Configure<GaiusConfiguration>(overrideConfig =>
-                        {
-                            overrideConfig.SiteContainerFullPath = gaiusArgs.BasePath;
-                            overrideConfig.IsTestModeEnabled = gaiusArgs.IsTestModeEnabled;
-                        })
-                        .Configure<GaiusConfiguration>(hostBuilderContext.Configuration.GetSection("GaiusEngine"))
-                        .AddSingleton<ITerminalDisplayService, TerminalDisplayService>()
-                        .AddSingleton<IFSProcessor, FSProcessor>()
-                        .AddSingleton<GaiusArguments>(serviceProvider => gaiusArgs)
-                        .AddOptions<GaiusConfiguration>()
-                            .Bind(hostBuilderContext.Configuration.GetSection("GaiusEngine"));
-
-                        var gaiusConfiguration = new GaiusConfiguration(gaiusArgs);
-                        hostBuilderContext.Configuration.GetSection("GaiusEngine").Bind(gaiusConfiguration);
-
-                        if (gaiusConfiguration.Worker.Equals("Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
-                            serviceCollection = MarkdownLiquidWorker.ConfigureServicesForWorker(serviceCollection);
-                    })
-                    .ConfigureWebHostDefaults((webBuilder) =>
-                    {
-                        webBuilder.UseWebRoot(generationDirName);
-                        webBuilder.UseStartup<Startup>();
-                    })
-                    .ConfigureLogging((hostBuilderContext, loggingBuilder) => {
-                        loggingBuilder.ClearProviders();
-                        loggingBuilder.AddConsole();
-                    });
         }
 
         private static IHostBuilder CreateHostBuilderForConsoleApp(GaiusArguments gaiusArgs)
@@ -107,6 +65,54 @@ namespace Gaius
                     });
         }
 
+        private static IHostBuilder CreateHostBuilderForWebApp(GaiusArguments gaiusArgs)
+        {
+            var configurationRoot = BuildRootConfiguration(gaiusArgs.BasePath);
+
+            var manualGaiusConfig = new GaiusConfiguration(gaiusArgs);
+            configurationRoot.GetSection("GaiusEngine").Bind(manualGaiusConfig);
+            var generationDirName = manualGaiusConfig.GenerationDirectoryName;
+
+            return Host.CreateDefaultBuilder()
+                    .UseContentRoot(gaiusArgs.BasePath)
+                    .ConfigureAppConfiguration((hostBuilderContext, configBuilder) => {
+                        configBuilder.AddJsonFile("gaius.json", optional : true, reloadOnChange : false);
+                    })
+                    .ConfigureServices((hostBuilderContext, serviceCollection) =>
+                    {
+                        serviceCollection
+                        .Configure<GaiusConfiguration>(overrideConfig =>
+                        {
+                            overrideConfig.SiteContainerFullPath = gaiusArgs.BasePath;
+                            overrideConfig.IsTestModeEnabled = gaiusArgs.IsTestModeEnabled;
+                        })
+                        .Configure<GaiusConfiguration>(hostBuilderContext.Configuration.GetSection("GaiusEngine"))
+                        .AddHostedService<BuildRequestQueueProcessorHostedService>()
+                        .AddSingleton<SourceDataFileSystemWatcher>()
+                        .AddSingleton<IBuildRequestQueue, BuildRequestQueue>()
+                        .AddSingleton<ITerminalDisplayService, TerminalDisplayService>()
+                        .AddSingleton<IFSProcessor, FSProcessor>()
+                        .AddSingleton<GaiusArguments>(serviceProvider => gaiusArgs)
+                        .AddOptions<GaiusConfiguration>()
+                            .Bind(hostBuilderContext.Configuration.GetSection("GaiusEngine"));
+
+                        var gaiusConfiguration = new GaiusConfiguration(gaiusArgs);
+                        hostBuilderContext.Configuration.GetSection("GaiusEngine").Bind(gaiusConfiguration);
+
+                        if (gaiusConfiguration.Worker.Equals("Gaius.Worker.MarkdownLiquid.MarkdownLiquidWorker"))
+                            serviceCollection = MarkdownLiquidWorker.ConfigureServicesForWorker(serviceCollection);
+                    })
+                    .ConfigureWebHostDefaults((webBuilder) =>
+                    {
+                        webBuilder.UseWebRoot(generationDirName);
+                        webBuilder.UseStartup<Startup>();
+                    })
+                    .ConfigureLogging((hostBuilderContext, loggingBuilder) => {
+                        loggingBuilder.ClearProviders();
+                        loggingBuilder.AddConsole();
+                    });
+        }
+
         private static async Task Main(string[] args)
         {
             var gaiusArgs = new GaiusArguments(args);
@@ -117,7 +123,10 @@ namespace Gaius
             if(Environment.ExitCode == 0 && gaiusArgs.IsServeCommand)
             {
                 var webHostBuilder = CreateHostBuilderForWebApp(gaiusArgs);
-                await webHostBuilder.Build().RunAsync();
+                var webHost = webHostBuilder.Build();
+                var sourceDataFileSystemWatcher = webHost.Services.GetRequiredService<SourceDataFileSystemWatcher>();
+                sourceDataFileSystemWatcher.StartWatcher();
+                await webHost.RunAsync();
             }
         }
     }    

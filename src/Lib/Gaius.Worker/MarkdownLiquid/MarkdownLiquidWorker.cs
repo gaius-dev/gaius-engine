@@ -30,8 +30,8 @@ namespace Gaius.Worker.MarkdownLiquid
         private const string _indexHtml = "index.html";
         private const string _indexMd = "index.md";
         private readonly IFrontMatterParser _frontMatterParser;
-        private readonly Dictionary<string, IWorkerLayout> LayoutDataDictionary = new Dictionary<string, IWorkerLayout>();
-        private readonly Dictionary<string, BaseViewModel> ViewModelDictionary = new Dictionary<string, BaseViewModel>();
+        private readonly Dictionary<string, IWorkerLayout> _layoutDictionary;
+        private readonly Dictionary<string, BaseViewModel> _viewModelDictionary;
         private static readonly MarkdownPipeline _markdownPipeline 
                                                         = new MarkdownPipelineBuilder()
                                                                 .UseYamlFrontMatter() //Markdig extension to parse YAML
@@ -53,8 +53,18 @@ namespace Gaius.Worker.MarkdownLiquid
             GaiusConfiguration = gaiusConfigurationOptions.Value;
             SiteData = new SiteData(GaiusConfiguration);
             RequiredDirectories = new List<string> { GetLayoutsDirFullPath(GaiusConfiguration) };
-            BuildLayoutInfoDictionary();
+            _layoutDictionary = new Dictionary<string, IWorkerLayout>();
+            _viewModelDictionary = new Dictionary<string, BaseViewModel>();
+
         }
+
+        public override void InitWorker()
+        {
+            _layoutDictionary.Clear();
+            _viewModelDictionary.Clear();
+            BuildLayoutDictionary();
+        }
+
         public static IServiceCollection ConfigureServicesForWorker(IServiceCollection serviceCollection)
         {
             serviceCollection
@@ -62,6 +72,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 .AddSingleton<IWorker, MarkdownLiquidWorker>();
             return serviceCollection;
         }
+
         public override string PerformWork(WorkerTask workerTask)
         {
             if(workerTask.WorkType != WorkType.Transform)
@@ -75,7 +86,7 @@ namespace Gaius.Worker.MarkdownLiquid
             var markdownLiquidViewModel = new MarkdownLiquidViewModel(viewModelData, SiteData, GaiusInformation);
 
             var layoutId = workerTask.LayoutId;
-            if (string.IsNullOrEmpty(layoutId) || !LayoutDataDictionary.TryGetValue(layoutId, out var layoutData))
+            if (string.IsNullOrEmpty(layoutId) || !_layoutDictionary.TryGetValue(layoutId, out var layoutData))
                 throw new Exception($"Unable to find layout: {layoutId}");
 
             if(_liquidTemplatePhysicalFileProvider == null)
@@ -381,7 +392,7 @@ namespace Gaius.Worker.MarkdownLiquid
                                     ? _defaultLayoutId 
                                     : frontMatter.Layout;
 
-            if(!LayoutDataDictionary.TryGetValue(layoutIdToLookup, out layout))
+            if(!_layoutDictionary.TryGetValue(layoutIdToLookup, out layout))
             {
                 taskFlags = taskFlags | WorkerTaskFlags.IsInvalid;
                 return (null, null, taskFlags);
@@ -809,7 +820,7 @@ namespace Gaius.Worker.MarkdownLiquid
 
         private BaseViewModel CreateBaseViewModel(WorkerTask workerTask)
         {
-            if(ViewModelDictionary.TryGetValue(workerTask.GenerationId, out var baseViewModel))
+            if(_viewModelDictionary.TryGetValue(workerTask.GenerationId, out var baseViewModel))
                 return baseViewModel;
 
             var markdownFile = workerTask.FileInfo;
@@ -817,7 +828,7 @@ namespace Gaius.Worker.MarkdownLiquid
             var html = Markdown.ToHtml(markdownContent, _markdownPipeline);
             baseViewModel = new BaseViewModel(workerTask, html);
 
-            ViewModelDictionary.Add(workerTask.GenerationId, baseViewModel);
+            _viewModelDictionary.Add(workerTask.GenerationId, baseViewModel);
             return baseViewModel;
         }
 
@@ -830,7 +841,7 @@ namespace Gaius.Worker.MarkdownLiquid
         private string GenerationUrlRootPrefixPreProcessor(string markdownContent)
             => _siteUrlRegEx.Replace(markdownContent, GaiusConfiguration.GetGenerationUrlRootPrefix());
 
-        private void BuildLayoutInfoDictionary()
+        private void BuildLayoutDictionary()
         {
             var layoutsDirectory = new DirectoryInfo(GetLayoutsDirFullPath(GaiusConfiguration));
 
@@ -840,7 +851,7 @@ namespace Gaius.Worker.MarkdownLiquid
                     continue;
 
                 var layoutInfo = new MarkdownLiquidLayout(file, GaiusConfiguration);
-                LayoutDataDictionary.Add(layoutInfo.Id, layoutInfo);
+                _layoutDictionary.Add(layoutInfo.Id, layoutInfo);
             }
         }
     }
