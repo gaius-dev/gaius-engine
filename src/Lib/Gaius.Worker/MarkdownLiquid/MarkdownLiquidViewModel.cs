@@ -63,20 +63,38 @@ namespace Gaius.Worker.MarkdownLiquid
         public string content { get; private set; }
         public string excerpt { get; private set; }
         public List<MarkdownLiquidViewModel_Tag> tags { get; private set; }
+        private const string _moreComment = "<!--more-->";
+        private const int _numberOfParagraphsToExtract = 1;
+        private const string _pStart = "<p>";
+        private const string _pEnd = "</p>";
 
         private static string GetExcerpt(string content)
         {
-            var numberOfParagraphsToExtract = 2;
+            return GetExcerptBeforeMoreComment(content)
+                   ?? GetExcerptFromParagraphs(content, _numberOfParagraphsToExtract);
+        }
 
-            var indexOfFirstOpeningP = content.IndexOf("<p>", StringComparison.InvariantCultureIgnoreCase);
-            var indexOfClosingP = indexOfFirstOpeningP;
+        private static string GetExcerptBeforeMoreComment(string content)
+        {
+            var indexOfMoreComment = content.IndexOf(_moreComment);
+
+            if(indexOfMoreComment == -1)
+                return null;
+
+            return content.Substring(0, indexOfMoreComment);
+        }
+
+        private static string GetExcerptFromParagraphs(string content, int numberOfParagraphsToExtract)
+        {
+            var indexOfFirstOpeningP = content.IndexOf(_pStart, StringComparison.InvariantCultureIgnoreCase);
+            var indexMarker = indexOfFirstOpeningP;
 
             for(var p=0; p < numberOfParagraphsToExtract; p++)
             {
-                indexOfClosingP = content.IndexOf("</p>", indexOfClosingP + 1, StringComparison.InvariantCultureIgnoreCase);
+                indexMarker = content.IndexOf(_pEnd, indexMarker + 1, StringComparison.InvariantCultureIgnoreCase);
             }
 
-            return content.Substring(indexOfFirstOpeningP, indexOfClosingP + 4 - indexOfFirstOpeningP);
+            return content.Substring(indexOfFirstOpeningP, indexMarker + _pEnd.Length - indexOfFirstOpeningP);
         }
     }
 
