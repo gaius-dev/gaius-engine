@@ -1,7 +1,7 @@
 #!/bin/bash
 # Gaius CLI wrapper
 
-VERSION="0.0.100"
+VERSION="0.0.102"
 
 function main() {
 
