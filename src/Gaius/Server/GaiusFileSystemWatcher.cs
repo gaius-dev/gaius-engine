@@ -25,18 +25,14 @@ namespace Gaius.Server
 
         public void StartWatcher()
         {
-            _logger.LogDebug($"Starting file system watcher for all data in {_gaiusConfiguration.SourceDirectoryFullPath}");
+            _logger.LogInformation($"Starting file system watcher for all data in {_gaiusConfiguration.SiteContainerFullPath}");
 
-            Task.Run(() => Watch(_gaiusConfiguration.SourceDirectoryFullPath));
-
-            _logger.LogDebug($"Starting file system watcher for all data in {_gaiusConfiguration.NamedThemeDirectoryFullPath}");
-
-            Task.Run(() => Watch(_gaiusConfiguration.NamedThemeDirectoryFullPath));
+            Task.Run(() => Watch(_gaiusConfiguration.SiteContainerFullPath));
         }
 
-        private void Watch(string sourceDirFullPath)
+        private void Watch(string pathToWatch)
         {
-            _fileSystemWatcher = new FileSystemWatcher(sourceDirFullPath)
+            _fileSystemWatcher = new FileSystemWatcher(pathToWatch)
             {
                 Filter = string.Empty,
                 IncludeSubdirectories = true,
@@ -54,7 +50,14 @@ namespace Gaius.Server
 
         private void OnSourceDataChanged(object source, FileSystemEventArgs e)
         {
-            _logger.LogDebug($"Source data changed: {e.FullPath} {e.ChangeType}");
+            if(!e.FullPath.Contains(_gaiusConfiguration.SourceDirectoryFullPath)
+                && !e.FullPath.Contains(_gaiusConfiguration.NamedThemeDirectoryFullPath))
+            {
+                _logger.LogDebug($"Ignoring file system event: {e.FullPath} {e.ChangeType}");
+                return;
+            }
+
+            _logger.LogDebug($"File system event: {e.FullPath} {e.ChangeType}");
             
             _buildRequestQueue.QueueBuildRequest(new BuildRequest(e));
         }
