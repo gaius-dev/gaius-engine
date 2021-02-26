@@ -7,16 +7,16 @@ using Microsoft.Extensions.Options;
 
 namespace Gaius.Server
 {
-    public class SourceDataFileSystemWatcher
+    public class GaiusFileSystemWatcher
     {
         private readonly ILogger _logger;
         private readonly GaiusConfiguration _gaiusConfiguration;
         private readonly IBuildRequestQueue _buildRequestQueue;
         private FileSystemWatcher _fileSystemWatcher;
 
-        public SourceDataFileSystemWatcher(ILogger<SourceDataFileSystemWatcher> logger,
-                                           IOptions<GaiusConfiguration> gaiusConfigurationOptions,
-                                           IBuildRequestQueue buildRequestQueue)
+        public GaiusFileSystemWatcher(ILogger<GaiusFileSystemWatcher> logger,
+                                        IOptions<GaiusConfiguration> gaiusConfigurationOptions,
+                                        IBuildRequestQueue buildRequestQueue)
         {
             _logger = logger;
             _gaiusConfiguration = gaiusConfigurationOptions.Value;
@@ -25,9 +25,13 @@ namespace Gaius.Server
 
         public void StartWatcher()
         {
-            _logger.LogInformation($"Starting file system watcher for all data in {_gaiusConfiguration.SourceDirectoryFullPath}");
+            _logger.LogDebug($"Starting file system watcher for all data in {_gaiusConfiguration.SourceDirectoryFullPath}");
 
             Task.Run(() => Watch(_gaiusConfiguration.SourceDirectoryFullPath));
+
+            _logger.LogDebug($"Starting file system watcher for all data in {_gaiusConfiguration.NamedThemeDirectoryFullPath}");
+
+            Task.Run(() => Watch(_gaiusConfiguration.NamedThemeDirectoryFullPath));
         }
 
         private void Watch(string sourceDirFullPath)

@@ -15,11 +15,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 paginator = new MarkdownLiquidViewModel_Paginator(viewModelData, siteData);
             
             site = new MarkdownLiquidViewModel_Site(siteData);
-
-            gaius = new MarkdownLiquidViewModel_GaiusInfo()
-            {
-                version = gaiusInformation.Version
-            };
+            gaius = new MarkdownLiquidViewModel_GaiusInfo(gaiusInformation);
         }
 
         public MarkdownLiquidViewModel_Page page { get; set; }
@@ -37,8 +33,10 @@ namespace Gaius.Worker.MarkdownLiquid
             date = baseViewModel.Date;
             title = baseViewModel.FrontMatter.Title;
             author = baseViewModel.FrontMatter.Author;
+            author_url = GetUrl(siteData, baseViewModel.FrontMatter.AuthorUrl);
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
+            image = GetUrl(siteData, baseViewModel.FrontMatter.Image);
 
             var tagsFrontMatter = baseViewModel.FrontMatter?.GetTags();
             if(tagsFrontMatter != null)
@@ -58,8 +56,10 @@ namespace Gaius.Worker.MarkdownLiquid
         public string date { get; private set; }
         public string title { get; private set; }
         public string author { get; private set; }
+        public string author_url { get; private set; }
         public string keywords { get; private set; }
         public string description { get; private set; }
+        public string image { get; private set; }
         public string content { get; private set; }
         public string excerpt { get; private set; }
         public List<MarkdownLiquidViewModel_Tag> tags { get; private set; }
@@ -67,6 +67,14 @@ namespace Gaius.Worker.MarkdownLiquid
         private const int _numberOfParagraphsToExtract = 1;
         private const string _pStart = "<p>";
         private const string _pEnd = "</p>";
+
+        private static string GetUrl(SiteData siteData, string relativeUrl)
+        {
+            if(string.IsNullOrEmpty(siteData.Url))
+                return relativeUrl;
+
+            return $"{siteData.Url}/{relativeUrl}";
+        }
 
         private static string GetExcerpt(string content)
         {
@@ -156,6 +164,10 @@ namespace Gaius.Worker.MarkdownLiquid
 
     public class MarkdownLiquidViewModel_GaiusInfo 
     {
+        public MarkdownLiquidViewModel_GaiusInfo(GaiusInformation gaiusInformation)
+        {
+            version = gaiusInformation.Version;
+        }
         public string version { get; set; }
     }
 }

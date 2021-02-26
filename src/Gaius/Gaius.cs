@@ -87,7 +87,7 @@ namespace Gaius
                         })
                         .Configure<GaiusConfiguration>(hostBuilderContext.Configuration.GetSection("GaiusEngine"))
                         .AddHostedService<BuildRequestQueueProcessorHostedService>()
-                        .AddSingleton<SourceDataFileSystemWatcher>()
+                        .AddSingleton<GaiusFileSystemWatcher>()
                         .AddSingleton<IBuildRequestQueue, BuildRequestQueue>()
                         .AddSingleton<IFSProcessor, FSProcessor>()
                         .AddSingleton<IFrontMatterParser, YamlFrontMatterParser>()
@@ -118,7 +118,7 @@ namespace Gaius
             {
                 var webHostBuilder = CreateHostBuilderForWebApp(gaiusArgs);
                 var webHost = webHostBuilder.Build();
-                var sourceDataFileSystemWatcher = webHost.Services.GetRequiredService<SourceDataFileSystemWatcher>();
+                var sourceDataFileSystemWatcher = webHost.Services.GetRequiredService<GaiusFileSystemWatcher>();
                 sourceDataFileSystemWatcher.StartWatcher();
                 await webHost.RunAsync();
             }

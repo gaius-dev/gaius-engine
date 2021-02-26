@@ -10,8 +10,8 @@ namespace Gaius.Worker.FrontMatter.Yaml
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
                 .Build();
 
-        private const string YAML_FRONTMATTER_START = "---";
-        private const string YAML_FRONTMATTER_END = "...";
+        private const string _yamlFrontMatterStart = "---";
+        private const string _yamlFrontMatterEnd = "...";
 
         public IFrontMatter DeserializeFromContent(string markdownContent)
         {
@@ -25,13 +25,13 @@ namespace Gaius.Worker.FrontMatter.Yaml
 
         private static string GetYamlContentFromMarkdownContent(string markdownContent)
         {
-            var indexStartYaml = markdownContent.IndexOf(YAML_FRONTMATTER_START);
-            var indexEndYaml = markdownContent.IndexOf(YAML_FRONTMATTER_END);
+            var indexStartYaml = markdownContent.IndexOf(_yamlFrontMatterStart);
+            var indexEndYaml = markdownContent.IndexOf(_yamlFrontMatterEnd);
 
             if(indexStartYaml == -1 || indexEndYaml == -1)
                 return null;
 
-            var yamlLength = indexEndYaml - indexStartYaml + YAML_FRONTMATTER_END.Length;
+            var yamlLength = indexEndYaml - indexStartYaml + _yamlFrontMatterEnd.Length;
             var yamlContent = markdownContent.Substring(indexStartYaml, yamlLength);
             return yamlContent;
         }
