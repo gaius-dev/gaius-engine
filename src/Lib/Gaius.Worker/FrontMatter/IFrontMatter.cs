@@ -7,7 +7,8 @@ namespace Gaius.Worker.FrontMatter
         string Layout { get; }
         string Title { get; }
         string Author { get; }
-        string AuthorUrl { get; }
+        string AuthorPage { get; }
+        string AuthorImage { get; }
         string Keywords { get; }
         string Description { get; }
         string Image { get; }

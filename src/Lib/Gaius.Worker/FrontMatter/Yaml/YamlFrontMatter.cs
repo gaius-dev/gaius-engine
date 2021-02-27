@@ -10,8 +10,12 @@ namespace Gaius.Worker.FrontMatter.Yaml
         public string Title { get; internal set; }
         public string Author { get; internal set; }
         
-        [YamlMember(Alias = "author_url", ApplyNamingConventions = false)]
-        public string AuthorUrl { get; internal set; }
+        [YamlMember(Alias = "author_page", ApplyNamingConventions = false)]
+        public string AuthorPage { get; internal set; }
+
+        [YamlMember(Alias = "author_image", ApplyNamingConventions = false)]
+        public string AuthorImage { get; internal set; }
+        
         public string Keywords { get; internal set; }
         public string Description { get; internal set; }
         public string Image { get; internal set; }

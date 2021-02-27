@@ -33,7 +33,8 @@ namespace Gaius.Worker.MarkdownLiquid
             date = baseViewModel.Date;
             title = baseViewModel.FrontMatter.Title;
             author = baseViewModel.FrontMatter.Author;
-            author_url = GetUrl(siteData, baseViewModel.FrontMatter.AuthorUrl);
+            author_page = GetUrl(siteData, baseViewModel.FrontMatter.AuthorPage);
+            author_image = GetUrl(siteData, baseViewModel.FrontMatter.AuthorImage);
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
             image = GetUrl(siteData, baseViewModel.FrontMatter.Image);
@@ -56,7 +57,8 @@ namespace Gaius.Worker.MarkdownLiquid
         public string date { get; private set; }
         public string title { get; private set; }
         public string author { get; private set; }
-        public string author_url { get; private set; }
+        public string author_page { get; private set; }
+        public string author_image { get; private set; }
         public string keywords { get; private set; }
         public string description { get; private set; }
         public string image { get; private set; }
