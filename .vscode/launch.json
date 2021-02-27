@@ -65,7 +65,7 @@
             }
         },
         {
-            "name": "Build gaius-docs",
+            "name": "Build gaius-docs [Test Mode]",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
@@ -78,7 +78,20 @@
             "stopAtEntry": false
         },
         {
-            "name": "Build gaius-starter",
+            "name": "Build gaius-docs",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "build", "../../../gaius-docs", "--yes" ],
+            "cwd": "${workspaceFolder}/src/Gaius",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Build gaius-starter [Test Mode]",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
@@ -91,13 +104,39 @@
             "stopAtEntry": false
         },
         {
-            "name": "Build rstrube.github.io",
+            "name": "Build gaius-starter",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "build", "../../../gaius-starter", "--yes" ],
+            "cwd": "${workspaceFolder}/src/Gaius",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Build rstrube.github.io [Test Mode]",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
             "args": [ "build", "../../../rstrube.github.io", "--yes", "--testmode" ],
+            "cwd": "${workspaceFolder}/src/Gaius",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Build rstrube.github.io",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "build", "../../../rstrube.github.io", "--yes" ],
             "cwd": "${workspaceFolder}/src/Gaius",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",

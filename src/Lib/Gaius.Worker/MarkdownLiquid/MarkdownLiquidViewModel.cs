@@ -75,7 +75,7 @@ namespace Gaius.Worker.MarkdownLiquid
             if(string.IsNullOrEmpty(siteData.Url))
                 return relativeUrl;
 
-            return $"{siteData.Url}/{relativeUrl}";
+            return $"{siteData.Url}{relativeUrl}";
         }
 
         private static string GetExcerpt(string content)
