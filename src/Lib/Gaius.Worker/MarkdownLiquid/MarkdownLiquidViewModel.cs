@@ -76,7 +76,10 @@ namespace Gaius.Worker.MarkdownLiquid
 
         private static string GetUrl(SiteData siteData, string relativeUrl)
         {
-            if(string.IsNullOrEmpty(siteData.Url))
+            if(string.IsNullOrWhiteSpace(relativeUrl))
+                return null;
+
+            if(string.IsNullOrWhiteSpace(siteData.Url))
                 return relativeUrl;
 
             return $"{siteData.Url}{relativeUrl}";
