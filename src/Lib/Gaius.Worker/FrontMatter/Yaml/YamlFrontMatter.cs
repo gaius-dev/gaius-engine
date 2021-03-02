@@ -18,7 +18,12 @@ namespace Gaius.Worker.FrontMatter.Yaml
         
         public string Keywords { get; internal set; }
         public string Description { get; internal set; }
+
+        [YamlMember(Alias = "teaser_image", ApplyNamingConventions = false)]
+        public string TeaserImage { get; internal set; }
+        
         public string Image { get; internal set; }
+
 
         [YamlMember(Alias = "nav_order", ApplyNamingConventions = false)]
         public string NavOrder { get; internal set; }

@@ -11,6 +11,7 @@ namespace Gaius.Worker.FrontMatter
         string AuthorImage { get; }
         string Keywords { get; }
         string Description { get; }
+        string TeaserImage { get; }
         string Image { get; }
         string NavOrder { get; }
         string NavTitle { get; }

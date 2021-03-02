@@ -33,11 +33,12 @@ namespace Gaius.Worker.MarkdownLiquid
             date = baseViewModel.Date;
             title = baseViewModel.FrontMatter.Title;
             author = baseViewModel.FrontMatter.Author;
-            author_page = GetUrl(siteData, baseViewModel.FrontMatter.AuthorPage);
-            author_image = GetUrl(siteData, baseViewModel.FrontMatter.AuthorImage);
+            author_page = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.AuthorPage);
+            author_image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.AuthorImage);
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
-            image = GetUrl(siteData, baseViewModel.FrontMatter.Image);
+            teaser_image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.TeaserImage);
+            image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.Image);
             nav_order = baseViewModel.FrontMatter.NavOrder;
             nav_level = NavData.GetLevelFromOrder(nav_order);
 
@@ -63,6 +64,7 @@ namespace Gaius.Worker.MarkdownLiquid
         public string author_image { get; private set; }
         public string keywords { get; private set; }
         public string description { get; private set; }
+        public string teaser_image { get; private set; }
         public string image { get; private set; }
         public string nav_order { get; private set; }
         public int nav_level { get; private set; }
@@ -74,7 +76,7 @@ namespace Gaius.Worker.MarkdownLiquid
         private const string _pStart = "<p>";
         private const string _pEnd = "</p>";
 
-        private static string GetUrl(SiteData siteData, string relativeUrl)
+        private static string GetUrlFromFrontMatterRelativeUrl(SiteData siteData, string relativeUrl)
         {
             if(string.IsNullOrWhiteSpace(relativeUrl))
                 return null;
