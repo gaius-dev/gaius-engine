@@ -13,6 +13,7 @@ namespace Gaius.Worker
         public IWorkerLayout Layout { get; internal set; }
         public IFrontMatter FrontMatter { get; internal set; }
         public bool HasFrontMatter => FrontMatter != null;
+        public bool HasNavOrder => HasFrontMatter && !string.IsNullOrWhiteSpace(FrontMatter.NavOrder);
         public DirectoryInfo DirectoryInfo => FileSystemInfo as DirectoryInfo;
         public FileInfo FileInfo => FileSystemInfo as FileInfo;
         public WorkType WorkType { get; internal set; }

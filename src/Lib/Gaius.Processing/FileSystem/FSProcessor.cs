@@ -50,6 +50,7 @@ namespace Gaius.Processing.FileSystem
 
             var sourceDirTreeNode = rootTreeNode.AddChild(sourceDirOp);
             AddSourceOperationsToTreeNode(sourceDirTreeNode, sourceDirTask.DirectoryInfo);
+            AddNavDataToWorker(sourceDirTreeNode);
             AddAdditionalPostListingPaginatorOps(sourceDirTreeNode);
             AddTagDataToWorkerAndAdditionalTagListingOps(sourceDirTreeNode);
             
@@ -86,6 +87,23 @@ namespace Gaius.Processing.FileSystem
                 var newOpTreeNode = startTreeNode.AddChild(sourceDirOp);
                 AddSourceOperationsToTreeNode(newOpTreeNode, sourceDir);
             }
+        }
+
+        private void AddNavDataToWorker(TreeNode<IOperation> sourceDirTreeNode)
+        {
+            //rs: get all worker tasks for pages that should be included in the site navigation
+            //1. Must have FrontMatter
+            //2. No posts
+            //3. No drafts
+            //4. No tag listing pages
+            var navData = sourceDirTreeNode
+                .Where(tn => !tn.Data.IsInvalid
+                             && tn.Data.WorkerTask.HasNavOrder)
+                .OrderBy(tn => tn.Data.WorkerTask.FrontMatter.NavOrder)
+                .Select(tn => new NavData(tn.Data.WorkerTask))
+                .ToList();
+
+            _worker.AddNavDataToWorker(navData);
         }
 
         private void AddAdditionalPostListingPaginatorOps(TreeNode<IOperation> sourceDirTreeNode)

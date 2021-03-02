@@ -17,9 +17,15 @@ namespace Gaius.Worker.Models
         {
             TagData = tagData;
         }
+
+        internal void SetNavData(List<NavData> navData)
+        {
+            NavData = navData;
+        }
         
         internal string Url { get; private set; }
         internal string Time { get; private set; }
         internal List<TagData> TagData { get; private set; }
+        internal List<NavData> NavData { get; private set; }
     }
 }

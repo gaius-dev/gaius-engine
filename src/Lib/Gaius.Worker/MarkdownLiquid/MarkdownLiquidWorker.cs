@@ -91,6 +91,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Paginator>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Site>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Tag>();
+                context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_Nav>();
                 context.MemberAccessStrategy.Register<MarkdownLiquidViewModel_GaiusInfo>();
                 context.Model = markdownLiquidViewModel;
                 return liquidTemplate.Render(context);
@@ -104,6 +105,11 @@ namespace Gaius.Worker.MarkdownLiquid
         public override WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo)
         {
             return CreateWorkerTaskInternal(fileSystemInfo, null);
+        }
+
+        public override void AddNavDataToWorker(List<NavData> navData)
+        {
+            SiteData.SetNavData(navData);
         }
 
         public override void AddTagDataToWorker(List<TagData> tagData, bool tagListPageExists)
@@ -754,10 +760,10 @@ namespace Gaius.Worker.MarkdownLiquid
             {
                 return relativeTaskPathSegments.Count == 1
                     ? "."
-                    : string.Join(".", relativeTaskPathSegments.Take(relativeTaskPathSegments.Count - 1));
+                    : $".{string.Join(".", relativeTaskPathSegments.Take(relativeTaskPathSegments.Count - 1))}";
             }
 
-            return Path.GetFileNameWithoutExtension(string.Join(".", relativeTaskPathSegments));
+            return $".{Path.GetFileNameWithoutExtension(string.Join(".", relativeTaskPathSegments))}";
         }
 
         private void AddPrevAndNextUrlsToPaginator(Paginator paginator, WorkerTask workerTask)

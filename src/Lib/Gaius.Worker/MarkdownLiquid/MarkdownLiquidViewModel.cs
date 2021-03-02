@@ -18,9 +18,9 @@ namespace Gaius.Worker.MarkdownLiquid
             gaius = new MarkdownLiquidViewModel_GaiusInfo(gaiusInformation);
         }
 
+        public MarkdownLiquidViewModel_Site site { get; set; }
         public MarkdownLiquidViewModel_Page page { get; set; }
         public MarkdownLiquidViewModel_Paginator paginator { get; set; }
-        public MarkdownLiquidViewModel_Site site { get; set; }
         public MarkdownLiquidViewModel_GaiusInfo gaius { get; set; }
     }
 
@@ -38,6 +38,8 @@ namespace Gaius.Worker.MarkdownLiquid
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
             image = GetUrl(siteData, baseViewModel.FrontMatter.Image);
+            nav_order = baseViewModel.FrontMatter.NavOrder;
+            nav_level = NavData.GetLevelFromOrder(nav_order);
 
             var tagsFrontMatter = baseViewModel.FrontMatter?.GetTags();
             if(tagsFrontMatter != null)
@@ -62,6 +64,8 @@ namespace Gaius.Worker.MarkdownLiquid
         public string keywords { get; private set; }
         public string description { get; private set; }
         public string image { get; private set; }
+        public string nav_order { get; private set; }
+        public int nav_level { get; private set; }
         public string content { get; private set; }
         public string excerpt { get; private set; }
         public List<MarkdownLiquidViewModel_Tag> tags { get; private set; }
@@ -128,6 +132,7 @@ namespace Gaius.Worker.MarkdownLiquid
                                 ? new MarkdownLiquidViewModel_Tag(matchingSiteTagData)
                                 : null;
         }
+
         public int page { get; set; }
         public int per_page { get; set; }
         public List<MarkdownLiquidViewModel_Page> posts { get; set; }
@@ -147,8 +152,27 @@ namespace Gaius.Worker.MarkdownLiquid
             name = tagData.Name;
             url = tagData.Url ?? "#";
         }
+
         public string name { get; set; }
         public string url { get; set; }
+    }
+
+    public class MarkdownLiquidViewModel_Nav
+    {
+        internal MarkdownLiquidViewModel_Nav(NavData navData)
+        {
+            id = navData.Id;
+            title = navData.Title;
+            url = navData.Url ?? "#";
+            order = navData.Order;
+            level = navData.Level;
+        }
+
+        public string id { get; set;}
+        public string title { get; set; }
+        public string url { get; set; }
+        public int level { get; set; }
+        public string order { get; set; }
     }
 
     public class MarkdownLiquidViewModel_Site
@@ -157,11 +181,15 @@ namespace Gaius.Worker.MarkdownLiquid
         {
             url = siteData.Url;
             time = siteData.Time;
+            nav = siteData.NavData?.Select(navDataItem => new MarkdownLiquidViewModel_Nav(navDataItem)).ToList();
             tags = siteData.TagData?.Select(tag => new MarkdownLiquidViewModel_Tag(tag)).ToList();
         }
+
         public string url { get; set; }
         public string time { get; set; }
-        public List<MarkdownLiquidViewModel_Tag> tags { get; set;}
+        public List<MarkdownLiquidViewModel_Nav> nav { get; set;}
+        public List<MarkdownLiquidViewModel_Tag> tags { get; set; }
+
     }
 
     public class MarkdownLiquidViewModel_GaiusInfo 
@@ -170,6 +198,7 @@ namespace Gaius.Worker.MarkdownLiquid
         {
             version = gaiusInformation.Version;
         }
+
         public string version { get; set; }
     }
 }
