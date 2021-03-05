@@ -15,7 +15,7 @@ mkdir -p $ARTIFACTS_DIR
 ./deploy_artifacts.sh $ARTIFACTS_DIR
 ./zip_artifacts.sh
 
-ADDL_ARTIFACTS_TARGETS=( $ENGINE_ROOT_DIR/../gaius-docs $ENGINE_ROOT_DIR/../gaius-starter $ENGINE_ROOT_DIR/../rstrube.github.io )
+ADDL_ARTIFACTS_TARGETS=( $ENGINE_ROOT_DIR/../gaius-docs $ENGINE_ROOT_DIR/../gaius-example $ENGINE_ROOT_DIR/../gaius-starter $ENGINE_ROOT_DIR/../rstrube.github.io )
 
 for i in "${ADDL_ARTIFACTS_TARGETS[@]}"
 do
