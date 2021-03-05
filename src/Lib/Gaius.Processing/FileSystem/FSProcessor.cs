@@ -91,19 +91,45 @@ namespace Gaius.Processing.FileSystem
 
         private void AddNavDataToWorker(TreeNode<IOperation> sourceDirTreeNode)
         {
-            //rs: get all worker tasks for pages that should be included in the site navigation
+            //rs: get all worker tasks for all top level pages that should be included in the site navigation
             //1. Must have FrontMatter
-            //2. No posts
-            //3. No drafts
-            //4. No tag listing pages
-            var navData = sourceDirTreeNode
+            //2. Level == 0
+            var topLevelNavData = sourceDirTreeNode
                 .Where(tn => !tn.Data.IsInvalid
-                             && tn.Data.WorkerTask.HasNavOrder)
+                             && tn.Data.WorkerTask.HasNavOrder
+                             && tn.Data.WorkerTask.FrontMatter.NavLevel == 0)
                 .OrderBy(tn => tn.Data.WorkerTask.FrontMatter.NavOrder)
                 .Select(tn => new NavData(tn.Data.WorkerTask))
                 .ToList();
 
-            _worker.AddNavDataToWorker(navData);
+            foreach(var navData in topLevelNavData)
+            {
+                AddChildNavDataToNavData(sourceDirTreeNode, navData, navData.Order, navData.Level);
+            }
+
+            _worker.AddNavDataToWorker(topLevelNavData);
+        }
+
+        private void AddChildNavDataToNavData(TreeNode<IOperation> sourceDirTreeNode, NavData parentNavData, string parentNavOrder, int parentLevel)
+        {
+            var childNavData = sourceDirTreeNode
+                .Where(tn => !tn.Data.IsInvalid
+                             && tn.Data.WorkerTask.HasNavOrder
+                             && tn.Data.WorkerTask.FrontMatter.NavOrder.Contains(parentNavOrder)
+                             && tn.Data.WorkerTask.FrontMatter.NavLevel == parentLevel + 1)
+                .OrderBy(tn => tn.Data.WorkerTask.FrontMatter.NavOrder)
+                .Select(tn => new NavData(tn.Data.WorkerTask))
+                .ToList();
+
+            if(childNavData == null || childNavData.Count == 0)
+                return;
+
+            parentNavData.AddChildNavData(childNavData);
+
+            foreach(var child in childNavData)
+            {
+                AddChildNavDataToNavData(sourceDirTreeNode, child, child.Order, child.Level);
+            }
         }
 
         private void AddAdditionalPostListingPaginatorOps(TreeNode<IOperation> sourceDirTreeNode)

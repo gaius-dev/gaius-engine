@@ -40,7 +40,7 @@ namespace Gaius.Worker.MarkdownLiquid
             teaser_image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.TeaserImage);
             image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.Image);
             nav_order = baseViewModel.FrontMatter.NavOrder;
-            nav_level = NavData.GetLevelFromOrder(nav_order);
+            nav_level = baseViewModel.FrontMatter.NavLevel;
 
             var tagsFrontMatter = baseViewModel.FrontMatter?.GetTags();
             if(tagsFrontMatter != null)
@@ -171,6 +171,9 @@ namespace Gaius.Worker.MarkdownLiquid
             url = navData.Url ?? "#";
             order = navData.Order;
             level = navData.Level;
+
+            if(navData.Children != null && navData.Children.Count > 0)
+                children = navData.Children.Select(nd => new MarkdownLiquidViewModel_Nav(nd)).ToList();
         }
 
         public string id { get; set;}
@@ -178,6 +181,7 @@ namespace Gaius.Worker.MarkdownLiquid
         public string url { get; set; }
         public int level { get; set; }
         public string order { get; set; }
+        public List<MarkdownLiquidViewModel_Nav> children { get; set;}
     }
 
     public class MarkdownLiquidViewModel_Site

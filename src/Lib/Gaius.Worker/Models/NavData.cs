@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Gaius.Worker.Models
 {
@@ -13,20 +14,19 @@ namespace Gaius.Worker.Models
             Title = workerTask.FrontMatter?.NavTitle ?? workerTask.FrontMatter?.Title ?? workerTask.TaskFileOrDirectoryName;
             Url = workerTask.GenerationUrl;
             Order = workerTask.FrontMatter?.NavOrder;
+            Level = workerTask.FrontMatter?.NavLevel ?? -1;
         }
 
         public string Id { get; private set; }
         public string Title { get; private set; }
         public string Url { get; private set; }
         public string Order { get; private set; }
-        public int Level => GetLevelFromOrder(Order);
+        public int Level { get; private set; }
+        public List<NavData> Children { get; private set; }
 
-        internal static int GetLevelFromOrder(string order)
+        public void AddChildNavData(List<NavData> childNavData)
         {
-            if(string.IsNullOrWhiteSpace(order))
-                    return -1;
-
-            return order.Split('.', StringSplitOptions.RemoveEmptyEntries).Length - 1;
+            Children = childNavData;
         }
     }
 }

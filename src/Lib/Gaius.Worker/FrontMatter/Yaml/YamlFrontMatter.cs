@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using YamlDotNet.Serialization;
@@ -27,6 +28,17 @@ namespace Gaius.Worker.FrontMatter.Yaml
 
         [YamlMember(Alias = "nav_order", ApplyNamingConventions = false)]
         public string NavOrder { get; internal set; }
+
+        public int NavLevel
+        {
+            get
+            {
+                if(string.IsNullOrWhiteSpace(NavOrder))
+                    return -1;
+
+                return NavOrder.Split('.', StringSplitOptions.RemoveEmptyEntries).Length - 1;
+            }
+        }
 
         [YamlMember(Alias = "nav_title", ApplyNamingConventions = false)]
         public string NavTitle { get; internal set; }

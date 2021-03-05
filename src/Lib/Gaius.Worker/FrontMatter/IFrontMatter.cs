@@ -14,6 +14,7 @@ namespace Gaius.Worker.FrontMatter
         string TeaserImage { get; }
         string Image { get; }
         string NavOrder { get; }
+        int NavLevel { get; }
         string NavTitle { get; }
         List<string> Tags { get; }
         List<string> GetTags();
