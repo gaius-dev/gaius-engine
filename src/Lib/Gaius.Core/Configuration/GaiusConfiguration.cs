@@ -1,5 +1,4 @@
 using System.IO;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 using Gaius.Core.Arguments;
 
@@ -25,8 +24,12 @@ namespace Gaius.Core.Configuration
         public string ThemeName { get; set; } = "default";
         public int Pagination { get; set; } = 5;
         public string GenerationUrlRootPrefix { get; set; } = string.Empty;
-        public List<string> AlwaysKeep { get; set; } = new List<string>{ ".git" };
+        public string[] AlwaysKeep { get; set; }
+
+        [JsonIgnore]
         public string SiteContainerFullPath { get; set; }
+
+        [JsonIgnore]
         public bool IsTestModeEnabled { get; set; } = false;
 
         [JsonIgnore]

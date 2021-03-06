@@ -47,7 +47,7 @@ namespace Gaius
                             overrideConfig.SiteContainerFullPath = gaiusArgs.BasePath;
                             overrideConfig.IsTestModeEnabled = gaiusArgs.IsTestModeEnabled;
                         })
-                        .Configure<GaiusConfiguration>(hostBuilderContext.Configuration.GetSection("GaiusEngine"))
+                        //.Configure<GaiusConfiguration>(hostBuilderContext.Configuration.GetSection("GaiusEngine"))
                         .AddHostedService<GaiusConsoleHostedService>()
                         .AddSingleton<ITerminalDisplayService, TerminalDisplayService>()
                         .AddSingleton<IFSProcessor, FSProcessor>()
@@ -85,7 +85,7 @@ namespace Gaius
                             overrideConfig.SiteContainerFullPath = gaiusArgs.BasePath;
                             overrideConfig.IsTestModeEnabled = gaiusArgs.IsTestModeEnabled;
                         })
-                        .Configure<GaiusConfiguration>(hostBuilderContext.Configuration.GetSection("GaiusEngine"))
+                        //.Configure<GaiusConfiguration>(hostBuilderContext.Configuration.GetSection("GaiusEngine"))
                         .AddHostedService<BuildRequestQueueProcessorHostedService>()
                         .AddSingleton<GaiusFileSystemWatcher>()
                         .AddSingleton<IBuildRequestQueue, BuildRequestQueue>()
