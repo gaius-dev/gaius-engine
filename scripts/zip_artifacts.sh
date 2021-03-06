@@ -20,9 +20,9 @@ cd $BUILD_ARTIFACTS_DIR/bin/gaius
 zip $BUILD_ZIP_DIR/gaius-bin.zip ./*
 cd $DIR
 
-cd $BUILD_ARTIFACTS_DIR
-zip $BUILD_ZIP_DIR/gaius-cli.zip ./gaius.sh
-cd $DIR
+#cd $BUILD_ARTIFACTS_DIR
+#zip $BUILD_ZIP_DIR/gaius-cli.zip ./gaius.sh
+#cd $DIR
 
 cd $BUILD_ARTIFACTS_DIR/.github/workflows
 zip $BUILD_ZIP_DIR/gaius-github-actions.zip ./*
