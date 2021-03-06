@@ -14,7 +14,7 @@ function main()
 function deploy-artifacts() {
 
 	build-deploy-bin $1
-	deploy-cli-wrapper $1
+	# deploy-cli-wrapper $1
 	deploy-github-actions $1
 }
 
@@ -31,11 +31,11 @@ function build-deploy-bin() {
 	./build_xplatform.sh $1/bin/gaius
 }
 
-function deploy-cli-wrapper() {
-
-	echo "Deploying CLI wrappers in '$1'..."
-	cp ../cli/* $1/
-}
+# function deploy-cli-wrapper() {
+#
+#	 echo "Deploying CLI wrappers in '$1'..."
+#	 cp ../cli/* $1/
+# }
 
 function deploy-github-actions() {
 

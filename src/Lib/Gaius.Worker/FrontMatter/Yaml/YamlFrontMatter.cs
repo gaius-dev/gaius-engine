@@ -7,6 +7,7 @@ namespace Gaius.Worker.FrontMatter.Yaml
 {
     public class YamlFrontMatter : IFrontMatter
     {
+        public bool Draft { get; internal set; }
         public string Layout { get; internal set; }
         public string Title { get; internal set; }
         public string Author { get; internal set; }

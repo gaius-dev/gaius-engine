@@ -25,6 +25,26 @@
             }
         },
         {
+            "name": "Build and Serve gaius-example",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "serve", "../../../gaius-example", "--yes"],
+            "cwd": "${workspaceFolder}/src/Gaius",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/src/GaiusServer/Views"
+            }
+        },
+        {
             "name": "Build and Serve gaius-starter",
             "type": "coreclr",
             "request": "launch",
@@ -85,6 +105,32 @@
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
             "args": [ "build", "../../../gaius-docs", "--yes" ],
+            "cwd": "${workspaceFolder}/src/Gaius",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Build gaius-example [Test Mode]",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "build", "../../../gaius-example", "--yes", "--testmode" ],
+            "cwd": "${workspaceFolder}/src/Gaius",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Build gaius-example",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/Gaius/bin/Debug/net5.0/gaius.dll",
+            "args": [ "build", "../../../gaius-example", "--yes" ],
             "cwd": "${workspaceFolder}/src/Gaius",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",

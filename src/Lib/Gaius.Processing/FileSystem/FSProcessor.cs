@@ -71,6 +71,11 @@ namespace Gaius.Processing.FileSystem
             foreach(var sourceFile in sourceStartDir?.EnumerateFiles().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<FileInfo>())
             {
                 var sourceFileTask = _worker.CreateWorkerTask(sourceFile);
+
+                //rs: skip over any pages marked specifically as drafts
+                if(sourceFileTask.TaskFlags.HasFlag(WorkerTaskFlags.IsDraft) && !_gaiusConfiguration.IsTestModeEnabled)
+                    continue;
+
                 var sourceFileOp = new FSOperation(sourceFileTask);
                 startTreeNode.AddChild(sourceFileOp);
             }
@@ -144,7 +149,7 @@ namespace Gaius.Processing.FileSystem
             {
                 var draftWorkerTasks = sourceDirTreeNode
                     .Where(tn => !tn.Data.IsInvalid
-                                 && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+                                 && tn.Data.WorkerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
                     .Select(tn => tn.Data.WorkerTask).ToList();
 
                 postWorkerTasks.AddRange(draftWorkerTasks);

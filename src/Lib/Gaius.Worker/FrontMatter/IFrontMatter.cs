@@ -4,6 +4,7 @@ namespace Gaius.Worker.FrontMatter
 {
     public interface IFrontMatter
     {
+        bool Draft { get; }
         string Layout { get; }
         string Title { get; }
         string Author { get; }

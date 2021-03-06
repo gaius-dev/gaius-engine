@@ -225,7 +225,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 {
                     taskFlags = taskFlags | WorkerTaskFlags.IsChildOfSourceDir;
                     taskFlags = taskFlags | WorkerTaskFlags.IsSkip;
-                    taskFlags = taskFlags | WorkerTaskFlags.IsDraftsDir;
+                    taskFlags = taskFlags | WorkerTaskFlags.IsDraftPostsDir;
                     return taskFlags;
                 }
 
@@ -250,8 +250,11 @@ namespace Gaius.Worker.MarkdownLiquid
             if(GetIsPost(fileSystemInfo, taskFlags))
                 taskFlags = taskFlags | WorkerTaskFlags.IsPost;
 
-            else if(GetIsDraft(fileSystemInfo, taskFlags))
+            else if(GetIsDraftPost(fileSystemInfo, taskFlags))
+            {
+                taskFlags = taskFlags | WorkerTaskFlags.IsDraftPost;
                 taskFlags = taskFlags | WorkerTaskFlags.IsDraft;
+            }
 
             else if(GetIsTagList(fileSystemInfo, taskFlags))
                 taskFlags = taskFlags | WorkerTaskFlags.IsTagListing;
@@ -295,7 +298,7 @@ namespace Gaius.Worker.MarkdownLiquid
                     && fileSystemInfo.GetParentDirectory().FullName.Equals(GaiusConfiguration.PostsDirectoryFullPath);
         }
 
-        private bool GetIsDraft(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
+        private bool GetIsDraftPost(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
         {
             return taskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir)
                     && fileSystemInfo.IsMarkdownFile()
@@ -335,7 +338,7 @@ namespace Gaius.Worker.MarkdownLiquid
 
         private bool GetIsInvalid(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
         {
-            if((taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+            if((taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
                 && !_datePrefixRegEx.IsMatch(fileSystemInfo.Name))
                     return true;
 
@@ -384,6 +387,11 @@ namespace Gaius.Worker.MarkdownLiquid
                 return (null, null, taskFlags);
             }
 
+            else if(frontMatter.Draft)
+            {
+                taskFlags = taskFlags | WorkerTaskFlags.IsDraft;
+            }
+
             var layoutIdToLookup = string.IsNullOrEmpty(frontMatter.Layout)
                                     ? _defaultLayoutId 
                                     : frontMatter.Layout;
@@ -402,7 +410,7 @@ namespace Gaius.Worker.MarkdownLiquid
 
         private DateTime GetDate(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
         {
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
             {
                 var dateMatch = _datePrefixRegEx.Match(fileSystemInfo.Name);
 
@@ -433,7 +441,7 @@ namespace Gaius.Worker.MarkdownLiquid
             if(taskFlags.HasFlag(WorkerTaskFlags.IsPostsDir))
                 return new List<string>();
 
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsDraftsDir))
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsDraftPostsDir))
                 return new List<string>();
 
             if(taskFlags.HasFlag(WorkerTaskFlags.IsTagListDir))
@@ -471,7 +479,7 @@ namespace Gaius.Worker.MarkdownLiquid
             pageNumber += pageAdjustment;
 
             //posts and drafts
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
             {
                 var dateTimeMatch = _datePrefixRegEx.Match(fileSystemInfo.Name);
 
@@ -484,7 +492,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 if(taskFlags.HasFlag(WorkerTaskFlags.IsPost))
                     relativePathSegments.Remove(GaiusConfiguration.PostsDirectoryName);
 
-                else if(taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+                else if(taskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
                     relativePathSegments.Remove(GaiusConfiguration.DraftsDirectoryName);
 
                 var postUrlPrefix = string.IsNullOrWhiteSpace(GaiusConfiguration.PostUrlPrefix)
@@ -548,7 +556,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 || taskFlags.HasFlag(WorkerTaskFlags.IsNamedThemeDir))
                 return GaiusConfiguration.GenerationDirectoryName;
 
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsPostsDir) || taskFlags.HasFlag(WorkerTaskFlags.IsDraftsDir))
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsPostsDir) || taskFlags.HasFlag(WorkerTaskFlags.IsDraftPostsDir))
             {
                 return string.IsNullOrWhiteSpace(GaiusConfiguration.PostUrlPrefix)
                         ? $"/yyyy/MM/dd/[title]/"
@@ -592,7 +600,7 @@ namespace Gaius.Worker.MarkdownLiquid
                 startIndex = segmentCount - 3;
 
             //rs: all posts will have at least /yyyy/MM/dd/{title}/index.html
-            if (taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+            if (taskFlags.HasFlag(WorkerTaskFlags.IsPost) || taskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
             {
                 startIndex = segmentCount - 5;
 
@@ -613,7 +621,7 @@ namespace Gaius.Worker.MarkdownLiquid
             if (fileSystemInfo.Name.Equals(_indexMd, StringComparison.InvariantCultureIgnoreCase)
                 && !taskFlags.HasFlag(WorkerTaskFlags.IsTagListing)
                 && !taskFlags.HasFlag(WorkerTaskFlags.IsPost)
-                && !taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+                && !taskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
                 startIndex++;
 
             return startIndex;
@@ -656,7 +664,7 @@ namespace Gaius.Worker.MarkdownLiquid
             //The source file name is already index.md *and* it's not a post/draft, no need to auto insert folder
             if(fileSystemInfo.Name.Equals(_indexMd, StringComparison.InvariantCultureIgnoreCase)
                 && !taskFlags.HasFlag(WorkerTaskFlags.IsPost)
-                && !taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+                && !taskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
                 return null;
 
             var sanitizedNameWithoutExt = GetSanitizedName(Path.GetFileNameWithoutExtension(fileSystemInfo.Name));
@@ -664,7 +672,7 @@ namespace Gaius.Worker.MarkdownLiquid
             if(taskFlags.HasFlag(WorkerTaskFlags.IsPost))
                 return $"{_datePrefixRegEx.Replace(sanitizedNameWithoutExt, string.Empty).TrimStart('-')}";
 
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsDraft))
+            if(taskFlags.HasFlag(WorkerTaskFlags.IsDraftPost))
                 return $"{_datePrefixRegEx.Replace(sanitizedNameWithoutExt, string.Empty).TrimStart('-')}-draft";
 
             return sanitizedNameWithoutExt;

@@ -12,15 +12,16 @@ namespace Gaius.Worker
         IsPostsDir = 8,
         IsPost = 16,
         IsPostListing = 32,
-        IsDraftsDir = 64,
+        IsDraftPostsDir = 64,
         IsDraft = 128,
-        IsTagListDir = 256,
-        IsTagListing = 512,
-        IsSkip = 1024,
-        IsNamedThemeDir = 2048,
-        IsChildOfNamedThemeDir = 4096,
-        IsChildOfGenDir = 8192,
-        IsKeep = 16384,
-        IsInvalid = 32768
+        IsDraftPost = 256,
+        IsTagListDir = 512,
+        IsTagListing = 1024,
+        IsSkip = 2048,
+        IsNamedThemeDir = 4096,
+        IsChildOfNamedThemeDir = 8192,
+        IsChildOfGenDir = 16384,
+        IsKeep = 32768,
+        IsInvalid = 65536
     }
 }
