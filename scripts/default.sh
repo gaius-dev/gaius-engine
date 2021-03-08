@@ -2,8 +2,8 @@
 # Default build, package, and deploy script for Gaius
 
 DIR=$(dirname $(readlink -f $0))
-ENGINE_ROOT_DIR="$DIR/.."
-ARTIFACTS_DIR="$ENGINE_ROOT_DIR/build-artifacts"
+ROOT_SRC_DIR="$DIR/.."
+ARTIFACTS_DIR="$ROOT_SRC_DIR/build-artifacts"
 
 if [[ -d $ARTIFACTS_DIR ]]; then
     rm -rf $ARTIFACTS_DIR
@@ -15,7 +15,7 @@ mkdir -p $ARTIFACTS_DIR
 ./deploy_artifacts.sh $ARTIFACTS_DIR
 ./zip_artifacts.sh
 
-ADDL_ARTIFACTS_TARGETS=( $ENGINE_ROOT_DIR/../gaius-docs $ENGINE_ROOT_DIR/../gaius-example $ENGINE_ROOT_DIR/../gaius-starter $ENGINE_ROOT_DIR/../rstrube.github.io )
+ADDL_ARTIFACTS_TARGETS=( $ROOT_SRC_DIR/../gaius-docs $ROOT_SRC_DIR/../gaius-example $ROOT_SRC_DIR/../gaius-starter $ROOT_SRC_DIR/../rstrube.github.io )
 
 for i in "${ADDL_ARTIFACTS_TARGETS[@]}"
 do

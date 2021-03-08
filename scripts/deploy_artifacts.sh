@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script deploy Gaius engine binaries, Gaius server binaries, CLI wrappers, and Github Actions to a specific location
+# Script to deploy Gaius engine binaries and Github Actions to a specific location
 
 function main()
 {
