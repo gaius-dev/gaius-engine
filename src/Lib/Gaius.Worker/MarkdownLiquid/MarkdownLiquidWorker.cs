@@ -32,14 +32,13 @@ namespace Gaius.Worker.MarkdownLiquid
         private readonly Dictionary<string, BaseViewModel> _viewModelDictionary;
         private static readonly MarkdownPipeline _markdownPipeline 
                                                         = new MarkdownPipelineBuilder()
-                                                                .UseYamlFrontMatter() //Markdig extension to parse YAML
+                                                                .UseYamlFrontMatter() //Markdig extension to parse YAML (this is here so the YAML gets dected and ignored)
                                                                 .UseCustomContainers() // Markdig custom contain extension
                                                                 .UseEmphasisExtras() // Markdig extension for extra emphasis extension
                                                                 .UseListExtras() // Markdig extension for extra bullet lists
                                                                 .UseFigures() //Markdig extension for figures & footers
                                                                 .UsePipeTables() // Markdig extension for Github style pipe tables
                                                                 .UseMediaLinks() //Markdig extension for media links (e.g. youtube)
-                                                                .UseBootstrap() //Markdig extension to apply bootstrap CSS classes automatically
                                                                 .UseGenericAttributes() //Markdig extension to allow application of generic HTML attributes
                                                                 .Build();
                                                                 
