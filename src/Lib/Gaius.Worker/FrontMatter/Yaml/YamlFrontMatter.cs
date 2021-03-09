@@ -44,6 +44,9 @@ namespace Gaius.Worker.FrontMatter.Yaml
         [YamlMember(Alias = "nav_title", ApplyNamingConventions = false)]
         public string NavTitle { get; internal set; }
 
+        [YamlMember(Alias = "nav_in_header", ApplyNamingConventions = false)]
+        public bool NavInHeader { get; internal set; }
+
         public List<string> Tags { get; internal set; }
         public List<string> GetTags()
         {

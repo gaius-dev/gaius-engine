@@ -171,6 +171,7 @@ namespace Gaius.Worker.MarkdownLiquid
             url = navData.Url ?? "#";
             order = navData.Order;
             level = navData.Level;
+            in_header = navData.InHeader;
 
             if(navData.Children != null && navData.Children.Count > 0)
                 children = navData.Children.Select(nd => new MarkdownLiquidViewModel_Nav(nd)).ToList();
@@ -181,6 +182,7 @@ namespace Gaius.Worker.MarkdownLiquid
         public string url { get; set; }
         public int level { get; set; }
         public string order { get; set; }
+        public bool in_header { get; set; }
         public List<MarkdownLiquidViewModel_Nav> children { get; set;}
     }
 

@@ -15,6 +15,7 @@ namespace Gaius.Worker.Models
             Url = workerTask.GenerationUrl;
             Order = workerTask.FrontMatter?.NavOrder;
             Level = workerTask.FrontMatter?.NavLevel ?? -1;
+            InHeader = workerTask.FrontMatter?.NavInHeader ?? false;
         }
 
         public string Id { get; private set; }
@@ -22,6 +23,7 @@ namespace Gaius.Worker.Models
         public string Url { get; private set; }
         public string Order { get; private set; }
         public int Level { get; private set; }
+        public bool InHeader { get; private set; }
         public List<NavData> Children { get; private set; }
 
         public void AddChildNavData(List<NavData> childNavData)
