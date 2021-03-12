@@ -8,7 +8,8 @@ namespace Gaius.Worker
     {
         void InitWorker();
         WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
-        void AddNavDataToWorker(List<NavData> navData);
+        void AddNavDataToWorker(List<BaseNavData> navData);
+        void AddSidebarDataToWorker(List<BaseNavData> sidebarData);
         void AddTagDataToWorker(List<TagData> tagData, bool tagListPageExists);
         WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         string PerformWork(WorkerTask task);

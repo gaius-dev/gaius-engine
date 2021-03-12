@@ -18,14 +18,20 @@ namespace Gaius.Worker.Models
             TagData = tagData;
         }
 
-        internal void SetNavData(List<NavData> navData)
+        internal void SetNavData(List<BaseNavData> navData)
         {
             NavData = navData;
+        }
+
+        internal void SetSidebarData(List<BaseNavData> sidebarData)
+        {
+            SidebarData = sidebarData;
         }
         
         internal string Url { get; private set; }
         internal string Time { get; private set; }
         internal List<TagData> TagData { get; private set; }
-        internal List<NavData> NavData { get; private set; }
+        internal List<BaseNavData> NavData { get; private set; }
+        internal List<BaseNavData> SidebarData { get; private set; }
     }
 }

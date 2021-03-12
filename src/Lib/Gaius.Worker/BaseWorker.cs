@@ -14,7 +14,8 @@ namespace Gaius.Worker
 
         public abstract void InitWorker();
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo);
-        public abstract void AddNavDataToWorker(List<NavData> navData);
+        public abstract void AddNavDataToWorker(List<BaseNavData> navData);
+        public abstract void AddSidebarDataToWorker(List<BaseNavData> sidebarData);
         public abstract void AddTagDataToWorker(List<TagData> tagData, bool tagListPageExists);
         public abstract WorkerTask CreateWorkerTask(FileSystemInfo fileSystemInfo, Paginator paginator, List<WorkerTask> paginatorWorkerTasks);
         public abstract string PerformWork(WorkerTask workerTask);

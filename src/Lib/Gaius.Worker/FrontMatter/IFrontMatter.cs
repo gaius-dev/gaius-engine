@@ -14,10 +14,16 @@ namespace Gaius.Worker.FrontMatter
         string Description { get; }
         string TeaserImage { get; }
         string Image { get; }
+
+        string NavTitle { get; }
         string NavOrder { get; }
         int NavLevel { get; }
-        bool NavInHeader { get; }
-        string NavTitle { get; }
+        string SidebarTitle { get; }
+        string SidebarOrder { get; }
+        int SidebarLevel { get; }
+        string GetOrder(bool forSidebar);
+        int GetLevel(bool forSidebar);
+
         List<string> Tags { get; }
         List<string> GetTags();
     }

@@ -2,18 +2,18 @@ using System;
 
 namespace Gaius.Worker.Models
 {
-    public class NavData : BaseNavData
+    public class SidebarData : BaseNavData
     {
-        public NavData(WorkerTask workerTask)
+        public SidebarData(WorkerTask workerTask)
         {
             if(!workerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsChildOfSourceDir))
                 throw new ArgumentException($"{nameof(workerTask.TaskFlags)} must contain {nameof(WorkerTaskFlags.IsChildOfSourceDir)}");
 
             Id = workerTask.GenerationId;
-            Title =  workerTask.FrontMatter?.NavTitle ?? workerTask.FrontMatter?.Title ?? workerTask.TaskFileOrDirectoryName;
+            Title =  workerTask.FrontMatter?.SidebarTitle ?? workerTask.FrontMatter?.NavTitle ?? workerTask.FrontMatter?.Title ?? workerTask.TaskFileOrDirectoryName;
             Url = workerTask.GenerationUrl;
-            Order = workerTask.FrontMatter?.NavOrder;
-            Level = workerTask.FrontMatter?.NavLevel ?? -1;
+            Order = workerTask.FrontMatter?.SidebarOrder;
+            Level = workerTask.FrontMatter?.SidebarLevel ?? -1;
         }
     }
 }

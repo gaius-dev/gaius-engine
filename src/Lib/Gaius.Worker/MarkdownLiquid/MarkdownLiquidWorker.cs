@@ -106,9 +106,14 @@ namespace Gaius.Worker.MarkdownLiquid
             return CreateWorkerTaskInternal(fileSystemInfo, null);
         }
 
-        public override void AddNavDataToWorker(List<NavData> navData)
+        public override void AddNavDataToWorker(List<BaseNavData> navData)
         {
             SiteData.SetNavData(navData);
+        }
+
+        public override void AddSidebarDataToWorker(List<BaseNavData> sidebarData)
+        {
+            SiteData.SetSidebarData(sidebarData);
         }
 
         public override void AddTagDataToWorker(List<TagData> tagData, bool tagListPageExists)

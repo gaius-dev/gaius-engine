@@ -17,7 +17,6 @@ namespace Gaius.Worker.FrontMatter.Yaml
 
         [YamlMember(Alias = "author_image", ApplyNamingConventions = false)]
         public string AuthorImage { get; internal set; }
-        
         public string Keywords { get; internal set; }
         public string Description { get; internal set; }
 
@@ -26,27 +25,26 @@ namespace Gaius.Worker.FrontMatter.Yaml
         
         public string Image { get; internal set; }
 
-
-        [YamlMember(Alias = "nav_order", ApplyNamingConventions = false)]
-        public string NavOrder { get; internal set; }
-
-        public int NavLevel
-        {
-            get
-            {
-                if(string.IsNullOrWhiteSpace(NavOrder))
-                    return -1;
-
-                return NavOrder.Split('.', StringSplitOptions.RemoveEmptyEntries).Length - 1;
-            }
-        }
-
+        //main navigation
         [YamlMember(Alias = "nav_title", ApplyNamingConventions = false)]
         public string NavTitle { get; internal set; }
 
-        [YamlMember(Alias = "nav_in_header", ApplyNamingConventions = false)]
-        public bool NavInHeader { get; internal set; }
+        [YamlMember(Alias = "nav_order", ApplyNamingConventions = false)]
+        public string NavOrder { get; internal set; }
+        public int NavLevel => GetLevelFromOrder(NavOrder);
 
+        //sidebar
+        [YamlMember(Alias = "sidebar_title", ApplyNamingConventions = false)]
+        public string SidebarTitle { get; internal set; }
+
+        [YamlMember(Alias = "sidebar_order", ApplyNamingConventions = false)]
+        public string SidebarOrder { get; internal set; }
+        public int SidebarLevel => GetLevelFromOrder(SidebarOrder);
+
+        public string GetOrder(bool forSidebar) => forSidebar ? SidebarOrder : NavOrder;
+        public int GetLevel(bool forSidebar) => forSidebar ? SidebarLevel : NavLevel;
+
+        //tags
         public List<string> Tags { get; internal set; }
         public List<string> GetTags()
         {
@@ -58,5 +56,12 @@ namespace Gaius.Worker.FrontMatter.Yaml
             return tags;
         }
 
+        private static int GetLevelFromOrder(string orderStr)
+        {
+            if(string.IsNullOrWhiteSpace(orderStr))
+                    return -1;
+
+            return orderStr.Split('.', StringSplitOptions.RemoveEmptyEntries).Length - 1;
+        }
     }
 }

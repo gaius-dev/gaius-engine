@@ -50,7 +50,8 @@ namespace Gaius.Processing.FileSystem
 
             var sourceDirTreeNode = rootTreeNode.AddChild(sourceDirOp);
             AddSourceOperationsToTreeNode(sourceDirTreeNode, sourceDirTask.DirectoryInfo);
-            AddNavDataToWorker(sourceDirTreeNode);
+            AddBaseNavDataToWorker(sourceDirTreeNode, false);
+            AddBaseNavDataToWorker(sourceDirTreeNode, true);
             AddAdditionalPostListingPaginatorOps(sourceDirTreeNode);
             AddTagDataToWorkerAndAdditionalTagListingOps(sourceDirTreeNode);
             
@@ -94,46 +95,56 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        private void AddNavDataToWorker(TreeNode<IOperation> sourceDirTreeNode)
+        private void AddBaseNavDataToWorker(TreeNode<IOperation> sourceDirTreeNode, bool forSidebar)
         {
             //rs: get all worker tasks for all top level pages that should be included in the site navigation
             //1. Must have FrontMatter
             //2. Level == 0
-            var topLevelNavData = sourceDirTreeNode
+            var topLevelBaseNavData = sourceDirTreeNode
                 .Where(tn => !tn.Data.IsInvalid
-                             && tn.Data.WorkerTask.HasNavOrder
-                             && tn.Data.WorkerTask.FrontMatter.NavLevel == 0)
-                .OrderBy(tn => tn.Data.WorkerTask.FrontMatter.NavOrder)
-                .Select(tn => new NavData(tn.Data.WorkerTask))
+                             && tn.Data.WorkerTask.GetHasOrder(forSidebar)
+                             && tn.Data.WorkerTask.FrontMatter.GetLevel(forSidebar) == 0)
+                .OrderBy(tn => tn.Data.WorkerTask.FrontMatter.GetOrder(forSidebar))
+                .Select(tn => forSidebar
+                              ? new SidebarData(tn.Data.WorkerTask) as BaseNavData
+                              : new NavData(tn.Data.WorkerTask) as BaseNavData)
                 .ToList();
 
-            foreach(var navData in topLevelNavData)
+            foreach(var baseNavData in topLevelBaseNavData)
             {
-                AddChildNavDataToNavData(sourceDirTreeNode, navData, navData.Order, navData.Level);
+                AddChildBaseNavData(sourceDirTreeNode, baseNavData, baseNavData.Order, baseNavData.Level, forSidebar);
             }
 
-            _worker.AddNavDataToWorker(topLevelNavData);
+            if(forSidebar)
+                _worker.AddSidebarDataToWorker(topLevelBaseNavData);
+
+            else
+                _worker.AddNavDataToWorker(topLevelBaseNavData);
         }
 
-        private void AddChildNavDataToNavData(TreeNode<IOperation> sourceDirTreeNode, NavData parentNavData, string parentNavOrder, int parentLevel)
+        private void AddChildBaseNavData(TreeNode<IOperation> sourceDirTreeNode,
+                                              BaseNavData parentBaseNavData, string parentOrder,
+                                              int parentLevel, bool forSidebar)
         {
-            var childNavData = sourceDirTreeNode
+            var childBaseNavData = sourceDirTreeNode
                 .Where(tn => !tn.Data.IsInvalid
-                             && tn.Data.WorkerTask.HasNavOrder
-                             && tn.Data.WorkerTask.FrontMatter.NavOrder.Contains(parentNavOrder)
-                             && tn.Data.WorkerTask.FrontMatter.NavLevel == parentLevel + 1)
-                .OrderBy(tn => tn.Data.WorkerTask.FrontMatter.NavOrder)
-                .Select(tn => new NavData(tn.Data.WorkerTask))
+                             && tn.Data.WorkerTask.GetHasOrder(forSidebar)
+                             && tn.Data.WorkerTask.FrontMatter.GetOrder(forSidebar).Contains(parentOrder)
+                             && tn.Data.WorkerTask.FrontMatter.GetLevel(forSidebar) == parentLevel + 1)
+                .OrderBy(tn => tn.Data.WorkerTask.FrontMatter.GetOrder(forSidebar))
+                .Select(tn => forSidebar 
+                              ? new SidebarData(tn.Data.WorkerTask) as BaseNavData
+                              : new NavData(tn.Data.WorkerTask) as BaseNavData)
                 .ToList();
 
-            if(childNavData == null || childNavData.Count == 0)
+            if(childBaseNavData == null || childBaseNavData.Count == 0)
                 return;
 
-            parentNavData.AddChildNavData(childNavData);
+            parentBaseNavData.AddChildBaseNavData(childBaseNavData);
 
-            foreach(var child in childNavData)
+            foreach(var child in childBaseNavData)
             {
-                AddChildNavDataToNavData(sourceDirTreeNode, child, child.Order, child.Level);
+                AddChildBaseNavData(sourceDirTreeNode, child, child.Order, child.Level, forSidebar);
             }
         }
 

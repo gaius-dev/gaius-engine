@@ -41,8 +41,11 @@ namespace Gaius.Worker.MarkdownLiquid
             image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.Image);
             nav_order = baseViewModel.FrontMatter.NavOrder;
             nav_level = baseViewModel.FrontMatter.NavLevel;
+            sidebar_order = baseViewModel.FrontMatter.SidebarOrder;
+            sidebar_level = baseViewModel.FrontMatter.SidebarLevel;
 
             var tagsFrontMatter = baseViewModel.FrontMatter?.GetTags();
+
             if(tagsFrontMatter != null)
             {
                 var tagData = siteData.TagData.Where(td => tagsFrontMatter.Contains(td.Name));
@@ -68,6 +71,8 @@ namespace Gaius.Worker.MarkdownLiquid
         public string image { get; private set; }
         public string nav_order { get; private set; }
         public int nav_level { get; private set; }
+        public string sidebar_order { get; private set; }
+        public int sidebar_level { get; private set; }
         public string content { get; private set; }
         public string excerpt { get; private set; }
         public List<MarkdownLiquidViewModel_Tag> tags { get; private set; }
@@ -164,17 +169,16 @@ namespace Gaius.Worker.MarkdownLiquid
 
     public class MarkdownLiquidViewModel_Nav
     {
-        internal MarkdownLiquidViewModel_Nav(NavData navData)
+        internal MarkdownLiquidViewModel_Nav(BaseNavData baseNavData)
         {
-            id = navData.Id;
-            title = navData.Title;
-            url = navData.Url ?? "#";
-            order = navData.Order;
-            level = navData.Level;
-            in_header = navData.InHeader;
+            id = baseNavData.Id;
+            title = baseNavData.Title;
+            url = baseNavData.Url ?? "#";
+            order = baseNavData.Order;
+            level = baseNavData.Level;
 
-            if(navData.Children != null && navData.Children.Count > 0)
-                children = navData.Children.Select(nd => new MarkdownLiquidViewModel_Nav(nd)).ToList();
+            if(baseNavData.Children != null && baseNavData.Children.Count > 0)
+                children = baseNavData.Children.Select(bnd => new MarkdownLiquidViewModel_Nav(bnd)).ToList();
         }
 
         public string id { get; set;}
@@ -182,7 +186,6 @@ namespace Gaius.Worker.MarkdownLiquid
         public string url { get; set; }
         public int level { get; set; }
         public string order { get; set; }
-        public bool in_header { get; set; }
         public List<MarkdownLiquidViewModel_Nav> children { get; set;}
     }
 
@@ -193,14 +196,15 @@ namespace Gaius.Worker.MarkdownLiquid
             url = siteData.Url;
             time = siteData.Time;
             nav = siteData.NavData?.Select(navDataItem => new MarkdownLiquidViewModel_Nav(navDataItem)).ToList();
+            sidebar = siteData.SidebarData?.Select(sidebarDataItem => new MarkdownLiquidViewModel_Nav(sidebarDataItem)).ToList();
             tags = siteData.TagData?.Select(tag => new MarkdownLiquidViewModel_Tag(tag)).ToList();
         }
 
         public string url { get; set; }
         public string time { get; set; }
-        public List<MarkdownLiquidViewModel_Nav> nav { get; set;}
+        public List<MarkdownLiquidViewModel_Nav> nav { get; set; }
+        public List<MarkdownLiquidViewModel_Nav> sidebar { get; set; }
         public List<MarkdownLiquidViewModel_Tag> tags { get; set; }
-
     }
 
     public class MarkdownLiquidViewModel_GaiusInfo 
