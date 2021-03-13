@@ -11,6 +11,7 @@ using Gaius.Worker.Models;
 using System.Text.RegularExpressions;
 using System.Linq;
 using Gaius.Worker.FrontMatter;
+using Gaius.Worker.MarkdownLiquid.ViewModelComponents;
 
 namespace Gaius.Worker.MarkdownLiquid
 {

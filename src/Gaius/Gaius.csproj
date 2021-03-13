@@ -11,7 +11,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>gaius</AssemblyName>
     <AssemblyTitle>Gaius Engine</AssemblyTitle>
-    <Version>0.150.0</Version>
+    <Version>0.160.0</Version>
     <Authors>Robert Strube</Authors>
     <Description>A static site generation engine and Kestrel micro-server.</Description>
   </PropertyGroup>
