@@ -18,8 +18,8 @@ namespace Gaius.Worker.MarkdownLiquid.ViewModelComponents
             author_image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.AuthorImage);
             keywords = baseViewModel.FrontMatter.Keywords;
             description = baseViewModel.FrontMatter.Description;
-            teaser_image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.TeaserImage);
             image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.Image);
+            teaser_image = GetUrlFromFrontMatterRelativeUrl(siteData, baseViewModel.FrontMatter.TeaserImage) ?? image;
             nav_order = baseViewModel.FrontMatter.NavOrder;
             nav_level = baseViewModel.FrontMatter.NavLevel;
             sidebar_order = baseViewModel.FrontMatter.SidebarOrder;
