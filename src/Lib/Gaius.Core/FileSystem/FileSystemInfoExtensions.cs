@@ -68,6 +68,12 @@ namespace Gaius.Core.FileSystem
             return fileSystemInfo.FullName.Split(Path.DirectorySeparatorChar).ToList();
         }
 
+        public static List<string> GetDirPathSegments(this FileSystemInfo fileSystemInfo)
+        {
+            var pathSegments = GetDirPathSegments(fileSystemInfo);
+            return pathSegments.Take(pathSegments.Count - 1).ToList();
+        }
+
         public static DirectoryInfo GetParentDirectory(this FileSystemInfo fileSystemInfo)
         {
             return Directory.GetParent(fileSystemInfo.FullName);

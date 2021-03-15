@@ -473,7 +473,12 @@ namespace Gaius.Worker.MarkdownLiquid
             var relativePathSegments = fullPathSegments.Skip(skipAmt).ToList();
 
             if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfNamedThemeDir))
+            {
+                relativePathSegments[relativePathSegments.Count - 1] 
+                    = GetTaskFileOrDirectoryName(fileSystemInfo, taskFlags);
+                    
                 return relativePathSegments;
+            }
 
             //rs: Do we have a folder that should auto insert into the relative path segments?
             var autoInsertedFolder = GetAutoInsertedFolderName(fileSystemInfo, taskFlags);
@@ -688,9 +693,15 @@ namespace Gaius.Worker.MarkdownLiquid
             if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfGenDir))
                 throw new ArgumentException($"{nameof(taskFlags)} must cannot contain {nameof(WorkerTaskFlags.IsChildOfGenDir)}");
 
-            //rs: anything in the named theme directory should not have it's name altered in any way
+            //rs: anything in the named theme directory
             if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfNamedThemeDir))
-                return fileSystemInfo.Name;
+            {
+                //rs: we're not dealing with a JS or CSS file
+                if(!fileSystemInfo.IsCSSFile() && !fileSystemInfo.IsJSFile())
+                    return fileSystemInfo.Name;
+
+                return GetCacheBustName(fileSystemInfo.Name);
+            }
 
             //rs: if we're dealing with a .md file, we'll always be generating an index.html file (in the appropriate auto inserted folder)
             if(fileSystemInfo.IsMarkdownFile())
@@ -705,6 +716,14 @@ namespace Gaius.Worker.MarkdownLiquid
                 return $"{sanitizedNameWithoutExt}{Path.GetExtension(fileSystemInfo.Name)}";
 
             return sanitizedNameWithoutExt;
+        }
+
+        private string GetCacheBustName(string fileSystemName)
+        {
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(fileSystemName);
+            var ext = Path.GetExtension(fileSystemName);
+
+            return $"{nameWithoutExtension}-{SiteData.CacheBust}{ext}";
         }
 
         private string GetSanitizedName(string nameWithoutExtension)

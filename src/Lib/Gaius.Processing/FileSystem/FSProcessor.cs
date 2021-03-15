@@ -256,7 +256,11 @@ namespace Gaius.Processing.FileSystem
             // Files ==========================================================
             foreach(var genFile in generationStartDir?.EnumerateFiles().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<FileInfo>())
             {
-                if(!rootTreeNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskFullPath == genFile.FullName))
+                //rs: there is *NO* source file op matching the generation file
+                //add it as a regular gen file op (most likely it will be a delete)
+                if(!rootTreeNode.Any(node => !node.Data.IsNullOp 
+                                     && (node.Data.WorkerTask.HasGenerationFileSystemInfoMatch(genFile)
+                                         || node.Data.WorkerTask.HasGenerationFileCacheBustMatch(genFile))))
                 {
                     var genFileTask = _worker.CreateWorkerTask(genFile);
                     var genFileOp = new FSOperation(genFileTask);
@@ -267,32 +271,28 @@ namespace Gaius.Processing.FileSystem
             // Directories ====================================================
             foreach(var genDir in generationStartDir?.EnumerateDirectories().OrderBy(directoryInfo => directoryInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
             {
-                //rs: does the gen dir op have a matching source dir op?
-                var hasMatchingSourceDirOp = rootTreeNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskFullPath == genDir.FullName);
-
-                //rs: check a special condition first
-                // 1. We don't have an explicit matching source dir op
-                // 2. AND we don't have a source file op which contains this gen directory (e.g. post and draft file ops)
-                // This means we'll need to either delet or keep this generation directory
-                if(!hasMatchingSourceDirOp && !rootTreeNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskParentDirectory.Contains(genDir.FullName)))
+                //rs: there is *NO* source dir op matching the generation dir
+                if(!rootTreeNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.HasGenerationFileSystemInfoMatch(genDir)))
                 {
-                    var genDirTask = _worker.CreateWorkerTask(genDir);
-                    var genDirOp = new FSOperation(genDirTask);
-                    var newGenDirOpNode = startTreeNode.AddChild(genDirOp);
-                    AddGenerationDirOperationsToTreeNode(rootTreeNode, newGenDirOpNode, genDir);
-                }
+                    //rs: there is *ALSO NO* source file ops that match this generation directory (e.g. post and draft source file ops)
+                    //add it as a regular gen dir op (most likely it will be a delete)
+                    if(!rootTreeNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.HasGenerationParentDirectoryMatch(genDir)))
+                    {
+                        var genDirTask = _worker.CreateWorkerTask(genDir);
+                        var genDirOp = new FSOperation(genDirTask);
+                        var newGenDirOpNode = startTreeNode.AddChild(genDirOp);
+                        AddGenerationDirOperationsToTreeNode(rootTreeNode, newGenDirOpNode, genDir);
+                    }
 
-                //rs: we do have a matching dir op, just skip this gen dir and add nothing to the op tree
-                else if(hasMatchingSourceDirOp)
-                    continue;
-
-                //rs: we don't really know if we'll need this gen dir op or not, add it as a null op
-                //NOTE: this could be pruned later if it doesn't contain any child op nodes that are deletes or keeps
-                else
-                {
-                    var nullGenDirOp = new FSOperation(genDir.Name, genDir.Name);
-                    var newNullGenDirOpNode = startTreeNode.AddChild(nullGenDirOp);
-                    AddGenerationDirOperationsToTreeNode(rootTreeNode, newNullGenDirOpNode, genDir);
+                    //rs: we did have at least one source file op that matches this generation directory
+                    //add it as a null op, we don't know if we'll need this gen directory op or not
+                    //NOTE: this could be pruned later if it doesn't contain any child op nodes that are deletes or keeps
+                    else
+                    {
+                        var nullGenDirOp = new FSOperation(genDir.Name, genDir.Name);
+                        var newNullGenDirOpNode = startTreeNode.AddChild(nullGenDirOp);
+                        AddGenerationDirOperationsToTreeNode(rootTreeNode, newNullGenDirOpNode, genDir);
+                    }
                 }
             }
         }
@@ -324,20 +324,21 @@ namespace Gaius.Processing.FileSystem
                 Directory.CreateDirectory(genDirFullPath);
 
             var genDir = new DirectoryInfo(genDirFullPath);
-            var allContainedFsInfos = genDir.EnumerateFileSystemInfos();
+            var genFileSystemInfos = genDir.EnumerateFileSystemInfos();
 
             //rs: delete *almost* all contained directories and files in the generation directory
-            foreach(var containedFsInfo in allContainedFsInfos)
+            foreach(var genFileSystemInfo in genFileSystemInfos)
             {
                 //rs: we have an explicit request to keep a specific file or directory
-                if(rootTreeNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.TaskFullPath == containedFsInfo.FullName
-                    && node.Data.OperationType == OperationType.Keep))
-                    continue;
+                if(rootTreeNode.Any(node => !node.Data.IsNullOp
+                                    && node.Data.WorkerTask.HasGenerationFileSystemInfoMatch(genFileSystemInfo)
+                                    && node.Data.OperationType == OperationType.Keep))
+                                    continue;
 
-                if(containedFsInfo.IsDirectory())
-                    ((DirectoryInfo)containedFsInfo).Delete(true);
+                if(genFileSystemInfo.IsDirectory())
+                    ((DirectoryInfo)genFileSystemInfo).Delete(true);
 
-                else containedFsInfo.Delete();
+                else genFileSystemInfo.Delete();
             }
             
             rootTreeNode.Data.Status = OperationStatus.Complete;

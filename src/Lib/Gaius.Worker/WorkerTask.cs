@@ -3,6 +3,7 @@ using System.IO;
 using Gaius.Worker.Models;
 using System.Linq;
 using Gaius.Worker.FrontMatter;
+using Gaius.Core.FileSystem;
 using System;
 
 namespace Gaius.Worker
@@ -20,6 +21,7 @@ namespace Gaius.Worker
         public WorkType WorkType { get; internal set; }
         public WorkerTaskFlags TaskFlags { get; internal set; }
         public List<string> TaskPathSegments { get; internal set; }
+        public List<string> TaskDirPathSegments => TaskPathSegments.Take(TaskPathSegments.Count - 1).ToList();
         public string TaskFullPath => string.Join(Path.DirectorySeparatorChar, TaskPathSegments);
         public string TaskParentDirectory => string.Join(Path.DirectorySeparatorChar, TaskPathSegments.Take(TaskPathSegments.Count - 1));
         public string TaskFileOrDirectoryName => TaskPathSegments.Last();
@@ -39,5 +41,27 @@ namespace Gaius.Worker
         internal bool HasPaginatorData => Paginator != null 
                                         && PaginatorWorkerTasks != null
                                         && PaginatorWorkerTasks.Count > 0;
+
+        public bool HasGenerationFileSystemInfoMatch(FileSystemInfo genFileSystemInfo) => TaskFullPath.Equals(genFileSystemInfo.FullName);
+
+        public bool HasGenerationFileCacheBustMatch(FileInfo genFile)
+        {
+            if(!genFile.IsCSSFile() && !genFile.IsJSFile())
+                return false;
+
+            var genFileNameSplit = genFile.Name.Split('-', System.StringSplitOptions.RemoveEmptyEntries);
+
+            if(genFileNameSplit.Length <= 0)
+                return false;
+
+            var genFileNameStart = genFileNameSplit[0];
+
+            return TaskDirPathSegments.SequenceEqual(genFile.GetDirPathSegments()) && TaskFileOrDirectoryName.StartsWith(genFileNameStart);
+        }
+
+        public bool HasGenerationParentDirectoryMatch(DirectoryInfo genDir)
+        {
+            return TaskParentDirectory.Contains(genDir.FullName);
+        }
     }
 }
