@@ -58,6 +58,7 @@ namespace Gaius.Worker.MarkdownLiquid
 
         public override void InitWorker()
         {
+            SiteData = new SiteData(GaiusConfiguration);
             _layoutDictionary.Clear();
             _viewModelDictionary.Clear();
             BuildLayoutDictionary();
