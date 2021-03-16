@@ -129,7 +129,7 @@ namespace Gaius.Processing.FileSystem
             var childBaseNavData = sourceDirTreeNode
                 .Where(tn => !tn.Data.IsInvalid
                              && tn.Data.WorkerTask.GetHasOrder(forSidebar)
-                             && tn.Data.WorkerTask.FrontMatter.GetOrder(forSidebar).Contains(parentOrder)
+                             && tn.Data.WorkerTask.FrontMatter.GetOrder(forSidebar).StartsWith(parentOrder)
                              && tn.Data.WorkerTask.FrontMatter.GetLevel(forSidebar) == parentLevel + 1)
                 .OrderBy(tn => tn.Data.WorkerTask.FrontMatter.GetOrder(forSidebar))
                 .Select(tn => forSidebar 
