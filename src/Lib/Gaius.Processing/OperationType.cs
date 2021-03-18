@@ -6,8 +6,6 @@ namespace Gaius.Processing
         Root,
         CreateOverwrite,
         Skip,
-        Keep,
-        Delete,
         Invalid
     }
 }

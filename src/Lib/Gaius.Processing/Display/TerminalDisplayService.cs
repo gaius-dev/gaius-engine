@@ -31,9 +31,6 @@ namespace Gaius.Processing.Display
 
             foreach(var opNode in rootNode)
             {
-                if(opNode.Data.OperationType == OperationType.Delete)
-                    continue;
-
                 var srcLength = (3 * opNode.Level) + opNode.Data.SourceDisplay.Length;
                 
                 if(srcLength > maxSrcLength)
@@ -48,17 +45,13 @@ namespace Gaius.Processing.Display
             if(rootNode.Data.Status == OperationStatus.Pending)
             {
                 var areInvalidOps = rootNode.Any(node => node.Data.IsInvalid);
-                var areUnsafeOps = rootNode.Any(node => node.Data.IsUnsafe);
 
-                if(areInvalidOps || areUnsafeOps)
+                if(areInvalidOps)
                 {
                     Console.WriteLine();
 
                     if(areInvalidOps)
                         PrintInvalidOperationsMessages(rootNode.Where(node => node.Data.IsInvalid).ToList());
-
-                    if(areUnsafeOps)
-                        PrintUnsafeOperationsMessages(rootNode.Where(node => node.Data.IsUnsafe).ToList());
                 }
 
                 else PrintSafeOperationsMessage();
@@ -92,17 +85,12 @@ namespace Gaius.Processing.Display
         private static void PrintChildOperationTreeNode(TreeNode<IOperation> opNode, int maxSrcLength)
         {
             PrintOperationStatus(opNode.Data);
-
-            if(opNode.Data.OperationType == OperationType.Delete
-                    || opNode.Data.OperationType == OperationType.Keep)
-                PrintOutputDisplayOnlyOperationTreeNode(opNode, maxSrcLength);
-
-            else PrintNormalOperationTreeNode(opNode, maxSrcLength);
+            PrintNormalOperationTreeNode(opNode, maxSrcLength);
         }
 
         private static (string indent, string outdent) GetIndentAndOutdent(TreeNode<IOperation> treeNode, int maxSrcLength)
         {
-            var srcName = treeNode.Data.OperationType != OperationType.Delete ? treeNode.Data.SourceDisplay : string.Empty;
+            var srcName = treeNode.Data.SourceDisplay;
 
             var paddingLeft = 3 * treeNode.Level;
             var indent = string.Empty;
@@ -131,20 +119,6 @@ namespace Gaius.Processing.Display
                 Colorful.Console.Write(treeNode.Data.OutputDisplay, GetColorForTreeNode(treeNode, true));
             }
 
-            Console.WriteLine();
-        }
-
-        private static void PrintOutputDisplayOnlyOperationTreeNode(TreeNode<IOperation> treeNode, int maxSrcLength)
-        {
-            (string indent, string outdent) = GetIndentAndOutdent(treeNode, maxSrcLength);
-            
-            Console.Write(string.Empty.PadRight(maxSrcLength + 1, ' '));
-            PrintOperation(treeNode.Data);
-            Console.Write(indent);
-
-            var targetColor = treeNode.Data.OperationType == OperationType.Delete ? TerminalUtilities._colorRed : TerminalUtilities._colorCyan;
-
-            Colorful.Console.Write(treeNode.Data.SourceDisplay, targetColor);
             Console.WriteLine();
         }
 
@@ -195,20 +169,12 @@ namespace Gaius.Processing.Display
                     Colorful.Console.Write(" + ", TerminalUtilities._colorGreen);
                     break;
 
-                case OperationType.Keep:
-                    Colorful.Console.Write(" ^ ", TerminalUtilities._colorCyan);
-                    break;
-
                 case OperationType.Skip:
                     Colorful.Console.Write(" _ ", TerminalUtilities._colorGrey);
                     break;
 
                 case OperationType.Root:
                     Colorful.Console.Write(" R ", TerminalUtilities._colorMagenta);
-                    break;
-
-                case OperationType.Delete:
-                    Colorful.Console.Write(" x ", TerminalUtilities._colorRed);
                     break;
 
                 case OperationType.Invalid:
@@ -235,20 +201,12 @@ namespace Gaius.Processing.Display
                     Console.Write("create");
                     break;
 
-                case OperationType.Keep:
-                    Console.Write("keep  ");
-                    break;
-
                 case OperationType.Skip:
                     Console.Write("skip  ");
                     break;
                     
                 case OperationType.Root:
                     Console.Write("root  ");
-                    break;
-
-                case OperationType.Delete:
-                    Console.Write("delete");
                     break;
 
                 case OperationType.Invalid:
@@ -306,21 +264,6 @@ namespace Gaius.Processing.Display
             Console.WriteLine();
         }
 
-        private static void PrintUnsafeOperationsMessages(List<TreeNode<IOperation>> unsafeOps)
-        {
-            Colorful.Console.WriteLine("One or more of the proposed operations is considered unsafe and could lead to data loss.", TerminalUtilities._colorRed);
-            Colorful.Console.WriteLine("The following files/directories will be deleted because they do not have corresponding filesystem objects in the source directory:", TerminalUtilities._colorRed);
-            Console.WriteLine();
-            
-            for(var i=0; i < unsafeOps.Count; i++)
-            {
-                Colorful.Console.Write($"{i+1}. ", TerminalUtilities._colorRed);
-                Console.WriteLine(unsafeOps[i].Data.WorkerTask.FileSystemInfo.FullName);
-            }
-
-            Console.WriteLine();
-        }
-
         private static void PrintSafeOperationsMessage()
         {
             Console.WriteLine();
@@ -339,9 +282,6 @@ namespace Gaius.Processing.Display
             var dirsCreatedOverwritten = completedOps.Count(node => node.Data.OperationType == OperationType.CreateOverwrite && node.Data.IsDirectoryOp);
             var filesCreatedOverwritten = completedOps.Count(node => node.Data.OperationType == OperationType.CreateOverwrite && !node.Data.IsDirectoryOp);
 
-            var dirsDeleted = completedOps.Count(node => node.Data.OperationType == OperationType.Delete && node.Data.IsDirectoryOp);
-            var filesDeleted = completedOps.Count(node => node.Data.OperationType == OperationType.Delete && !node.Data.IsDirectoryOp);
-
             var dirsSkipped = treeNode.Count(node => node.Data.OperationType == OperationType.Skip && node.Data.IsDirectoryOp);
             var filesSkipped = treeNode.Count(node => node.Data.OperationType == OperationType.Skip && !node.Data.IsDirectoryOp);
 
@@ -359,11 +299,6 @@ namespace Gaius.Processing.Display
                 Console.WriteLine("Create/Overwrite Operations:");
                 Console.WriteLine($"  {dirsCreatedOverwritten} new {(dirsCreatedOverwritten == 1 ? DIRECTORY_WAS : DIRECTORIES_WERE)} created/overwritten.");
                 Console.WriteLine($"  {filesCreatedOverwritten} new {(filesCreatedOverwritten == 1 ? FILE_WAS : FILES_WERE)} created/overwritten.");
-
-                Console.WriteLine();
-                Console.WriteLine("Delete Operations:");
-                Console.WriteLine($"  {dirsDeleted} {(dirsDeleted == 1 ? DIRECTORY_WAS : DIRECTORIES_WERE)} deleted.");
-                Console.WriteLine($"  {filesDeleted} {(filesDeleted == 1 ? FILE_WAS : FILES_WERE)} deleted.");
 
                 Console.WriteLine();
                 Console.WriteLine("Skipped Operations:");

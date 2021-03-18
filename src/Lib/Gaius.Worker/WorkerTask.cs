@@ -3,7 +3,6 @@ using System.IO;
 using Gaius.Worker.Models;
 using System.Linq;
 using Gaius.Worker.FrontMatter;
-using Gaius.Core.FileSystem;
 using System;
 
 namespace Gaius.Worker
@@ -41,27 +40,5 @@ namespace Gaius.Worker
         internal bool HasPaginatorData => Paginator != null 
                                         && PaginatorWorkerTasks != null
                                         && PaginatorWorkerTasks.Count > 0;
-
-        public bool HasGenerationFileSystemInfoMatch(FileSystemInfo genFileSystemInfo) => TaskFullPath.Equals(genFileSystemInfo.FullName);
-
-        public bool HasGenerationFileCacheBustMatch(FileInfo genFile)
-        {
-            if(!genFile.IsCSSFile() && !genFile.IsJSFile())
-                return false;
-
-            var genFileNameSplit = genFile.Name.Split('-', System.StringSplitOptions.RemoveEmptyEntries);
-
-            if(genFileNameSplit.Length <= 0)
-                return false;
-
-            var genFileNameStart = genFileNameSplit[0];
-
-            return TaskDirPathSegments.SequenceEqual(genFile.GetDirPathSegments()) && TaskFileOrDirectoryName.StartsWith(genFileNameStart);
-        }
-
-        public bool HasGenerationParentDirectoryMatch(DirectoryInfo genDir)
-        {
-            return TaskParentDirectory.Contains(genDir.FullName);
-        }
     }
 }

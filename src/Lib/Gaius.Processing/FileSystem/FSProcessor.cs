@@ -58,11 +58,6 @@ namespace Gaius.Processing.FileSystem
             var namedThemeDirTreeNode = rootTreeNode.AddChild(namedThemeDirOp);
             AddSourceOperationsToTreeNode(namedThemeDirTreeNode, namedThemeDirTask.DirectoryInfo);
 
-            var genDirectoryInfo = new DirectoryInfo(_gaiusConfiguration.GenerationDirectoryFullPath);
-            AddGenerationDirOperationsToTreeNode(rootTreeNode, rootTreeNode, genDirectoryInfo);
-
-            PruneNullGenDirOpNodes(rootTreeNode);
-
             return rootTreeNode;            
         }
 
@@ -248,73 +243,6 @@ namespace Gaius.Processing.FileSystem
             }
         }
 
-        private void AddGenerationDirOperationsToTreeNode(TreeNode<IOperation> rootTreeNode, TreeNode<IOperation> startTreeNode, DirectoryInfo generationStartDir)
-        {
-            if(!generationStartDir.Exists)
-                return;
-                
-            // Files ==========================================================
-            foreach(var genFile in generationStartDir?.EnumerateFiles().OrderBy(fileInfo => fileInfo.Name) ?? Enumerable.Empty<FileInfo>())
-            {
-                //rs: there is *NO* source file op matching the generation file
-                //add it as a regular gen file op (most likely it will be a delete)
-                if(!rootTreeNode.Any(node => !node.Data.IsNullOp 
-                                     && (node.Data.WorkerTask.HasGenerationFileSystemInfoMatch(genFile)
-                                         || node.Data.WorkerTask.HasGenerationFileCacheBustMatch(genFile))))
-                {
-                    var genFileTask = _worker.CreateWorkerTask(genFile);
-                    var genFileOp = new FSOperation(genFileTask);
-                    startTreeNode.AddChild(genFileOp);
-                }
-            }
-
-            // Directories ====================================================
-            foreach(var genDir in generationStartDir?.EnumerateDirectories().OrderBy(directoryInfo => directoryInfo.Name) ?? Enumerable.Empty<DirectoryInfo>())
-            {
-                //rs: there is *NO* source dir op matching the generation dir
-                if(!rootTreeNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.HasGenerationFileSystemInfoMatch(genDir)))
-                {
-                    //rs: there is *ALSO NO* source file ops that match this generation directory (e.g. post and draft source file ops)
-                    //add it as a regular gen dir op (most likely it will be a delete)
-                    if(!rootTreeNode.Any(node => !node.Data.IsNullOp && node.Data.WorkerTask.HasGenerationParentDirectoryMatch(genDir)))
-                    {
-                        var genDirTask = _worker.CreateWorkerTask(genDir);
-                        var genDirOp = new FSOperation(genDirTask);
-                        var newGenDirOpNode = startTreeNode.AddChild(genDirOp);
-                        AddGenerationDirOperationsToTreeNode(rootTreeNode, newGenDirOpNode, genDir);
-                    }
-
-                    //rs: we did have at least one source file op that matches this generation directory
-                    //add it as a null op, we don't know if we'll need this gen directory op or not
-                    //NOTE: this could be pruned later if it doesn't contain any child op nodes that are deletes or keeps
-                    else
-                    {
-                        var nullGenDirOp = new FSOperation(genDir.Name, genDir.Name);
-                        var newNullGenDirOpNode = startTreeNode.AddChild(nullGenDirOp);
-                        AddGenerationDirOperationsToTreeNode(rootTreeNode, newNullGenDirOpNode, genDir);
-                    }
-                }
-            }
-        }
-
-        private void PruneNullGenDirOpNodes(TreeNode<IOperation> rootTreeNode)
-        {
-            var level1NullGenDirOps = rootTreeNode.Where(node => node.Data.IsNullOp).ToList();
-
-            foreach(var nullGenDirOp in level1NullGenDirOps)
-            {
-                //rs: this is an op that's already been pruned, just skip it
-                if(nullGenDirOp.Parent == null)
-                    continue;
-
-                //rs: the null op has no delete or keep children underneath it, no reason to keep it
-                if(!nullGenDirOp.Any(node 
-                    => node.Data.OperationType == OperationType.Delete
-                        || node.Data.OperationType == OperationType.Keep))
-                    nullGenDirOp.Parent.Children.Remove(nullGenDirOp);
-            }
-        }
-
         public void ProcessFSOperationTree(TreeNode<IOperation> rootTreeNode)
         {
             var siteDirFullPath = _gaiusConfiguration.SiteContainerFullPath;
@@ -330,10 +258,8 @@ namespace Gaius.Processing.FileSystem
             foreach(var genFileSystemInfo in genFileSystemInfos)
             {
                 //rs: we have an explicit request to keep a specific file or directory
-                if(rootTreeNode.Any(node => !node.Data.IsNullOp
-                                    && node.Data.WorkerTask.HasGenerationFileSystemInfoMatch(genFileSystemInfo)
-                                    && node.Data.OperationType == OperationType.Keep))
-                                    continue;
+                if(_gaiusConfiguration.AlwaysKeep.Any(ak => ak.ToLowerInvariant().Equals(genFileSystemInfo.Name.ToLowerInvariant())))
+                    continue;
 
                 if(genFileSystemInfo.IsDirectory())
                     ((DirectoryInfo)genFileSystemInfo).Delete(true);

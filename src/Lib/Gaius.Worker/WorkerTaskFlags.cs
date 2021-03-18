@@ -20,8 +20,6 @@ namespace Gaius.Worker
         IsSkip = 2048,
         IsNamedThemeDir = 4096,
         IsChildOfNamedThemeDir = 8192,
-        IsChildOfGenDir = 16384,
-        IsKeep = 32768,
-        IsInvalid = 65536
+        IsInvalid = 16384
     }
 }

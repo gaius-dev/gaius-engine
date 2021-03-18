@@ -161,9 +161,6 @@ namespace Gaius.Worker.MarkdownLiquid
             if(taskFlags.HasFlag(WorkerTaskFlags.IsSiteContainerDir))
                 taskPathSegments = siteContainerDirectoryInfo.GetPathSegments();
             
-            else if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfGenDir))
-                taskPathSegments = fileSystemInfo.GetPathSegments();
-
             else
             {
                 var genDirectoryInfo = new DirectoryInfo(GaiusConfiguration.GenerationDirectoryFullPath);
@@ -250,9 +247,6 @@ namespace Gaius.Worker.MarkdownLiquid
             else if(GetIsChildOfNamedThemeDir(fileSystemInfo))
                 taskFlags = taskFlags | WorkerTaskFlags.IsChildOfNamedThemeDir;
 
-            else if(GetIsChildOfGenDir(fileSystemInfo))
-                taskFlags = taskFlags | WorkerTaskFlags.IsChildOfGenDir;
-
             if(GetIsPost(fileSystemInfo, taskFlags))
                 taskFlags = taskFlags | WorkerTaskFlags.IsPost;
 
@@ -267,9 +261,6 @@ namespace Gaius.Worker.MarkdownLiquid
 
             if(GetIsSkip(fileSystemInfo, taskFlags))
                 taskFlags = taskFlags | WorkerTaskFlags.IsSkip;
-
-            else if(GetIsKeep(fileSystemInfo, taskFlags))
-                taskFlags = taskFlags | WorkerTaskFlags.IsKeep;
 
             else if(GetIsInvalid(fileSystemInfo, taskFlags))
             {
@@ -290,11 +281,6 @@ namespace Gaius.Worker.MarkdownLiquid
             var pathSegments = fileSystemInfo.GetPathSegments();
             return pathSegments.Contains(GaiusConfiguration.ThemesDirectoryName)
                     && pathSegments.Contains(GaiusConfiguration.ThemeName);
-        }
-
-        private bool GetIsChildOfGenDir(FileSystemInfo fileSystemInfo)
-        {
-            return fileSystemInfo.GetPathSegments().Contains(GaiusConfiguration.GenerationDirectoryName);
         }
 
         private bool GetIsPost(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
@@ -334,12 +320,6 @@ namespace Gaius.Worker.MarkdownLiquid
                 return true;
 
             return false;
-        }
-
-        private bool GetIsKeep(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
-        {
-            return taskFlags.HasFlag(WorkerTaskFlags.IsChildOfGenDir)
-                    && GaiusConfiguration.AlwaysKeep.Any(alwaysKeep => alwaysKeep.Equals(fileSystemInfo.Name, StringComparison.InvariantCultureIgnoreCase));
         }
 
         private bool GetIsInvalid(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
@@ -691,9 +671,6 @@ namespace Gaius.Worker.MarkdownLiquid
 
         private string GetTaskFileOrDirectoryName(FileSystemInfo fileSystemInfo, WorkerTaskFlags taskFlags)
         {
-            if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfGenDir))
-                throw new ArgumentException($"{nameof(taskFlags)} must cannot contain {nameof(WorkerTaskFlags.IsChildOfGenDir)}");
-
             //rs: anything in the named theme directory
             if(taskFlags.HasFlag(WorkerTaskFlags.IsChildOfNamedThemeDir))
             {

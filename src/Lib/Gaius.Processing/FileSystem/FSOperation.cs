@@ -32,7 +32,6 @@ namespace Gaius.Processing.FileSystem
         public bool IsNullOp => OperationType == OperationType.Null;
         public bool NoActionRequired => OperationType != OperationType.CreateOverwrite;
         public bool IsInvalid => OperationType == OperationType.Invalid;
-        public bool IsUnsafe => OperationType == OperationType.Delete;
         public bool IsDirectoryOp => WorkerTask?.FileSystemInfo?.IsDirectory() ?? false;
         public string SourceDisplay => string.IsNullOrEmpty(_nullOpSourceDisplay) ? WorkerTask.SourceDisplay : _nullOpSourceDisplay;
         public string OutputDisplay => string.IsNullOrEmpty(_nullOpOutputDisplay) ? WorkerTask.OutputDisplay : _nullOpOutputDisplay;
@@ -41,9 +40,6 @@ namespace Gaius.Processing.FileSystem
         {
             if(workerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsInvalid))
                 return OperationType.Invalid;
-
-            if(workerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsChildOfGenDir))
-                return workerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsKeep) ? OperationType.Keep : OperationType.Delete;
 
             return workerTask.TaskFlags.HasFlag(WorkerTaskFlags.IsSkip) ? OperationType.Skip : OperationType.CreateOverwrite;
         }

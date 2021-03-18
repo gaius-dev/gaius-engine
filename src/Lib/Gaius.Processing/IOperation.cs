@@ -10,7 +10,6 @@ namespace Gaius.Processing
         bool IsNullOp { get; }
         bool NoActionRequired { get; }
         bool IsInvalid { get; }
-        bool IsUnsafe { get; }
         bool IsDirectoryOp { get; }
         string SourceDisplay { get; }
         string OutputDisplay { get; }
