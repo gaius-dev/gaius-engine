@@ -80,14 +80,7 @@ namespace Gaius.Core.Terminal
         public static void PrintUnknownCommand(string command)
         {
             System.Console.WriteLine();
-            Colorful.Console.WriteLine($"Unrecognized command or argument '{command}'.", _colorRed);
-            PrintUsage();
-        }
-
-        public static void PrintMissingArgument(string argument, string command)
-        {
-            System.Console.WriteLine();
-            Colorful.Console.WriteLine($"Missing '{argument}' argument for the '{command}' command.", _colorRed);
+            Colorful.Console.WriteLine($"Unrecognized command or argument '{command}'", _colorRed);
             PrintUsage();
         }
 
@@ -133,16 +126,19 @@ namespace Gaius.Core.Terminal
         {
             var usage = 
 @"
-Usage: dotnet ./path/to/gaius.dll [command] [options]
+Usage: dotnet ./path/to/gaius.dll [command <arguments>] [options]
 
 Commands:
 
   help               Show help information.
   version            Show version information.
-  showconfig [path]  Show the configuration in [path].
-  build [path]       Build site in [path] using the config file [path]/gaius.json.
-  serve [path]       Build and serve site in [path] using the config file [path]/gaius.json.
+  showconfig <path>  Show the configuration in [path].
+  build <path>       Build site in <path> using the config file <path>/gaius.json.
+  serve <path>       Build and serve site in <path> using the config file <path>/gaius.json.
                        Note: testmode is enabled automatically.
+
+  Note: If no <path> argument is provided, the current working directory is inferred.
+
 Options:
 
   --yes        Automatically answer 'yes' for all questions.

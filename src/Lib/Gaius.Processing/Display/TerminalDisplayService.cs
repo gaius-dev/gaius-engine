@@ -54,7 +54,7 @@ namespace Gaius.Processing.Display
                         PrintInvalidOperationsMessages(rootNode.Where(node => node.Data.IsInvalid).ToList());
                 }
 
-                else PrintSafeOperationsMessage();
+                else PrintNoProblemsWithOperationsMessage();
             }
 
             if(rootNode.Data.Status == OperationStatus.Complete)
@@ -264,10 +264,10 @@ namespace Gaius.Processing.Display
             Console.WriteLine();
         }
 
-        private static void PrintSafeOperationsMessage()
+        private static void PrintNoProblemsWithOperationsMessage()
         {
             Console.WriteLine();
-            Colorful.Console.WriteLine("All of the proposed operations are considered safe.", TerminalUtilities._colorGreen);
+            Colorful.Console.WriteLine("There are no problems with any of the proposed operations.", TerminalUtilities._colorGreen);
         }
 
         private const string DIRECTORIES_WERE = "directories were";
